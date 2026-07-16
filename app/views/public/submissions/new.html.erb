@@ -1,0 +1,47 @@
+<% content_for :title, "Submit to #{@project.name}" %>
+<h1>Submit an idea or bug to <%= @project.name %></h1>
+
+<%= form_with model: @item, url: public_submissions_path(@project.public_token) do |form| %>
+  <% if @item.errors.any? %>
+    <ul class="errors">
+      <% @item.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <div>
+    <%= form.label :title %>
+    <%= form.text_field :title, required: true %>
+  </div>
+
+  <div>
+    <%= form.label :notes, "Description" %>
+    <%= form.text_area :notes %>
+  </div>
+
+  <div>
+    <%= form.label :item_type, "Type" %>
+    <%= form.select :item_type, [ [ "Bug", "bug" ], [ "Idea", "idea" ] ] %>
+  </div>
+
+  <div>
+    <%= form.label :submitter_name, "Your name (optional)" %>
+    <%= form.text_field :submitter_name %>
+  </div>
+
+  <div>
+    <%= form.label :submitter_email, "Your email (optional)" %>
+    <%= form.email_field :submitter_email %>
+  </div>
+
+  <div class="honeypot" aria-hidden="true" style="position: absolute; left: -9999px;">
+    <label>Website
+      <%= tag.input type: "text", name: "website", tabindex: "-1", autocomplete: "off" %>
+    </label>
+  </div>
+
+  <%= form.submit "Send submission" %>
+<% end %>
+
+<p><%= link_to "Back to board", public_project_path(@project.public_token) %></p>

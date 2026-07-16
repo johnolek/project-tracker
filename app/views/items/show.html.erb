@@ -1,0 +1,20 @@
+<% content_for :title, @item.title %>
+<h1><%= @item.title %></h1>
+
+<dl>
+  <dt>Project</dt><dd><%= link_to @project.name, project_path(@project) %></dd>
+  <dt>Type</dt><dd><%= @item.item_type %></dd>
+  <dt>Status</dt><dd><%= @item.status.name %></dd>
+  <dt>Points</dt><dd><%= @item.points %></dd>
+  <dt>Elo rating</dt><dd><%= @item.elo_rating %></dd>
+  <dt>Source</dt><dd><%= @item.source %></dd>
+  <% if @item.source == "external" %>
+    <dt>Submitted by</dt><dd><%= @item.submitter_name.presence || "Anonymous" %> <%= @item.submitter_email %></dd>
+  <% end %>
+  <dt>Notes</dt><dd><%= simple_format(@item.notes.to_s) %></dd>
+</dl>
+
+<p>
+  <%= link_to "Edit", edit_project_item_path(@project, @item) %>
+  <%= button_to "Delete", project_item_path(@project, @item), method: :delete, form: { data: { turbo_confirm: "Delete this item?" } } %>
+</p>

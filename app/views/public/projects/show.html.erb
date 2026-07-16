@@ -1,0 +1,7 @@
+<% content_for :title, "#{@project.name} — Board" %>
+<h1><%= @project.name %></h1>
+
+<p><%= link_to "Submit an idea or bug", new_public_submission_path(@project.public_token) %></p>
+
+<%= turbo_stream_from @project, "items" %>
+<%= render "items/board", project: @project %>

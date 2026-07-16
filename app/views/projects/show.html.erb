@@ -1,0 +1,43 @@
+<% content_for :title, @project.name %>
+<h1><%= @project.name %></h1>
+
+<p>
+  <%= link_to "Edit", edit_project_path(@project) %>
+  <%= button_to "Delete", @project, method: :delete, form: { data: { turbo_confirm: "Delete this project?" } } %>
+</p>
+
+<h2>Public links</h2>
+<ul>
+  <li>Board: <%= link_to public_project_url(@project.public_token), public_project_path(@project.public_token) %></li>
+  <li>Submissions: <%= link_to new_public_submission_url(@project.public_token), new_public_submission_path(@project.public_token) %></li>
+</ul>
+
+<h2>Board (live)</h2>
+<%= turbo_stream_from @project, "items" %>
+<%= render "items/board", project: @project %>
+
+<h2>Manage items</h2>
+<p><%= link_to "New item", new_project_item_path(@project) %></p>
+
+<% if @items.any? %>
+  <table>
+    <thead>
+      <tr><th>Title</th><th>Type</th><th>Status</th><th>Points</th><th>Source</th></tr>
+    </thead>
+    <tbody>
+      <% @items.each do |item| %>
+        <tr>
+          <td><%= link_to item.title, project_item_path(@project, item) %></td>
+          <td><%= item.item_type %></td>
+          <td><%= item.status.name %></td>
+          <td><%= item.points %></td>
+          <td><%= item.source %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p>No items yet.</p>
+<% end %>
+
+<p><%= link_to "Back to projects", projects_path %></p>

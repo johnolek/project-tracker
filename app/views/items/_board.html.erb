@@ -1,0 +1,20 @@
+<%= tag.div id: dom_id(project, :board), class: "item-board" do %>
+  <% project.organization.statuses.ordered.each do |status| %>
+    <section class="status-group">
+      <h3><%= status.name %></h3>
+      <% items = project.items.where(status_id: status.id).order(created_at: :desc) %>
+      <% if items.any? %>
+        <ul>
+          <% items.each do |item| %>
+            <li id="<%= dom_id(item) %>">
+              <%= item.title %>
+              <small>(<%= item.item_type %><%= ", #{item.points} pts" if item.points %>)</small>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p>Nothing here yet.</p>
+      <% end %>
+    </section>
+  <% end %>
+<% end %>

@@ -1,0 +1,36 @@
+<%= form_with model: [ @project, item ] do |form| %>
+  <% if item.errors.any? %>
+    <ul class="errors">
+      <% item.errors.full_messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  <% end %>
+
+  <div>
+    <%= form.label :title %>
+    <%= form.text_field :title %>
+  </div>
+
+  <div>
+    <%= form.label :notes %>
+    <%= form.text_area :notes %>
+  </div>
+
+  <div>
+    <%= form.label :item_type, "Type" %>
+    <%= form.select :item_type, Item::ITEM_TYPES.map { |type| [ type.humanize, type ] } %>
+  </div>
+
+  <div>
+    <%= form.label :status_id, "Status" %>
+    <%= form.collection_select :status_id, @project.organization.statuses.ordered, :id, :name %>
+  </div>
+
+  <div>
+    <%= form.label :points %>
+    <%= form.number_field :points %>
+  </div>
+
+  <%= form.submit %>
+<% end %>

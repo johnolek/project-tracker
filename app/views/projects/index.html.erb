@@ -1,0 +1,14 @@
+<% content_for :title, "Projects" %>
+<h1>Projects</h1>
+
+<p><%= link_to "New project", new_project_path %></p>
+
+<% if @projects.any? %>
+  <ul>
+    <% @projects.each do |project| %>
+      <li><%= link_to project.name, project %></li>
+    <% end %>
+  </ul>
+<% else %>
+  <p>No projects yet.</p>
+<% end %>

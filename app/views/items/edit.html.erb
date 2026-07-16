@@ -1,0 +1,6 @@
+<% content_for :title, "Edit item" %>
+<h1>Edit <%= @item.title %></h1>
+
+<%= render "form", item: @item %>
+
+<p><%= link_to "Back to item", project_item_path(@project, @item) %></p>
