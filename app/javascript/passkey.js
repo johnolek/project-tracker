@@ -83,7 +83,8 @@ async function register(form) {
   try {
     credential = await navigator.credentials.create({ publicKey: options });
   } catch (error) {
-    return showError(form, "Passkey registration was cancelled.");
+    if (error.name === "NotAllowedError") return showError(form, "Passkey registration was cancelled.");
+    return showError(form, `Passkey registration failed: ${error.message}`);
   }
 
   const finished = await postJson(form.dataset.callbackUrl, { credential: serializeCreate(credential) });
@@ -105,7 +106,8 @@ async function authenticate(form) {
   try {
     assertion = await navigator.credentials.get({ publicKey: options });
   } catch (error) {
-    return showError(form, "Passkey sign in was cancelled.");
+    if (error.name === "NotAllowedError") return showError(form, "Passkey sign in was cancelled.");
+    return showError(form, `Passkey sign in failed: ${error.message}`);
   }
 
   const finished = await postJson(form.dataset.callbackUrl, { credential: serializeGet(assertion) });
