@@ -1,0 +1,9 @@
+inherit_gem:
+  rubocop-rails-omakase: rubocop.yml
+
+AllCops:
+  Exclude:
+    - db/**/*
+    - bin/**/*
+    - node_modules/**/*
+    - vendor/**/*
