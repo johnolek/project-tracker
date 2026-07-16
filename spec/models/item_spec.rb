@@ -5,14 +5,17 @@ RSpec.describe Item, type: :model do
 
   it { is_expected.to belong_to(:project) }
   it { is_expected.to have_many(:comments).dependent(:destroy) }
+  it { is_expected.to have_many(:comparisons_as_item_a).class_name("Comparison").dependent(:destroy) }
+  it { is_expected.to have_many(:comparisons_as_item_b).class_name("Comparison").dependent(:destroy) }
 
   it "belongs to a status" do
     expect(described_class.reflect_on_association(:status).macro).to eq(:belongs_to)
   end
 
   it { is_expected.to validate_presence_of(:title) }
-  it { is_expected.to validate_presence_of(:elo_rating) }
-  it { is_expected.to validate_numericality_of(:elo_rating).only_integer }
+  it { is_expected.to validate_presence_of(:rating) }
+  it { is_expected.to validate_presence_of(:rating_deviation) }
+  it { is_expected.to validate_presence_of(:volatility) }
   it { is_expected.to validate_inclusion_of(:item_type).in_array(Item::ITEM_TYPES) }
   it { is_expected.to validate_inclusion_of(:source).in_array(Item::SOURCES) }
   it { is_expected.to validate_numericality_of(:points).only_integer.is_greater_than(0).allow_nil }
@@ -34,9 +37,11 @@ RSpec.describe Item, type: :model do
   end
 
   describe "column defaults" do
-    it "starts with an elo rating of 1000 and internal source" do
+    it "starts with Glicko-2 defaults, internal source, and task type" do
       item = Item.new
-      expect(item.elo_rating).to eq(1000)
+      expect(item.rating).to eq(1500.0)
+      expect(item.rating_deviation).to eq(350.0)
+      expect(item.volatility).to eq(0.06)
       expect(item.source).to eq("internal")
       expect(item.item_type).to eq("task")
     end

@@ -5,9 +5,11 @@ class Item < ApplicationRecord
   belongs_to :project
   belongs_to :status
   has_many :comments, dependent: :destroy
+  has_many :comparisons_as_item_a, class_name: "Comparison", foreign_key: :item_a_id, dependent: :destroy, inverse_of: :item_a
+  has_many :comparisons_as_item_b, class_name: "Comparison", foreign_key: :item_b_id, dependent: :destroy, inverse_of: :item_b
 
   validates :title, presence: true
-  validates :elo_rating, presence: true, numericality: { only_integer: true }
+  validates :rating, :rating_deviation, :volatility, presence: true, numericality: true
   validates :item_type, inclusion: { in: ITEM_TYPES }
   validates :source, inclusion: { in: SOURCES }
   validates :points, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_16_164210) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_16_164212) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -52,6 +52,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_16_164210) do
     t.index ["user_id"], name: "index_comments_on_user_id"
   end
 
+  create_table "comparisons", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "item_a_id", null: false
+    t.bigint "item_b_id", null: false
+    t.string "outcome", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["item_a_id"], name: "index_comparisons_on_item_a_id"
+    t.index ["item_b_id"], name: "index_comparisons_on_item_b_id"
+    t.index ["user_id"], name: "index_comparisons_on_user_id"
+  end
+
   create_table "credentials", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "external_id", null: false
@@ -66,17 +78,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_16_164210) do
 
   create_table "items", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.integer "elo_rating", default: 1000, null: false
     t.string "item_type", default: "task", null: false
     t.text "notes"
     t.integer "points"
     t.bigint "project_id", null: false
+    t.float "rating", default: 1500.0, null: false
+    t.float "rating_deviation", default: 350.0, null: false
     t.string "source", default: "internal", null: false
     t.bigint "status_id", null: false
     t.string "submitter_email"
     t.string "submitter_name"
     t.string "title", null: false
     t.datetime "updated_at", null: false
+    t.float "volatility", default: 0.06, null: false
     t.index ["project_id"], name: "index_items_on_project_id"
     t.index ["status_id"], name: "index_items_on_status_id"
   end
@@ -264,6 +278,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_16_164210) do
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "comments", "items"
   add_foreign_key "comments", "users"
+  add_foreign_key "comparisons", "items", column: "item_a_id"
+  add_foreign_key "comparisons", "items", column: "item_b_id"
+  add_foreign_key "comparisons", "users"
   add_foreign_key "credentials", "users"
   add_foreign_key "items", "projects"
   add_foreign_key "items", "statuses"

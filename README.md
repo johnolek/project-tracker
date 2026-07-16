@@ -57,14 +57,36 @@ it end-to-end with the `webauthn` gem's `FakeClient`.
   Completed*. Custom statuses later won't require a schema change.
 - **Project** — belongs to an organization; has an unguessable `public_token`.
 - **Item** — belongs to a project and a status (`title`, `notes`, `points`,
-  `elo_rating`, `item_type` in `bug`/`task`/`enhancement`/`idea`, `source`
-  `internal`/`external`, optional submitter name/email). New items default to the org's
-  first open-category status.
+  `item_type` in `bug`/`task`/`enhancement`/`idea`, `source` `internal`/`external`,
+  optional submitter name/email) plus Glicko-2 rating fields (`rating` 1500.0,
+  `rating_deviation` 350.0, `volatility` 0.06). New items default to the org's first
+  open-category status.
+- **Comparison** — a permanent log of pairwise judgments (`item_a`/`item_b`, judging
+  `user`, `outcome` in `a_wins`/`b_wins`/`draw` — "about equal" is a legitimate
+  judgment, and Glicko-2 scores draws as 0.5). The same pair may be compared
+  repeatedly; validated so the items differ and share an organization (schema/model
+  only; no UI yet). `#winner`/`#loser` derive the items from the outcome, nil on a
+  draw.
 - **Comment** — belongs to an item and a user (schema/model only; no UI yet).
 - **Credential** — a user's stored WebAuthn passkey.
 
 The authenticated UI (projects + items CRUD) is scoped to `current_user`'s default
 organization.
+
+### Architecture note: priority ranking
+
+Priority is modelled on [Glicko-2](https://en.wikipedia.org/wiki/Glicko_rating_system)
+(the `rating`/`rating_deviation`/`volatility` fields), not plain Elo. The math and the
+pick-a-pair UI are a **future phase** — this bootstrap only persists the shape. Two
+properties make the shape worth having now:
+
+- The `Comparison` table is an append-only log of every human judgment, so ratings can
+  be **recomputed from scratch** at any time when the parameters get tuned (a
+  [`glicko2`](https://rubygems.org/gems/glicko2) gem exists for the calculation).
+- Glicko-2's `rating_deviation` doubles as a **confidence signal**: items with high RD
+  (rarely compared) are exactly the ones a future pairing UI should ask about next, for
+  maximum information gain per click. Sorting can then offer both raw-rating order and a
+  comparison-derived stack rank.
 
 ## Live views
 

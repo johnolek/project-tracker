@@ -6,7 +6,6 @@
   <dt>Type</dt><dd><%= @item.item_type %></dd>
   <dt>Status</dt><dd><%= @item.status.name %></dd>
   <dt>Points</dt><dd><%= @item.points %></dd>
-  <dt>Elo rating</dt><dd><%= @item.elo_rating %></dd>
   <dt>Source</dt><dd><%= @item.source %></dd>
   <% if @item.source == "external" %>
     <dt>Submitted by</dt><dd><%= @item.submitter_name.presence || "Anonymous" %> <%= @item.submitter_email %></dd>
