@@ -1,0 +1,116 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# CLI for the tracker JSON API. Reads credentials from config/claude_api.key
+# (URL= and TOKEN= lines). Prints JSON to stdout; errors to stderr, exit 1.
+#
+# Usage: bin/tracker COMMAND [ID] [--flag value ...]
+# Run with no arguments for the command list.
+
+require "json"
+require "net/http"
+require "uri"
+
+USAGE = <<~TEXT
+  Usage: bin/tracker COMMAND [ID] [--flag value ...]
+
+  Commands (flags become API params; kebab-case maps to snake_case):
+    projects                          List projects
+    create-project --name NAME        Create a project
+    items [--status NAME] [--type T] [--tags a,b] [--tags-match all]
+          [--points N | --points-lt/-lte/-gt/-gte N] [--q TEXT]
+          [--project-id ID] [--sort F] [--direction asc|desc]
+          [--page N] [--per-page N]   List/filter items across the org
+    item ID                           Show one item
+    create-item PROJECT_ID --title T [--notes HTML] [--type T]
+          [--points N] [--tags a,b] [--status NAME]
+    update-item ID [same flags as create-item]
+    delete-item ID
+    advance ID                        Move item to the next status
+    comments ID                       List an item's comments
+    comment ID --body TEXT            Add a comment
+    statuses                          List workflow statuses
+    tags                              List tags
+TEXT
+
+COMMANDS = {
+  "projects"       => { method: :get,    path: "/projects" },
+  "create-project" => { method: :post,   path: "/projects", wrap: "project" },
+  "items"          => { method: :get,    path: "/items" },
+  "item"           => { method: :get,    path: "/items/%{id}", positional: 1 },
+  "create-item"    => { method: :post,   path: "/projects/%{id}/items", positional: 1, wrap: "item" },
+  "update-item"    => { method: :patch,  path: "/items/%{id}", positional: 1, wrap: "item" },
+  "delete-item"    => { method: :delete, path: "/items/%{id}", positional: 1 },
+  "advance"        => { method: :post,   path: "/items/%{id}/advance", positional: 1 },
+  "comments"       => { method: :get,    path: "/items/%{id}/comments", positional: 1 },
+  "comment"        => { method: :post,   path: "/items/%{id}/comments", positional: 1, wrap: "comment" },
+  "statuses"       => { method: :get,    path: "/statuses" },
+  "tags"           => { method: :get,    path: "/tags" }
+}.freeze
+
+def credentials
+  path = File.expand_path("../config/claude_api.key", __dir__)
+  abort "Missing #{path} (URL= and TOKEN= lines)" unless File.exist?(path)
+  pairs = File.readlines(path).filter_map { |line| line.strip.split("=", 2) if line.include?("=") }.to_h
+  url = pairs["URL"].to_s.chomp("/")
+  token = pairs["TOKEN"].to_s
+  abort "config/claude_api.key needs URL= and TOKEN= values" if url.empty? || token.empty?
+  [url, token]
+end
+
+def parse_flags(argv)
+  flags = {}
+  until argv.empty?
+    flag = argv.shift
+    abort "Expected --flag, got #{flag.inspect}\n\n#{USAGE}" unless flag.start_with?("--")
+    value = argv.shift or abort "Missing value for #{flag}"
+    flags[flag.delete_prefix("--").tr("-", "_")] = value
+  end
+  flags
+end
+
+command = ARGV.shift
+spec = COMMANDS[command] or abort USAGE
+
+argv = ARGV.dup
+id = spec[:positional] ? (argv.shift or abort "#{command} requires an ID\n\n#{USAGE}") : nil
+flags = parse_flags(argv)
+
+base_url, token = credentials
+path = format(spec[:path], id: id)
+uri = URI("#{base_url}/api/v1#{path}")
+
+request =
+  case spec[:method]
+  when :get
+    uri.query = URI.encode_www_form(flags) unless flags.empty?
+    Net::HTTP::Get.new(uri)
+  when :post, :patch
+    klass = spec[:method] == :post ? Net::HTTP::Post : Net::HTTP::Patch
+    klass.new(uri).tap do |req|
+      req["Content-Type"] = "application/json"
+      req.body = JSON.generate(spec[:wrap] ? { spec[:wrap] => flags } : flags)
+    end
+  when :delete
+    Net::HTTP::Delete.new(uri)
+  end
+
+request["Authorization"] = "Bearer #{token}"
+
+response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https",
+                           open_timeout: 10, read_timeout: 30) { |http| http.request(request) }
+
+body = response.body.to_s
+pretty = begin
+  JSON.pretty_generate(JSON.parse(body))
+rescue JSON::ParserError
+  body
+end
+
+if response.code.to_i >= 400
+  warn "HTTP #{response.code}"
+  warn pretty unless pretty.empty?
+  exit 1
+end
+
+puts pretty.empty? ? %({"status":#{response.code}}) : pretty

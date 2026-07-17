@@ -4,10 +4,9 @@ Personal project/item tracker. Rails 8.1, PostgreSQL, passkey-only auth (WebAuth
 
 ## Using the tracker API
 
-- Credentials live in `config/claude_api.key` (gitignored): `URL=` and `TOKEN=` lines. Read it before API work.
-- All endpoints documented in `API.md`. Auth: `Authorization: Bearer <TOKEN>`.
-- Workflow conventions: fetch work with filters (e.g. `GET /api/v1/items?status=new&points_lte=2`), log progress as comments on the item, move it along with `POST /api/v1/items/:id/advance`.
-- Tags auto-create on use; pass `tags` as an array or comma-separated string.
+- Use `bin/tracker` (see the `tracker` skill in .claude/skills/) — it reads `config/claude_api.key` (gitignored, `URL=`/`TOKEN=` lines) and wraps the whole API: `bin/tracker items --status new --points-lte 2`, `create-item`, `advance`, `comment`, etc.
+- Raw endpoints are documented in `API.md` (`Authorization: Bearer <TOKEN>`) if the CLI doesn't cover something.
+- Workflow conventions: advance an item when starting/finishing work, log progress as comments, reuse existing tags where sensible (tags auto-create on use).
 
 ## Development
 
