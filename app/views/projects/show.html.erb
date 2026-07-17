@@ -23,7 +23,7 @@
   <div class="table-container">
     <table class="table is-fullwidth is-striped is-hoverable">
       <thead>
-        <tr><th>Title</th><th>Type</th><th>Status</th><th>Points</th></tr>
+        <tr><th>Title</th><th>Type</th><th>Status</th><th>Points</th><th>Tags</th></tr>
       </thead>
       <tbody>
         <% @items.each do |item| %>
@@ -32,6 +32,13 @@
             <td><%= item.item_type %></td>
             <td><%= item.status.name %></td>
             <td><%= item.points %></td>
+            <td>
+              <div class="tags">
+                <% item.tags.each do |tag| %>
+                  <span class="tag is-small"><%= tag.name %></span>
+                <% end %>
+              </div>
+            </td>
           </tr>
         <% end %>
       </tbody>

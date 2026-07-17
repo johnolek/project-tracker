@@ -10,6 +10,9 @@
               <li id="<%= dom_id(item) %>" class="mb-2">
                 <%= item.title %>
                 <small class="has-text-weak">(<%= item.item_type %><%= ", #{item.points} pts" if item.points %>)</small>
+                <% item.tags.each do |tag| %>
+                  <span class="tag is-small"><%= tag.name %></span>
+                <% end %>
               </li>
             <% end %>
           </ul>

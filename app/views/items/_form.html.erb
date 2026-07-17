@@ -29,6 +29,14 @@
   </div>
 
   <div class="field">
+    <%= form.label :tag_names, "Tags", class: "label" %>
+    <div class="control">
+      <%= form.text_field :tag_names, value: item.tag_names.join(", "), class: "input" %>
+    </div>
+    <p class="help">Comma-separated. New tags are created automatically.</p>
+  </div>
+
+  <div class="field">
     <%= form.label :item_type, "Type", class: "label" %>
     <div class="control">
       <div class="select">

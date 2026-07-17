@@ -7,6 +7,8 @@ RSpec.describe Item, type: :model do
   it { is_expected.to have_many(:comments).dependent(:destroy) }
   it { is_expected.to have_many(:comparisons_as_item_a).class_name("Comparison").dependent(:destroy) }
   it { is_expected.to have_many(:comparisons_as_item_b).class_name("Comparison").dependent(:destroy) }
+  it { is_expected.to have_many(:item_tags).dependent(:destroy) }
+  it { is_expected.to have_many(:tags).through(:item_tags) }
 
   it "belongs to a status" do
     expect(described_class.reflect_on_association(:status).macro).to eq(:belongs_to)
@@ -32,6 +34,52 @@ RSpec.describe Item, type: :model do
       completed = project.organization.statuses.find_by(category: "done")
       item = project.items.create!(title: "A task", status: completed)
       expect(item.status).to eq(completed)
+    end
+  end
+
+  describe "tags" do
+    let(:item) { create(:item) }
+    let(:organization) { item.project.organization }
+
+    it "creates tags from a comma-separated string on save" do
+      item.update!(tag_names: "backend, urgent")
+
+      expect(item.reload.tag_names).to eq(%w[backend urgent])
+      expect(Tag.where(organization: organization).pluck(:name)).to contain_exactly("backend", "urgent")
+    end
+
+    it "creates tags from an array of names on save" do
+      item.update!(tag_names: [ "backend", "urgent" ])
+
+      expect(item.reload.tag_names).to eq(%w[backend urgent])
+    end
+
+    it "normalizes names, dropping blanks and case-insensitive duplicates" do
+      item.update!(tag_names: " Backend , backend, , urgent ")
+
+      expect(item.reload.tag_names).to contain_exactly("Backend", "urgent")
+    end
+
+    it "reuses an existing tag case-insensitively without creating a duplicate" do
+      existing = create(:tag, organization: organization, name: "bug")
+      item.update!(tag_names: "Bug")
+
+      expect(item.tags).to contain_exactly(existing)
+      expect(Tag.where(organization: organization).count).to eq(1)
+    end
+
+    it "replaces the full tag set on reassignment" do
+      item.update!(tag_names: "one, two")
+      item.update!(tag_names: "two, three")
+
+      expect(item.reload.tag_names).to contain_exactly("two", "three")
+    end
+
+    it "leaves tags alone when tag_names is never assigned" do
+      item.update!(tag_names: "keep")
+      Item.find(item.id).update!(title: "Renamed")
+
+      expect(item.reload.tag_names).to eq([ "keep" ])
     end
   end
 
