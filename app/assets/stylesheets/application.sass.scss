@@ -169,16 +169,30 @@ rhino-editor {
   }
 }
 
-// Prioritize page: each candidate is one full-card submit button.
+// Prioritize page: each candidate is one full-card submit button. Cards are
+// width-capped and pulled toward the center with the Equal button between
+// them, so the two reads sit close enough to compare at a glance.
 .comparison-pair {
-  form {
-    height: 100%;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+
+  .comparison-choice {
+    display: flex;
+    flex: 1 1 16rem;
+    max-width: 22rem;
+  }
+
+  .comparison-equal {
+    align-self: center;
+    flex: 0 0 auto;
   }
 
   .comparison-card {
     display: block;
     width: 100%;
-    height: 100%;
     padding: 1rem 1.25rem;
     border: 1px solid var(--bulma-border-weak);
     border-radius: var(--bulma-radius);
