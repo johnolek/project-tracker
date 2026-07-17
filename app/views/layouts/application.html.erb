@@ -40,6 +40,19 @@
         <div class="navbar-menu" data-navbar-target="menu">
           <div class="navbar-end">
             <% if signed_in? %>
+              <div class="navbar-item">
+                <%= form_with url: search_path, method: :get, data: { turbo_frame: "_top" } do |form| %>
+                  <div class="field has-addons mb-0">
+                    <div class="control">
+                      <%= form.search_field :q, value: params[:q], placeholder: "Search items…",
+                            class: "input is-small", "aria-label": "Search items" %>
+                    </div>
+                    <div class="control">
+                      <%= form.submit "Search", class: "button is-small" %>
+                    </div>
+                  </div>
+                <% end %>
+              </div>
               <span class="navbar-item"><%= current_user.username %></span>
               <%= link_to "Projects", projects_path, class: "navbar-item" %>
               <%= link_to "API keys", settings_api_keys_path, class: "navbar-item" %>
