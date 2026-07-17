@@ -12,7 +12,7 @@
   <div class="field">
     <%= form.label :name, class: "label" %>
     <div class="control">
-      <%= form.text_field :name, class: "input" %>
+      <%= form.text_field :name, class: "input", autofocus: project.new_record? %>
     </div>
   </div>
 
