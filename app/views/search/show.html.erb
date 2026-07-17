@@ -4,7 +4,7 @@
 <%= form_with url: search_path, method: :get, data: { turbo_frame: "_top" } do |form| %>
   <div class="field has-addons">
     <div class="control is-expanded">
-      <%= form.search_field :q, value: @query, placeholder: "Search items…",
+      <%= form.search_field :q, value: @query, placeholder: "Search projects and items…",
             class: "input", autofocus: true %>
     </div>
     <div class="control">
@@ -14,11 +14,23 @@
 <% end %>
 
 <% if @query.blank? %>
-  <p class="has-text-weak mt-4">Enter a search term to find items by title.</p>
-<% elsif @items.empty? %>
-  <p class="has-text-weak mt-4">No items match &ldquo;<%= @query %>&rdquo;.</p>
-<% else %>
-  <p class="has-text-weak mt-4">
+  <p class="has-text-weak mt-4">Enter a search term to find projects and items by name.</p>
+<% elsif @projects.empty? && @items.empty? %>
+  <p class="has-text-weak mt-4">Nothing matches &ldquo;<%= @query %>&rdquo;.</p>
+<% end %>
+
+<% if @projects.any? %>
+  <h2 class="title is-5 mt-4">Projects</h2>
+  <ul>
+    <% @projects.each do |project| %>
+      <li class="mb-1"><%= link_to project.name, project_path(project) %></li>
+    <% end %>
+  </ul>
+<% end %>
+
+<% if @items.any? %>
+  <h2 class="title is-5 mt-4">Items</h2>
+  <p class="has-text-weak">
     <%= pluralize(@items.size, "item") %> matching &ldquo;<%= @query %>&rdquo;.
   </p>
 

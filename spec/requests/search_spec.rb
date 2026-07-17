@@ -40,6 +40,26 @@ RSpec.describe "Search", type: :request do
       expect(response.body).to include(project_item_path(project, mine))
     end
 
+    it "finds projects by case-insensitive name substring" do
+      matching = organization.projects.create!(name: "Garden Redesign")
+      organization.projects.create!(name: "Unrelated")
+
+      get search_path, params: { q: "garden" }
+
+      expect(response.body).to include("Garden Redesign")
+      expect(response.body).to include(project_path(matching))
+      expect(response.body).not_to include("Unrelated")
+    end
+
+    it "never returns projects belonging to another organization" do
+      other_org = create(:organization)
+      create(:project, organization: other_org, name: "Garden Elsewhere")
+
+      get search_path, params: { q: "garden" }
+
+      expect(response.body).not_to include("Garden Elsewhere")
+    end
+
     it "treats LIKE metacharacters in the query literally" do
       literal = create(:item, project: project, title: "draft_final")
       create(:item, project: project, title: "draftXfinal")
