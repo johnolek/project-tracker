@@ -10,6 +10,7 @@ class Organization < ApplicationRecord
   has_many :projects, dependent: :destroy
   has_many :statuses, dependent: :destroy
   has_many :tags, dependent: :destroy
+  has_many :api_keys, dependent: :destroy
 
   validates :name, presence: true
 

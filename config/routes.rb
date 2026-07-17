@@ -18,6 +18,20 @@ Rails.application.routes.draw do
     resources :api_keys, only: %i[index create destroy]
   end
 
+  namespace :api do
+    namespace :v1 do
+      resources :projects, only: %i[index show create update destroy] do
+        resources :items, only: %i[index create]
+      end
+      resources :items, only: %i[index show update destroy] do
+        member { post :advance }
+        resources :comments, only: %i[index create]
+      end
+      resources :statuses, only: :index
+      resources :tags, only: :index
+    end
+  end
+
   get "up", to: "rails/health#show", as: :rails_health_check
 
   root "projects#index"
