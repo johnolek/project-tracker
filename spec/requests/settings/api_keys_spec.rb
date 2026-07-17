@@ -34,6 +34,14 @@ RSpec.describe "Settings::ApiKeys", type: :request do
       expect(response.body).not_to match(/pt_[a-zA-Z0-9]{32}/)
     end
 
+    it "offers a copy-to-clipboard button carrying the new token" do
+      post settings_api_keys_path, params: { api_key: { name: "CI" } }
+      follow_redirect!
+
+      expect(response.body).to match(/data-clipboard-text="pt_[a-zA-Z0-9]{32}"/)
+      expect(response.body).to include("Copy to clipboard")
+    end
+
     it "keeps the api_key_token flash out of the Toasts island props" do
       post settings_api_keys_path, params: { api_key: { name: "CI" } }
       follow_redirect!

@@ -1,5 +1,6 @@
 import "@hotwired/turbo-rails"
 import "./navbar"
+import "./clipboard"
 import "./islands"
 import "./passkey"
 import "rhino-editor"

@@ -3,7 +3,12 @@
 
 <% if flash[:api_key_token] %>
   <div class="notification is-success">
-    <p>Your new API key is <code><%= flash[:api_key_token] %></code></p>
+    <p>
+      Your new API key is <code><%= flash[:api_key_token] %></code>
+      <button type="button" class="button is-small ml-2"
+              data-clipboard-text="<%= flash[:api_key_token] %>"
+              data-clipboard-message="API key copied to clipboard.">Copy to clipboard</button>
+    </p>
     <p>Copy it now — it will never be shown again.</p>
   </div>
 <% end %>
