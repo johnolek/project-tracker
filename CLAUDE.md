@@ -14,6 +14,7 @@ Personal project/item tracker. Rails 8.1, PostgreSQL, passkey-only auth (WebAuth
 - Stimulus controllers register explicitly in `app/javascript/controllers/index.js`.
 - Tests: `bundle exec rspec`. Request specs authenticate with `register_passkey(username:)` (WebAuthn FakeClient); API specs use `spec/support/api_helpers.rb`.
 - Browser verification: Playwright (devDependency) with a CDP virtual authenticator handles the passkey flow; see the pattern in past session scratchpads if needed.
+- `bin/rails db:seed` (development only) fills an organization with demo projects, items, and comparisons for manual testing. Register a passkey user first; it targets `SEED_USER=<username>` or the oldest user with a credential.
 - Theme: seed palette in `app/assets/stylesheets/application.sass.scss`. Any color change must keep WCAG AA contrast in BOTH light and dark schemes (verify against built CSS values, not intended ones). Scope light-theme variable overrides so they don't leak into dark mode.
 
 ## Deployment
