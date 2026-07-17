@@ -121,6 +121,67 @@ rhino-editor {
   }
 }
 
+// One coherent toolbar: title search, type/point/tag filters, and sort share a
+// wrapping flex row. Active-filter chips and the clear affordance drop onto
+// their own line (flex-basis: 100%) so a narrowed board explains itself.
+.board-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+
+  .field {
+    margin-bottom: 0;
+  }
+
+  .board-toolbar-search {
+    flex: 1 1 12rem;
+    min-width: 10rem;
+  }
+
+  .board-points-input {
+    width: 5rem;
+  }
+
+  .buttons {
+    margin-bottom: 0;
+
+    .button {
+      margin-bottom: 0;
+    }
+  }
+
+  .board-caret {
+    margin-left: 0.35rem;
+    font-size: 0.7rem;
+  }
+}
+
+.board-active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  flex-basis: 100%;
+}
+
+// Quiet text button — present only while a filter narrows the board.
+.board-clear-filters {
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--bulma-text-weak);
+  font-size: 0.8rem;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+
+  &:hover {
+    color: var(--bulma-text);
+  }
+}
+
 // Board columns: each card is one clickable link that drags between status
 // groups. Keep the card body on --bulma-text (not link colour) so titles and
 // meta stay readable; tags carry their own Bulma colours. Every column keeps a
@@ -237,6 +298,28 @@ rhino-editor {
 
     .tag {
       margin-bottom: 0;
+    }
+  }
+
+  // Card tags double as filter toggles. The active pairing mirrors
+  // .board-card-points (--bulma-primary / --bulma-primary-invert), already
+  // vetted for AA in both schemes, so a filtered-in tag reads clearly.
+  .board-card-tag {
+    cursor: pointer;
+    transition: background-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+
+    &:hover {
+      box-shadow: inset 0 0 0 1px var(--bulma-primary);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--bulma-primary);
+      outline-offset: 1px;
+    }
+
+    &.is-active-filter {
+      background-color: var(--bulma-primary);
+      color: var(--bulma-primary-invert);
     }
   }
 

@@ -9,6 +9,13 @@
   // svelte-ignore state_referenced_locally -- islands remount per visit; props seed state once
   let items = $state(initialItems)
   let query = $state("")
+  // Filters are session-only: unlike sort, they never touch localStorage, so a
+  // reload starts from an unfiltered board.
+  let itemType = $state("")
+  let minPoints = $state(null)
+  let maxPoints = $state(null)
+  let selectedTags = $state([])
+  let tagMenuOpen = $state(false)
   let sort = $state(readSort())
   let dragging = false
   let pendingMessages = []
@@ -19,16 +26,83 @@
     { key: "points", label: "Points", defaultDirection: "asc" },
   ]
 
+  const ITEM_TYPES = ["bug", "task", "enhancement", "idea"]
+
   const normalizedQuery = $derived(query.trim().toLowerCase())
+  const minBound = $derived(toBound(minPoints))
+  const maxBound = $derived(toBound(maxPoints))
+
+  // Distinct tags across every board item, derived from state so the dropdown
+  // tracks live cable upserts/removals without extra wiring.
+  const allTags = $derived([...new Set(items.flatMap((item) => item.tags))].sort())
+
   const columns = $derived(
     statuses.map((status) => ({
       status,
       items: items
         .filter((item) => item.status_id === status.id)
-        .filter((item) => !normalizedQuery || item.title.toLowerCase().includes(normalizedQuery))
+        .filter(matchesFilters)
         .toSorted(compareItems),
     }))
   )
+
+  const visibleCount = $derived(columns.reduce((sum, column) => sum + column.items.length, 0))
+  const hiddenCount = $derived(items.length - visibleCount)
+  const anyFilterActive = $derived(
+    normalizedQuery !== "" ||
+      itemType !== "" ||
+      minBound != null ||
+      maxBound != null ||
+      selectedTags.length > 0
+  )
+
+  function toBound(value) {
+    return value == null || value === "" || Number.isNaN(value) ? null : Number(value)
+  }
+
+  // Every criterion composes with AND, including the title query.
+  function matchesFilters(item) {
+    if (normalizedQuery && !item.title.toLowerCase().includes(normalizedQuery)) return false
+    if (itemType && item.item_type !== itemType) return false
+    // Unpointed items are excluded once a minimum is set (an item with no
+    // estimate can't be shown to clear a floor) but pass under any maximum (a
+    // ceiling shouldn't hide work simply because it lacks an estimate).
+    if (minBound != null && (item.points == null || item.points < minBound)) return false
+    if (maxBound != null && item.points != null && item.points > maxBound) return false
+    // Multi-selected tags AND together: the item must carry all of them.
+    if (selectedTags.length && !selectedTags.every((tag) => item.tags.includes(tag))) return false
+    return true
+  }
+
+  function toggleTag(tag) {
+    selectedTags = selectedTags.includes(tag)
+      ? selectedTags.filter((candidate) => candidate !== tag)
+      : [...selectedTags, tag]
+  }
+
+  // preventDefault/stopPropagation keep a tag click on a card from following
+  // the card's link; the click only toggles the shared tag filter.
+  function filterByTag(event, tag) {
+    event.preventDefault()
+    event.stopPropagation()
+    toggleTag(tag)
+  }
+
+  function clearFilters() {
+    query = ""
+    itemType = ""
+    minPoints = null
+    maxPoints = null
+    selectedTags = []
+  }
+
+  function clickOutside(node) {
+    const handler = (event) => {
+      if (!node.contains(event.target)) tagMenuOpen = false
+    }
+    document.addEventListener("click", handler)
+    return { destroy: () => document.removeEventListener("click", handler) }
+  }
 
   function readSort() {
     try {
@@ -147,24 +221,89 @@
   }
 </script>
 
-<div class="field">
-  <div class="control">
+<div class="board-toolbar">
+  <div class="control board-toolbar-search">
     <input
-      class="input"
+      class="input is-small"
       type="search"
       placeholder="Filter cards by title…"
       aria-label="Filter cards by title"
       bind:value={query}
     >
   </div>
-</div>
 
-<div class="field">
-  <div class="buttons has-addons" role="group" aria-label="Sort cards">
+  <div class="control">
+    <div class="select is-small">
+      <select bind:value={itemType} aria-label="Filter by item type">
+        <option value="">All types</option>
+        {#each ITEM_TYPES as type (type)}
+          <option value={type}>{type}</option>
+        {/each}
+      </select>
+    </div>
+  </div>
+
+  <div class="field has-addons board-points-range" role="group" aria-label="Filter by point range">
+    <div class="control">
+      <input
+        class="input is-small board-points-input"
+        type="number"
+        min="0"
+        placeholder="min"
+        aria-label="Minimum points"
+        bind:value={minPoints}
+      >
+    </div>
+    <div class="control">
+      <input
+        class="input is-small board-points-input"
+        type="number"
+        min="0"
+        placeholder="max"
+        aria-label="Maximum points"
+        bind:value={maxPoints}
+      >
+    </div>
+  </div>
+
+  {#if allTags.length}
+    <div class="dropdown board-tags-dropdown" class:is-active={tagMenuOpen} use:clickOutside>
+      <div class="dropdown-trigger">
+        <button
+          type="button"
+          class="button is-small"
+          aria-haspopup="true"
+          aria-expanded={tagMenuOpen}
+          onclick={() => (tagMenuOpen = !tagMenuOpen)}
+        >
+          <span>Tags{selectedTags.length ? ` (${selectedTags.length})` : ""}</span>
+          <span class="board-caret" aria-hidden="true">▾</span>
+        </button>
+      </div>
+      <div class="dropdown-menu" role="menu">
+        <div class="dropdown-content">
+          {#each allTags as tag (tag)}
+            <button
+              type="button"
+              class="dropdown-item"
+              class:is-active={selectedTags.includes(tag)}
+              role="menuitemcheckbox"
+              aria-checked={selectedTags.includes(tag)}
+              onclick={() => toggleTag(tag)}
+            >
+              {selectedTags.includes(tag) ? "✓ " : ""}{tag}
+            </button>
+          {/each}
+        </div>
+      </div>
+    </div>
+  {/if}
+
+  <div class="buttons has-addons board-toolbar-sort" role="group" aria-label="Sort cards">
     {#each SORT_OPTIONS as option (option.key)}
       <button
         type="button"
-        class="button"
+        class="button is-small"
         class:is-primary={sort?.key === option.key}
         aria-pressed={sort?.key === option.key}
         onclick={() => chooseSort(option)}
@@ -173,6 +312,27 @@
       </button>
     {/each}
   </div>
+
+  {#if selectedTags.length || anyFilterActive}
+    <div class="board-active-filters">
+      {#each selectedTags as tag (tag)}
+        <span class="tag is-small is-primary board-filter-chip">
+          {tag}
+          <button
+            type="button"
+            class="delete is-small"
+            aria-label={`Remove ${tag} tag filter`}
+            onclick={() => toggleTag(tag)}
+          ></button>
+        </span>
+      {/each}
+      {#if anyFilterActive}
+        <button type="button" class="board-clear-filters" onclick={clearFilters}>
+          {#if hiddenCount > 0}{hiddenCount} hidden — {/if}Clear filters
+        </button>
+      {/if}
+    </div>
+  {/if}
 </div>
 
 <div class="columns is-multiline item-board">
@@ -205,7 +365,16 @@
                   {#if item.tags.length}
                     <span class="tags board-card-tags">
                       {#each item.tags as tag (tag)}
-                        <span class="tag is-small">{tag}</span>
+                        <span
+                          class="tag is-small board-card-tag"
+                          class:is-active-filter={selectedTags.includes(tag)}
+                          role="button"
+                          tabindex="0"
+                          aria-pressed={selectedTags.includes(tag)}
+                          title={`Filter by ${tag}`}
+                          onclick={(event) => filterByTag(event, tag)}
+                          onkeydown={(event) => { if (event.key === "Enter" || event.key === " ") filterByTag(event, tag) }}
+                        >{tag}</span>
                       {/each}
                     </span>
                   {/if}
