@@ -250,10 +250,18 @@ rhino-editor {
     flex: 0 0 auto;
   }
 
-  .comparison-card {
-    display: block;
+  // The card is wrapped so the Pin button can sit as a sibling positioned over
+  // the corner rather than nested inside the outcome button (invalid HTML).
+  .comparison-card-wrap {
+    position: relative;
+    display: flex;
     flex: 1 1 16rem;
     max-width: 22rem;
+  }
+
+  .comparison-card {
+    display: block;
+    flex: 1 1 auto;
     padding: 1rem 1.25rem;
     border: 1px solid var(--bulma-border-weak);
     border-radius: var(--bulma-radius);
@@ -262,11 +270,72 @@ rhino-editor {
     text-align: left;
     cursor: pointer;
 
+    // Reserve room in the top-right corner for the Pin affordance.
+    .title {
+      padding-right: 3.25rem;
+    }
+
     &:hover,
     &:focus-visible {
       border-color: var(--bulma-primary);
       background: var(--bulma-scheme-main-ter);
     }
+  }
+
+  .comparison-pin {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    z-index: 1;
+    padding: 0.15rem 0.6rem;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    border: 1px solid var(--bulma-border);
+    border-radius: var(--bulma-radius-small);
+    background: var(--bulma-scheme-main);
+    color: var(--bulma-text-weak);
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--bulma-primary);
+      background: var(--bulma-scheme-main-ter);
+      color: var(--bulma-text);
+    }
+
+    &.is-pinned {
+      border-color: var(--bulma-primary);
+      background: var(--bulma-primary);
+      color: var(--bulma-primary-invert);
+    }
+  }
+}
+
+// Slim indicator that stays above the pair while an item is pinned, showing its
+// title and running comparison total with a one-click Unpin.
+.comparison-pin-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--bulma-border-weak);
+  border-left: 3px solid var(--bulma-primary);
+  border-radius: var(--bulma-radius);
+  background: var(--bulma-scheme-main-bis);
+
+  .comparison-pin-bar-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .comparison-pin-bar-title {
+    font-weight: 600;
+    color: var(--bulma-text);
   }
 }
 

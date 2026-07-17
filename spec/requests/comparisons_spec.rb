@@ -131,6 +131,97 @@ RSpec.describe "Comparisons", type: :request do
         expect(response).to have_http_status(:not_found)
       end
     end
+
+    describe "pinning an item to compare against many others (JSON)" do
+      let!(:pinned) { create(:item, project: project, title: "Anchor") }
+      let!(:rival_one) { create(:item, project: project, title: "Rival one") }
+      let!(:rival_two) { create(:item, project: project, title: "Rival two") }
+      let!(:rival_three) { create(:item, project: project, title: "Rival three") }
+
+      it "always returns the pinned item as item A while the opponent varies among the rest" do
+        opponents = []
+
+        15.times do
+          get prioritize_project_path(project, format: :json), params: { pinned_item_id: pinned.id }
+
+          payload = response.parsed_body
+          expect(payload["pinned_id"]).to eq(pinned.id)
+          expect(payload["pair"].first["id"]).to eq(pinned.id)
+
+          opponent_id = payload["pair"].last["id"]
+          expect(opponent_id).not_to eq(pinned.id)
+          expect([ rival_one, rival_two, rival_three ].map(&:id)).to include(opponent_id)
+          opponents << opponent_id
+        end
+
+        expect(opponents.uniq.size).to be > 1
+      end
+
+      it "echoes the pinned item's running comparison total as pinned_count" do
+        create(:comparison, project: project, item_a: pinned, item_b: rival_one, outcome: "a_wins")
+        create(:comparison, project: project, item_a: rival_two, item_b: pinned, outcome: "a_wins")
+
+        get prioritize_project_path(project, format: :json), params: { pinned_item_id: pinned.id }
+
+        expect(response.parsed_body["pinned_count"]).to eq(2)
+      end
+
+      it "returns a null pair but still echoes the pin when no opponent is left" do
+        solo_project = organization.projects.create!(name: "Solo")
+        only = create(:item, project: solo_project, title: "Only one")
+
+        get prioritize_project_path(solo_project, format: :json), params: { pinned_item_id: only.id }
+
+        payload = response.parsed_body
+        expect(payload["pair"]).to be_nil
+        expect(payload["pinned_id"]).to eq(only.id)
+        expect(payload["pinned_count"]).to eq(0)
+      end
+
+      it "falls back to normal pairing for an unknown pinned_item_id" do
+        get prioritize_project_path(project, format: :json), params: { pinned_item_id: 0 }
+
+        payload = response.parsed_body
+        expect(payload["pinned_id"]).to be_nil
+        expect(payload["pinned_count"]).to be_nil
+        expect(payload["pair"].size).to eq(2)
+      end
+
+      it "falls back to normal pairing for a done pinned item" do
+        done_status = organization.statuses.find_by(category: "done")
+        finished = create(:item, project: project, title: "Finished", status: done_status)
+
+        get prioritize_project_path(project, format: :json), params: { pinned_item_id: finished.id }
+
+        payload = response.parsed_body
+        expect(payload["pinned_id"]).to be_nil
+        expect(payload["pair"].map { |item| item["id"] }).not_to include(finished.id)
+      end
+
+      it "falls back to normal pairing for another project's item" do
+        other_project = organization.projects.create!(name: "Elsewhere")
+        foreign = create(:item, project: other_project, title: "Foreign anchor")
+
+        get prioritize_project_path(project, format: :json), params: { pinned_item_id: foreign.id }
+
+        payload = response.parsed_body
+        expect(payload["pinned_id"]).to be_nil
+        expect(payload["pair"].map { |item| item["id"] }).not_to include(foreign.id)
+      end
+
+      it "keeps the pinned item in the next pair after recording a comparison" do
+        post project_comparisons_path(project),
+             params: { item_a_id: pinned.id, item_b_id: rival_one.id, outcome: "a_wins", pinned_item_id: pinned.id },
+             as: :json
+
+        expect(response).to have_http_status(:ok)
+        payload = response.parsed_body
+        expect(payload["pinned_id"]).to eq(pinned.id)
+        expect(payload["pinned_count"]).to eq(1)
+        expect(payload["pair"].first["id"]).to eq(pinned.id)
+        expect(payload["pair"].last["id"]).not_to eq(pinned.id)
+      end
+    end
   end
 
   context "when signed out" do

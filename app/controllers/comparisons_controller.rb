@@ -3,12 +3,13 @@ class ComparisonsController < ApplicationController
   before_action :set_project
 
   def new
-    @pair = next_pair
+    pinned = pinned_item
+    @pair = next_pair(pinned: pinned)
     @comparison_count = Comparison.for_project(@project).count
 
     respond_to do |format|
       format.html
-      format.json { render json: pair_payload(pair: @pair, count: @comparison_count) }
+      format.json { render json: pair_payload(pair: @pair, count: @comparison_count, pinned: pinned) }
     end
   end
 
@@ -22,7 +23,10 @@ class ComparisonsController < ApplicationController
     if comparison.save
       respond_to do |format|
         format.html { redirect_to prioritize_project_path(@project), notice: "Recorded. Here's another pair." }
-        format.json { render json: pair_payload(pair: next_pair, count: Comparison.for_project(@project).count) }
+        format.json do
+          pinned = pinned_item
+          render json: pair_payload(pair: next_pair(pinned: pinned), count: Comparison.for_project(@project).count, pinned: pinned)
+        end
       end
     else
       respond_to do |format|
@@ -38,25 +42,54 @@ class ComparisonsController < ApplicationController
     @project = current_organization.projects.find(params[:project_id] || params[:id])
   end
 
-  # @param pair [Array<Item>, nil]
-  # @param count [Integer]
-  # @return [Hash] the JSON the Prioritize island consumes after each action
-  def pair_payload(pair:, count:)
-    { pair: pair&.map(&:comparison_payload), count: count }
+  # Resolves the optional pin from +params[:pinned_item_id]+. A pin is honored
+  # only when it names an open item of this project; anything missing, done, or
+  # foreign is silently ignored so pairing falls back to the normal heuristic.
+  #
+  # @return [Item, nil]
+  def pinned_item
+    return nil if params[:pinned_item_id].blank?
+
+    @project.items.not_done.find_by(id: params[:pinned_item_id])
   end
 
-  # Picks the project's two open items that have appeared in the fewest
-  # comparisons so far, breaking ties randomly. This steers attention toward
-  # under-compared items (improving ranking coverage) while the random tiebreak
-  # keeps the same pair from recurring. Returns nil when there are fewer than
-  # two open items.
-  #
-  # @return [Array<Item>, nil]
-  def next_pair
-    items = @project.items.not_done.includes(:status).to_a
-    return nil if items.size < 2
+  # @param pair [Array<Item>, nil]
+  # @param count [Integer]
+  # @param pinned [Item, nil] the anchored item, echoed back so the client stays
+  #   in sync (nil when no valid pin is active)
+  # @return [Hash] the JSON the Prioritize island consumes after each action
+  def pair_payload(pair:, count:, pinned: nil)
+    {
+      pair: pair&.map(&:comparison_payload),
+      count: count,
+      pinned_id: pinned&.id,
+      pinned_count: pinned && Comparison.counts_by_item(project: @project).fetch(pinned.id, 0)
+    }
+  end
 
+  # Picks the next pair of open items to compare, breaking ties randomly.
+  #
+  # With no pin, returns the project's two least-compared open items (steering
+  # attention toward under-compared items while the random tiebreak keeps the
+  # same pair from recurring). With a +pinned+ item, the pair is anchored on it
+  # as item A and the opponent is the least-compared of the remaining open
+  # items. Returns nil when there are too few items to form a pair.
+  #
+  # @param pinned [Item, nil]
+  # @return [Array<Item>, nil]
+  def next_pair(pinned: nil)
+    items = @project.items.not_done.includes(:status).to_a
     counts = Comparison.counts_by_item(project: @project)
-    items.sort_by { |item| [ counts.fetch(item.id, 0), rand ] }.first(2)
+
+    if pinned
+      opponents = items.reject { |item| item.id == pinned.id }
+      return nil if opponents.empty?
+
+      [ pinned, opponents.min_by { |item| [ counts.fetch(item.id, 0), rand ] } ]
+    else
+      return nil if items.size < 2
+
+      items.sort_by { |item| [ counts.fetch(item.id, 0), rand ] }.first(2)
+    end
   end
 end
