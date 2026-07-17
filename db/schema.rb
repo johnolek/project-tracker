@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_17_030022) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_17_040000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -116,12 +116,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_17_030022) do
     t.string "item_type", default: "task", null: false
     t.integer "points"
     t.bigint "project_id", null: false
-    t.float "rating", default: 1500.0, null: false
-    t.float "rating_deviation", default: 350.0, null: false
     t.bigint "status_id", null: false
+    t.float "strength", default: 0.0, null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
-    t.float "volatility", default: 0.06, null: false
     t.index ["project_id"], name: "index_items_on_project_id"
     t.index ["status_id"], name: "index_items_on_status_id"
   end

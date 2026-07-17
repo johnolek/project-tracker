@@ -15,9 +15,8 @@ RSpec.describe Item, type: :model do
   end
 
   it { is_expected.to validate_presence_of(:title) }
-  it { is_expected.to validate_presence_of(:rating) }
-  it { is_expected.to validate_presence_of(:rating_deviation) }
-  it { is_expected.to validate_presence_of(:volatility) }
+  it { is_expected.to validate_presence_of(:strength) }
+  it { is_expected.to validate_numericality_of(:strength) }
   it { is_expected.to validate_inclusion_of(:item_type).in_array(Item::ITEM_TYPES) }
   it { is_expected.to validate_numericality_of(:points).only_integer.is_greater_than(0).allow_nil }
 
@@ -84,11 +83,9 @@ RSpec.describe Item, type: :model do
   end
 
   describe "column defaults" do
-    it "starts with Glicko-2 defaults and task type" do
+    it "starts at neutral Bradley-Terry strength and task type" do
       item = Item.new
-      expect(item.rating).to eq(1500.0)
-      expect(item.rating_deviation).to eq(350.0)
-      expect(item.volatility).to eq(0.06)
+      expect(item.strength).to eq(0.0)
       expect(item.item_type).to eq("task")
     end
   end

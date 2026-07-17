@@ -38,6 +38,39 @@ RSpec.describe Comparison, type: :model do
     expect(duplicate).to be_valid
   end
 
+  describe "strength recomputation" do
+    let(:project) { create(:project) }
+    let(:item_a) { create(:item, project: project) }
+    let(:item_b) { create(:item, project: project) }
+
+    it "recomputes and persists Bradley-Terry strengths when created" do
+      create(:comparison, item_a: item_a, item_b: item_b, outcome: "a_wins", user: create(:user))
+
+      expect(item_a.reload.strength).to be > item_b.reload.strength
+    end
+
+    it "re-fits strengths when a comparison is destroyed" do
+      comparison = create(:comparison, item_a: item_a, item_b: item_b, outcome: "a_wins", user: create(:user))
+      expect(item_a.reload.strength).to be > 0.0
+
+      comparison.destroy!
+
+      expect(item_a.reload.strength).to eq(0.0)
+      expect(item_b.reload.strength).to eq(0.0)
+    end
+
+    it "persists strengths without broadcasting a board update per item" do
+      item_a
+      item_b
+      broadcasts = []
+      allow(ActionCable.server).to receive(:broadcast) { |_stream, message| broadcasts << message.to_s }
+
+      create(:comparison, item_a: item_a, item_b: item_b, outcome: "a_wins", user: create(:user))
+
+      expect(broadcasts).to be_empty
+    end
+  end
+
   describe "#winner, #loser, #draw?" do
     let(:comparison) { build(:comparison) }
 

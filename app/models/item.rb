@@ -12,9 +12,11 @@ class Item < ApplicationRecord
   has_many :tags, through: :item_tags
 
   validates :title, presence: true
-  validates :rating, :rating_deviation, :volatility, presence: true, numericality: true
+  validates :strength, presence: true, numericality: true
   validates :item_type, inclusion: { in: ITEM_TYPES }
   validates :points, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
+
+  scope :not_done, -> { joins(:status).where.not(statuses: { category: "done" }) }
 
   before_validation :assign_default_status, on: :create
   before_save :apply_pending_tag_names
@@ -22,6 +24,22 @@ class Item < ApplicationRecord
   after_create :broadcast_board
   after_update :broadcast_board
   after_destroy :broadcast_board
+
+  # Refits Bradley-Terry log-strengths for every item in the organization from
+  # all of its comparisons and persists them, writing with update_column so the
+  # per-item board broadcast (an after_update callback) does not fire once per
+  # item. Items with no comparisons are reset to the neutral 0.0.
+  #
+  # @param organization [Organization]
+  # @return [void]
+  def self.recompute_strengths(organization:)
+    strengths = BradleyTerry.fit(comparisons: Comparison.for_organization(organization))
+
+    joins(:project).where(projects: { organization_id: organization.id }).find_each do |item|
+      target = strengths.fetch(item.id, 0.0)
+      item.update_column(:strength, target) unless item.strength == target
+    end
+  end
 
   # @return [Array<String>] tag names ordered alphabetically, or the pending
   #   names when tag_names= has been assigned but not yet saved

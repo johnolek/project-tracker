@@ -9,6 +9,29 @@ class Comparison < ApplicationRecord
   validate :items_differ
   validate :items_in_same_organization
 
+  after_create :recompute_strengths
+  after_destroy :recompute_strengths
+
+  # All comparisons whose items belong to the given organization. Filtering on
+  # item_a alone is sufficient: the same-organization validation guarantees both
+  # items share an organization.
+  #
+  # @param organization [Organization]
+  scope :for_organization, ->(organization) {
+    where(item_a_id: Item.joins(:project).where(projects: { organization_id: organization.id }).select(:id))
+  }
+
+  # @param organization [Organization]
+  # @return [Hash{Integer => Integer}] item_id => number of comparisons it appears in
+  def self.counts_by_item(organization:)
+    counts = Hash.new(0)
+    for_organization(organization).pluck(:item_a_id, :item_b_id).each do |item_a_id, item_b_id|
+      counts[item_a_id] += 1
+      counts[item_b_id] += 1
+    end
+    counts
+  end
+
   # @return [Item, nil] the winning item, or nil for a draw
   def winner
     case outcome
@@ -31,6 +54,11 @@ class Comparison < ApplicationRecord
   end
 
   private
+
+  def recompute_strengths
+    organization = item_a&.project&.organization
+    Item.recompute_strengths(organization: organization) if organization
+  end
 
   def items_differ
     return if item_a_id.nil? || item_b_id.nil?
