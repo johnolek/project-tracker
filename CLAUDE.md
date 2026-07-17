@@ -16,6 +16,11 @@ Personal project/item tracker. Rails 8.1, PostgreSQL, passkey-only auth (WebAuth
 - Browser verification: Playwright (devDependency) with a CDP virtual authenticator handles the passkey flow; see the pattern in past session scratchpads if needed.
 - Theme: seed palette in `app/assets/stylesheets/application.sass.scss`. Any color change must keep WCAG AA contrast in BOTH light and dark schemes (verify against built CSS values, not intended ones). Scope light-theme variable overrides so they don't leak into dark mode.
 
+## Deployment
+
+- Coolify builds the Dockerfile; deploy env needs `DATABASE_URL`, `RAILS_MASTER_KEY`, `WEBAUTHN_RP_ID`, `WEBAUTHN_ORIGIN`.
+- Active Storage uses local disk: a persistent volume must be mounted at `/rails/storage` (Coolify → Persistent Storage) or uploads are lost on redeploy.
+
 ## Direction
 
 - Item ranking (future) uses Bradley-Terry fitted from the `comparisons` table — not Elo/Glicko. The Glicko columns on items are vestigial until then.

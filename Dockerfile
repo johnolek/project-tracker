@@ -5,7 +5,11 @@
 #
 #   docker build -t project_tracker .
 #   docker run -d -p 3000:3000 -e RAILS_MASTER_KEY=<config/master.key> \
-#     -e DATABASE_URL=<postgres url> --name project_tracker project_tracker
+#     -e DATABASE_URL=<postgres url> -v tracker_storage:/rails/storage \
+#     --name project_tracker project_tracker
+#
+# Active Storage writes to /rails/storage (local disk service): a persistent
+# volume MUST be mounted there or uploads vanish on every redeploy.
 
 # Make sure RUBY_VERSION matches the Ruby version in .ruby-version
 ARG RUBY_VERSION=4.0.5
