@@ -85,4 +85,38 @@ RSpec.describe "Passkey authentication", type: :request do
       expect(response).to redirect_to(login_path)
     end
   end
+
+  describe "signed-in navbar" do
+    it "renders the username as a dropdown holding API keys and Sign out" do
+      register_passkey(username: "dana")
+
+      get projects_path
+      expect(response).to have_http_status(:ok)
+
+      page = Nokogiri::HTML(response.body)
+      dropdown = page.at_css(".navbar-end .navbar-item.has-dropdown")
+      expect(dropdown).to be_present
+
+      trigger = dropdown.at_css(".navbar-link")
+      expect(trigger).to be_present
+      expect(trigger.text.strip).to eq("dana")
+      expect(trigger["aria-expanded"]).to eq("false")
+
+      menu = dropdown.at_css(".navbar-dropdown")
+      expect(menu).to be_present
+
+      api_keys_link = menu.at_css("a[href='#{settings_api_keys_path}']")
+      expect(api_keys_link).to be_present
+      expect(api_keys_link.text.strip).to eq("API keys")
+
+      sign_out = menu.at_css("form[action='#{logout_path}'] button.navbar-item")
+      expect(sign_out).to be_present
+      expect(sign_out.text.strip).to eq("Sign out")
+
+      # The API keys link and Sign out control now live only inside the dropdown,
+      # not as bare navbar items alongside it.
+      expect(page.css(".navbar-end > a[href='#{settings_api_keys_path}']")).to be_empty
+      expect(page.css(".navbar-end > .navbar-item > form[action='#{logout_path}']")).to be_empty
+    end
+  end
 end

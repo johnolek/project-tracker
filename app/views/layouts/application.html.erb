@@ -56,12 +56,16 @@
                   </div>
                 <% end %>
               </div>
-              <span class="navbar-item"><%= current_user.username %></span>
               <%= link_to "Projects", projects_path, class: "navbar-item" %>
-              <%= link_to "API keys", settings_api_keys_path, class: "navbar-item" %>
-              <div class="navbar-item">
-                <%= button_to "Sign out", logout_path, method: :delete, class: "button is-small",
-                      form: { data: { turbo: false } } %>
+              <div class="navbar-item has-dropdown is-hoverable">
+                <a class="navbar-link" role="button" tabindex="0"
+                   aria-haspopup="true" aria-expanded="false"><%= current_user.username %></a>
+                <div class="navbar-dropdown is-right">
+                  <%= link_to "API keys", settings_api_keys_path, class: "navbar-item" %>
+                  <hr class="navbar-divider">
+                  <%= button_to "Sign out", logout_path, method: :delete, class: "navbar-item",
+                        form: { data: { turbo: false } } %>
+                </div>
               </div>
             <% else %>
               <%= link_to "Sign in", login_path, class: "navbar-item" %>

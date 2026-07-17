@@ -417,3 +417,31 @@ rhino-editor {
   border: 1px solid var(--bulma-border-weak);
   border-top: 3px solid var(--bulma-primary);
 }
+
+// Username dropdown: the Sign out control is a button_to (a <form> wrapping a
+// <button>), so strip the native button chrome and give it the full-width,
+// left-aligned look Bulma gives an <a class="navbar-item"> in the dropdown.
+// The dropdown itself needs no dark-mode fix: Bulma derives its background from
+// --bulma-scheme-main and item text from --bulma-text, both theme-aware.
+.navbar-dropdown {
+  form.button_to {
+    display: block;
+    margin: 0;
+  }
+
+  button.navbar-item {
+    width: 100%;
+    border: none;
+    border-radius: 0;
+    background-color: transparent;
+    color: var(--bulma-text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--bulma-scheme-main-ter);
+    }
+  }
+}
