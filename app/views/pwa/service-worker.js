@@ -1,3 +1,8 @@
+// Intentionally a no-op passthrough: no fetch handler, no caching. This app is
+// useless offline and a stale cache would be a footgun (especially in dev), so
+// the service worker exists only to satisfy PWA installability. The browser
+// serves every request from the network as usual.
+//
 // Add a service worker for processing Web Push notifications:
 //
 // self.addEventListener("push", async (event) => {

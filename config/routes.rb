@@ -43,5 +43,10 @@ Rails.application.routes.draw do
 
   get "up", to: "rails/health#show", as: :rails_health_check
 
+  # PWA files rendered from app/views/pwa/*. Rails::PwaController bypasses the
+  # app's login filters, so the browser can fetch these without a session.
+  get "manifest" => "rails/pwa#manifest", as: :pwa_manifest
+  get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
+
   root "projects#index"
 end

@@ -11,8 +11,12 @@
 
     <%= yield :head %>
 
-    <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
-    <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
+    <%# Installable PWA manifest (routes enabled in config/routes.rb). %>
+    <%= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
+
+    <%# Terracotta browser UI in light, dark-scheme sand in dark, matching the theme. %>
+    <meta name="theme-color" content="#a1462b">
+    <meta name="theme-color" content="#1d1711" media="(prefers-color-scheme: dark)">
 
     <%# Green P locally, terracotta P in production, so tabs are unmistakable %>
     <link rel="icon" href="<%= Rails.env.production? ? "/icon.svg" : "/icon-dev.svg" %>" type="image/svg+xml">
