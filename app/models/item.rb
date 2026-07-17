@@ -1,6 +1,10 @@
 class Item < ApplicationRecord
   ITEM_TYPES = %w[bug task enhancement idea].freeze
 
+  # Estimates offered by the UI (fibonacci up to 13). Not a validation: the API
+  # may still write other positive integers, and such values keep rendering.
+  POINT_OPTIONS = [ 1, 2, 3, 5, 8, 13 ].freeze
+
   has_rich_text :notes
 
   belongs_to :project
@@ -67,6 +71,19 @@ class Item < ApplicationRecord
       url: Rails.application.routes.url_helpers.project_item_path(project_id, id),
       move_url: Rails.application.routes.url_helpers.move_project_item_path(project_id, id)
     }
+  end
+
+  # JSON shape the item-detail islands (ItemEditor/ItemSidebar) render and
+  # receive back after every inline save. notes_html is the rendered rich text
+  # for display; notes_trix seeds the rhino editor when editing begins.
+  #
+  # @return [Hash]
+  def detail_payload
+    board_payload.merge(
+      notes_html: notes.present? ? notes.to_s : "",
+      notes_trix: notes.body&.to_trix_html.to_s,
+      updated_at: updated_at.to_i
+    )
   end
 
   # JSON shape the Prioritize Svelte island renders for a candidate card.

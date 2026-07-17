@@ -52,6 +52,37 @@ module ApplicationHelper
     }
   end
 
+  # Props for the ItemEditor island (inline title + notes editing).
+  #
+  # @param project [Project]
+  # @param item [Item]
+  # @return [Hash]
+  def item_editor_props(project:, item:)
+    {
+      item: item.detail_payload,
+      updateUrl: project_item_path(project, item),
+      blobUrlTemplate: rails_service_blob_url(":signed_id", ":filename"),
+      directUploadUrl: rails_direct_uploads_url
+    }
+  end
+
+  # Props for the ItemSidebar island (inline status/type/points/tags editing).
+  #
+  # @param project [Project]
+  # @param item [Item]
+  # @return [Hash]
+  def item_sidebar_props(project:, item:)
+    organization = project.organization
+    {
+      item: item.detail_payload,
+      updateUrl: project_item_path(project, item),
+      statuses: organization.statuses.ordered.map { |status| { id: status.id, name: status.name } },
+      itemTypes: Item::ITEM_TYPES,
+      pointOptions: Item::POINT_OPTIONS,
+      allTags: organization.tags.order(:name).pluck(:name)
+    }
+  end
+
   # Server flash mapped to props for the Toasts island. The api_key_token key is
   # skipped: the API keys settings view renders that token inline itself, and it
   # must never surface as a toast.

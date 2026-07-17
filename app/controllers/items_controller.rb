@@ -27,9 +27,15 @@ class ItemsController < ApplicationController
 
   def update
     if @item.update(item_params)
-      redirect_to project_item_path(@project, @item), notice: "Item updated."
+      respond_to do |format|
+        format.html { redirect_to project_item_path(@project, @item), notice: "Item updated." }
+        format.json { render json: @item.detail_payload }
+      end
     else
-      render :edit, status: :unprocessable_entity
+      respond_to do |format|
+        format.html { render :edit, status: :unprocessable_entity }
+        format.json { render json: { errors: @item.errors.full_messages }, status: :unprocessable_entity }
+      end
     end
   end
 
@@ -68,7 +74,9 @@ class ItemsController < ApplicationController
     @item = @project.items.find(params[:id])
   end
 
+  # tag_names is permitted in both shapes: the classic form posts one
+  # comma-separated string, the inline sidebar PATCHes a JSON array.
   def item_params
-    params.require(:item).permit(:title, :notes, :points, :item_type, :status_id, :tag_names)
+    params.require(:item).permit(:title, :notes, :points, :item_type, :status_id, :tag_names, tag_names: [])
   end
 end

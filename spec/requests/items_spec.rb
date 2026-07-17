@@ -44,7 +44,7 @@ RSpec.describe "Item moves", type: :request do
     let(:organization) { User.find_by(username: "owner").default_organization }
     let(:project) { organization.projects.create!(name: "Board") }
 
-    it "renders a breadcrumb and the sidebar metadata panel" do
+    it "renders a breadcrumb and mounts the inline-editing islands with their props" do
       item = create(:item, project: project, item_type: "bug", points: 5)
       item.update!(tag_names: [ "urgent" ])
 
@@ -58,43 +58,76 @@ RSpec.describe "Item moves", type: :request do
       expect(breadcrumb.at_css("a[href='#{project_path(project)}']").text).to eq("Board")
       expect(breadcrumb.at_css("li.is-active").text).to include(item.title)
 
-      sidebar = Nokogiri::HTML(response.body).at_css("aside.item-meta")
+      document = Nokogiri::HTML(response.body)
+      editor = document.at_css('[data-svelte-component="ItemEditor"]')
+      expect(editor).to be_present
+      editor_props = JSON.parse(editor["data-props"])
+      expect(editor_props["item"]["title"]).to eq(item.title)
+      expect(editor_props["updateUrl"]).to eq(project_item_path(project, item))
+
+      sidebar = document.at_css('[data-svelte-component="ItemSidebar"]')
       expect(sidebar).to be_present
-      expect(sidebar.at_css("span.item-type-tag.item-type-bug").text).to eq("bug")
-      expect(sidebar.text).to include(item.status.name)
-      expect(sidebar.text).to include("5")
-      expect(sidebar.text).to include(format("%+.1f", item.strength))
-      expect(sidebar.at_css("span.tag").text).to eq("urgent")
-    end
-
-    it "exposes the status as an inline select that PATCHes the update action" do
-      item = create(:item, project: project)
-
-      get project_item_path(project, item)
-
-      form = Nokogiri::HTML(response.body).at_css("aside.item-meta form.item-status-form")
-      expect(form).to be_present
-      expect(form["action"]).to eq(project_item_path(project, item))
-      select = form.at_css("select[name='item[status_id]']")
-      expect(select).to be_present
-      expect(select["onchange"]).to include("requestSubmit")
+      sidebar_props = JSON.parse(sidebar["data-props"])
+      expect(sidebar_props["item"]["points"]).to eq(5)
+      expect(sidebar_props["item"]["tags"]).to eq([ "urgent" ])
+      expect(sidebar_props["pointOptions"]).to eq([ 1, 2, 3, 5, 8, 13 ])
+      expect(sidebar_props["statuses"].map { |status| status["name"] }).to include(item.status.name)
+      expect(sidebar_props["allTags"]).to include("urgent")
     end
   end
 
-  describe "PATCH update via the inline status select" do
+  describe "PATCH update from the inline-editing islands" do
     before { register_passkey(username: "owner") }
 
     let(:organization) { User.find_by(username: "owner").default_organization }
     let(:project) { organization.projects.create!(name: "Board") }
     let(:in_progress) { organization.statuses.find_by!(category: "in_progress") }
 
-    it "changes only the status and redirects back to the item" do
+    it "changes only the status and redirects back to the item (form fallback)" do
       item = create(:item, project: project)
 
       patch project_item_path(project, item), params: { item: { status_id: in_progress.id } }
 
       expect(response).to redirect_to(project_item_path(project, item))
       expect(item.reload.status).to eq(in_progress)
+    end
+
+    it "saves inline JSON edits and returns the fresh detail payload" do
+      item = create(:item, project: project, title: "Old title")
+
+      patch project_item_path(project, item),
+            params: { item: { title: "New title", points: 8, notes: "<p>Inline notes</p>" } },
+            as: :json
+
+      expect(response).to have_http_status(:ok)
+      payload = response.parsed_body
+      expect(payload["title"]).to eq("New title")
+      expect(payload["points"]).to eq(8)
+      expect(payload["notes_html"]).to include("Inline notes")
+      expect(item.reload.title).to eq("New title")
+    end
+
+    it "replaces the tag set from a JSON array and echoes it back sorted" do
+      item = create(:item, project: project)
+      item.update!(tag_names: [ "old" ])
+
+      patch project_item_path(project, item),
+            params: { item: { tag_names: [ "urgent", "board" ] } },
+            as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body["tags"]).to match_array(%w[urgent board])
+      expect(item.reload.tag_names).to match_array(%w[urgent board])
+    end
+
+    it "returns validation errors as JSON" do
+      item = create(:item, project: project)
+
+      patch project_item_path(project, item), params: { item: { title: "" } }, as: :json
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response.parsed_body["errors"]).to be_present
+      expect(item.reload.title).to be_present
     end
   end
 

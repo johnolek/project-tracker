@@ -1,34 +1,29 @@
 <% content_for :title, @item.title %>
 
-<nav class="breadcrumb" aria-label="breadcrumbs">
-  <ul>
-    <li><%= link_to "Projects", projects_path %></li>
-    <li><%= link_to @project.name, project_path(@project) %></li>
-    <li class="is-active"><a href="#" aria-current="page"><%= @item.title %></a></li>
-  </ul>
-</nav>
+<div class="level is-mobile mb-0">
+  <div class="level-left">
+    <nav class="breadcrumb" aria-label="breadcrumbs">
+      <ul>
+        <li><%= link_to "Projects", projects_path %></li>
+        <li><%= link_to @project.name, project_path(@project) %></li>
+        <li class="is-active"><a href="#" aria-current="page"><%= @item.title %></a></li>
+      </ul>
+    </nav>
+  </div>
+  <div class="level-right">
+    <div class="buttons">
+      <%= link_to "Edit form", edit_project_item_path(@project, @item), class: "button is-small" %>
+      <%= button_to "Delete", project_item_path(@project, @item), method: :delete,
+            class: "button is-small is-danger is-outlined",
+            form: { data: { turbo_confirm: "Delete this item?" } } %>
+    </div>
+  </div>
+</div>
 
 <div class="columns item-detail">
   <div class="column">
-    <div class="level is-mobile mb-4">
-      <div class="level-left"><h1 class="title mb-0"><%= @item.title %></h1></div>
-      <div class="level-right">
-        <div class="buttons">
-          <%= link_to "Edit", edit_project_item_path(@project, @item), class: "button is-small" %>
-          <%= button_to "Delete", project_item_path(@project, @item), method: :delete,
-                class: "button is-small is-danger is-outlined",
-                form: { data: { turbo_confirm: "Delete this item?" } } %>
-        </div>
-      </div>
-    </div>
-
-    <div class="content item-notes">
-      <% if @item.notes.present? %>
-        <%= @item.notes %>
-      <% else %>
-        <p class="has-text-weak">No notes yet.</p>
-      <% end %>
-    </div>
+    <div data-svelte-component="ItemEditor"
+         data-props="<%= item_editor_props(project: @project, item: @item).to_json %>"></div>
 
     <section class="comment-thread">
       <h2 class="title is-4">Comments</h2>
@@ -74,64 +69,7 @@
   </div>
 
   <div class="column is-one-third">
-    <aside class="box item-meta">
-      <dl class="item-meta-list">
-        <div class="item-meta-row">
-          <dt>Status</dt>
-          <dd>
-            <%= form_with model: [ @project, @item ], method: :patch, class: "item-status-form" do |form| %>
-              <div class="select is-small is-fullwidth">
-                <%= form.collection_select :status_id, @project.organization.statuses.ordered, :id, :name, {},
-                      onchange: "this.form.requestSubmit()", "aria-label": "Change status" %>
-              </div>
-            <% end %>
-          </dd>
-        </div>
-
-        <div class="item-meta-row">
-          <dt>Type</dt>
-          <dd><span class="item-type-tag item-type-<%= @item.item_type %>"><%= @item.item_type %></span></dd>
-        </div>
-
-        <div class="item-meta-row">
-          <dt>Points</dt>
-          <dd><%= @item.points || "—" %></dd>
-        </div>
-
-        <div class="item-meta-row">
-          <dt>Tags</dt>
-          <dd>
-            <% if @item.tags.any? %>
-              <div class="tags mb-0">
-                <% @item.tags.each do |tag| %>
-                  <span class="tag <%= tag_color_class(name: tag.name) %>"><%= tag.name %></span>
-                <% end %>
-              </div>
-            <% else %>
-              <span class="has-text-weak">None</span>
-            <% end %>
-          </dd>
-        </div>
-
-        <div class="item-meta-row">
-          <dt>Strength</dt>
-          <dd><%= format("%+.1f", @item.strength) %></dd>
-        </div>
-
-        <div class="item-meta-row">
-          <dt>Created</dt>
-          <dd>
-            <time datetime="<%= @item.created_at.iso8601 %>"><%= @item.created_at.strftime("%b %-d, %Y") %></time>
-          </dd>
-        </div>
-
-        <div class="item-meta-row">
-          <dt>Updated</dt>
-          <dd>
-            <time datetime="<%= @item.updated_at.iso8601 %>"><%= @item.updated_at.strftime("%b %-d, %Y") %></time>
-          </dd>
-        </div>
-      </dl>
-    </aside>
+    <div data-svelte-component="ItemSidebar"
+         data-props="<%= item_sidebar_props(project: @project, item: @item).to_json %>"></div>
   </div>
 </div>

@@ -57,7 +57,11 @@
   <div class="field">
     <%= form.label :points, class: "label" %>
     <div class="control">
-      <%= form.number_field :points, class: "input" %>
+      <div class="select">
+        <%= form.select :points,
+              (Item::POINT_OPTIONS | [ item.points ].compact).sort,
+              { include_blank: "No estimate" } %>
+      </div>
     </div>
   </div>
 

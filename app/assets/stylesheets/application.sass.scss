@@ -685,9 +685,71 @@ $tag-colors: (
   dd {
     margin: 0;
   }
+}
 
-  .item-status-form {
-    margin: 0;
+// Inline editing affordances: editable blocks hint on hover/focus with the
+// same hairline-border treatment cards use, without shifting layout.
+.item-editable {
+  border: 1px solid transparent;
+  border-radius: var(--bulma-radius);
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--bulma-border-weak);
+    background: var(--bulma-scheme-main-bis);
+  }
+}
+
+.item-title-input {
+  font-size: var(--bulma-size-3);
+  font-weight: 600;
+}
+
+// The title renders as a real button (keyboard-accessible without role
+// shimming) that inherits the heading's look.
+.item-title-trigger {
+  padding: 0 0.25rem;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+// Tag typeahead: suggestions drop over the content below the input.
+.tag-typeahead {
+  position: relative;
+
+  .tag-typeahead-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    margin: 0.25rem 0 0;
+    padding: 0.25rem;
+    list-style: none;
+    border: 1px solid var(--bulma-border-weak);
+    border-radius: var(--bulma-radius);
+    background: var(--bulma-scheme-main);
+    box-shadow: 0 2px 8px hsla(var(--bulma-scheme-h), var(--bulma-scheme-s), 10%, 0.18);
+  }
+
+  .tag-typeahead-option {
+    display: block;
+    width: 100%;
+    padding: 0.3rem 0.5rem;
+    border: none;
+    border-radius: var(--bulma-radius-small);
+    background: none;
+    color: var(--bulma-text);
+    text-align: left;
+    cursor: pointer;
+
+    &:hover,
+    &.is-highlighted {
+      background: var(--bulma-scheme-main-ter);
+    }
   }
 }
 
