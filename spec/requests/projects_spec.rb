@@ -55,7 +55,6 @@ RSpec.describe "Projects", type: :request do
 
       item = project.items.last
       expect(item.status).to eq(organization.default_status)
-      expect(item.source).to eq("internal")
     end
   end
 

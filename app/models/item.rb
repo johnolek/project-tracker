@@ -1,6 +1,5 @@
 class Item < ApplicationRecord
   ITEM_TYPES = %w[bug task enhancement idea].freeze
-  SOURCES = %w[internal external].freeze
 
   has_rich_text :notes
 
@@ -13,7 +12,6 @@ class Item < ApplicationRecord
   validates :title, presence: true
   validates :rating, :rating_deviation, :volatility, presence: true, numericality: true
   validates :item_type, inclusion: { in: ITEM_TYPES }
-  validates :source, inclusion: { in: SOURCES }
   validates :points, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
 
   before_validation :assign_default_status, on: :create
@@ -29,7 +27,7 @@ class Item < ApplicationRecord
   end
 
   # Re-renders the whole project board so items appear, move between status
-  # groups, and disappear live on every subscribed view (authed and public).
+  # groups, and disappear live on every subscribed view.
   def broadcast_board
     broadcast_replace_to(
       [ project, "items" ],

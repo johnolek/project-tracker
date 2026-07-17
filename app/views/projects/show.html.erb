@@ -10,14 +10,6 @@
   </div>
 </div>
 
-<h2 class="title is-4">Public links</h2>
-<div class="content">
-  <ul>
-    <li>Board: <%= link_to public_project_url(@project.public_token), public_project_path(@project.public_token) %></li>
-    <li>Submissions: <%= link_to new_public_submission_url(@project.public_token), new_public_submission_path(@project.public_token) %></li>
-  </ul>
-</div>
-
 <h2 class="title is-4">Board (live)</h2>
 <%= turbo_stream_from @project, "items" %>
 <%= render "items/board", project: @project %>
@@ -31,7 +23,7 @@
   <div class="table-container">
     <table class="table is-fullwidth is-striped is-hoverable">
       <thead>
-        <tr><th>Title</th><th>Type</th><th>Status</th><th>Points</th><th>Source</th></tr>
+        <tr><th>Title</th><th>Type</th><th>Status</th><th>Points</th></tr>
       </thead>
       <tbody>
         <% @items.each do |item| %>
@@ -40,7 +32,6 @@
             <td><%= item.item_type %></td>
             <td><%= item.status.name %></td>
             <td><%= item.points %></td>
-            <td><%= item.source %></td>
           </tr>
         <% end %>
       </tbody>

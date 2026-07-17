@@ -94,10 +94,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_17_030022) do
     t.bigint "project_id", null: false
     t.float "rating", default: 1500.0, null: false
     t.float "rating_deviation", default: 350.0, null: false
-    t.string "source", default: "internal", null: false
     t.bigint "status_id", null: false
-    t.string "submitter_email"
-    t.string "submitter_name"
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.float "volatility", default: 0.06, null: false
@@ -126,10 +123,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_17_030022) do
     t.datetime "created_at", null: false
     t.string "name", null: false
     t.bigint "organization_id", null: false
-    t.string "public_token", null: false
     t.datetime "updated_at", null: false
     t.index ["organization_id"], name: "index_projects_on_organization_id"
-    t.index ["public_token"], name: "index_projects_on_public_token", unique: true
   end
 
   create_table "solid_cable_messages", force: :cascade do |t|

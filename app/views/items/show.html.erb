@@ -17,10 +17,6 @@
       <tr><th>Type</th><td><%= @item.item_type %></td></tr>
       <tr><th>Status</th><td><%= @item.status.name %></td></tr>
       <tr><th>Points</th><td><%= @item.points %></td></tr>
-      <tr><th>Source</th><td><%= @item.source %></td></tr>
-      <% if @item.source == "external" %>
-        <tr><th>Submitted by</th><td><%= @item.submitter_name.presence || "Anonymous" %> <%= @item.submitter_email %></td></tr>
-      <% end %>
       <tr><th>Notes</th><td class="content"><%= @item.notes %></td></tr>
     </tbody>
   </table>
