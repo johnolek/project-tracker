@@ -66,6 +66,7 @@ def parse_flags(argv)
     value = argv.shift or abort "Missing value for #{flag}"
     flags[flag.delete_prefix("--").tr("-", "_")] = value
   end
+  flags["item_type"] = flags.delete("type") if flags.key?("type")
   flags
 end
 
