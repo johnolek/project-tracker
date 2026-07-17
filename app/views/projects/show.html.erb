@@ -14,7 +14,16 @@
   <div class="level-left"><h2 class="title is-4">Board (live)</h2></div>
   <div class="level-right"><%= link_to "New item", new_project_item_path(@project), class: "button is-primary" %></div>
 </div>
-<%= turbo_stream_from @project, "items" %>
-<%= render "items/board", project: @project %>
+<div data-controller="board-filter">
+  <div class="field">
+    <div class="control">
+      <input class="input" type="search" placeholder="Filter cards by title…"
+             aria-label="Filter cards by title"
+             data-board-filter-target="input" data-action="input->board-filter#filter">
+    </div>
+  </div>
+  <%= turbo_stream_from @project, "items" %>
+  <%= render "items/board", project: @project %>
+</div>
 
 <p class="mt-4"><%= link_to "Back to projects", projects_path %></p>
