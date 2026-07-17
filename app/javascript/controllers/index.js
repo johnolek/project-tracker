@@ -1,4 +1,6 @@
-// Import and register all your controllers from the importmap via controllers/**/*_controller
-import { application } from "controllers/application"
-import { eagerLoadControllersFrom } from "@hotwired/stimulus-loading"
-eagerLoadControllersFrom("controllers", application)
+// With esbuild, controllers register explicitly: import and register new
+// controllers here (or run rails stimulus:manifest:update).
+import { application } from "./application"
+
+import NavbarController from "./navbar_controller"
+application.register("navbar", NavbarController)
