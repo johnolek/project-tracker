@@ -24,8 +24,14 @@ RSpec.describe Comparison, type: :model do
     expect(comparison.errors[:item_b]).to be_present
   end
 
-  it "rejects items from different organizations" do
-    comparison = build(:comparison, item_a: create(:item), item_b: create(:item), user: create(:user))
+  it "rejects items from different projects" do
+    organization = create(:organization)
+    project_a = create(:project, organization: organization)
+    project_b = create(:project, organization: organization)
+    comparison = build(:comparison,
+                       item_a: create(:item, project: project_a),
+                       item_b: create(:item, project: project_b),
+                       user: create(:user))
 
     expect(comparison).not_to be_valid
     expect(comparison.errors[:item_b]).to be_present

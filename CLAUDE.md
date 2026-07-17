@@ -24,5 +24,5 @@ Personal project/item tracker. Rails 8.1, PostgreSQL, passkey-only auth (WebAuth
 
 ## Direction
 
-- Item ranking uses Bradley-Terry fitted from the `comparisons` table (not Elo/Glicko). The fit lives in `app/models/bradley_terry.rb`; `Item.recompute_strengths` persists org-relative log-strengths into `items.strength` on every comparison create/destroy. Compare pairs at `/prioritize`, view the ranking at `/priorities`.
+- Item ranking uses Bradley-Terry fitted from the `comparisons` table (not Elo/Glicko). Prioritization is project-scoped: pairs come from one project and comparisons validate same-project. The fit lives in `app/models/bradley_terry.rb`; `Item.recompute_strengths` persists log-strengths into `items.strength` on every comparison create/destroy. Compare pairs at `/projects/:id/prioritize`, view the ranking at `/projects/:id/priorities`.
 - Public board/anonymous submissions were removed deliberately; don't reintroduce.

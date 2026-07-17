@@ -1,7 +1,12 @@
-<% content_for :title, "Priorities" %>
+<% content_for :title, "Priorities · #{@project.name}" %>
 <div class="level is-mobile">
-  <div class="level-left"><h1 class="title">Priorities</h1></div>
-  <div class="level-right"><%= link_to "Prioritize", prioritize_path, class: "button is-primary" %></div>
+  <div class="level-left">
+    <div>
+      <h1 class="title mb-1">Priorities</h1>
+      <p class="subtitle is-6 has-text-weak"><%= link_to @project.name, project_path(@project) %></p>
+    </div>
+  </div>
+  <div class="level-right"><%= link_to "Prioritize", prioritize_project_path(@project), class: "button is-primary" %></div>
 </div>
 
 <% if @items.any? %>
@@ -11,9 +16,9 @@
         <tr>
           <th>#</th>
           <th>Item</th>
-          <th>Project</th>
           <th>Type</th>
           <th>Points</th>
+          <th>Strength</th>
           <th>Comparisons</th>
         </tr>
       </thead>
@@ -21,10 +26,10 @@
         <% @items.each_with_index do |item, index| %>
           <tr>
             <td><%= index + 1 %></td>
-            <td><%= link_to item.title, project_item_path(item.project, item) %></td>
-            <td><%= item.project.name %></td>
+            <td><%= link_to item.title, project_item_path(@project, item) %></td>
             <td><%= item.item_type %></td>
             <td><%= item.points %></td>
+            <td><%= format("%+.1f", item.strength) %></td>
             <td><%= @comparison_counts.fetch(item.id, 0) %></td>
           </tr>
         <% end %>

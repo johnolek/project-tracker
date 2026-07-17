@@ -13,14 +13,15 @@ Rails.application.routes.draw do
   get "search", to: "search#show", as: :search
 
   resources :projects do
+    member do
+      get :prioritize, to: "comparisons#new"
+      get :priorities, to: "priorities#index"
+    end
     resources :items do
       patch :move, on: :member
     end
+    resources :comparisons, only: :create
   end
-
-  get "priorities", to: "priorities#index"
-  get "prioritize", to: "comparisons#new"
-  resources :comparisons, only: :create
 
   namespace :settings do
     resources :api_keys, only: %i[index create destroy]

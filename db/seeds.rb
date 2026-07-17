@@ -162,7 +162,7 @@ if Rails.env.development?
       ]
     }
 
-    open_items = []
+    open_items_by_project = Hash.new { |hash, key| hash[key] = [] }
     item_count = 0
     demo_projects.each do |project_name, rows|
       project = organization.projects.create!(name: project_name)
@@ -176,31 +176,35 @@ if Rails.env.development?
           notes: notes
         )
         item_count += 1
-        open_items << item unless status_category == "done"
+        open_items_by_project[project_name] << item unless status_category == "done"
       end
     end
 
-    # Comparisons are sampled against a hidden per-item priority so the fitted
-    # Bradley-Terry ranking comes out plausible but noisy (with a few upsets and
-    # draws). insert_all skips the per-comparison recompute callback; one explicit
+    # Comparisons stay within a project (prioritization is project-scoped) and
+    # are sampled against a hidden per-item priority so the fitted Bradley-Terry
+    # ranking comes out plausible but noisy (with a few upsets and draws).
+    # insert_all skips the per-comparison recompute callback; one explicit
     # recompute at the end persists the strengths.
     rng = Random.new(20_260_717)
-    hidden = open_items.shuffle(random: rng)
-                       .each_with_index.to_h { |item, index| [ item.id, Math.exp(-0.045 * index) ] }
     now = Time.current
 
-    comparison_rows = Array.new(160) do
-      item_a, item_b = open_items.sample(2, random: rng)
-      outcome =
-        if rng.rand < 0.05
-          "draw"
-        elsif rng.rand < hidden[item_a.id] / (hidden[item_a.id] + hidden[item_b.id])
-          "a_wins"
-        else
-          "b_wins"
-        end
-      { item_a_id: item_a.id, item_b_id: item_b.id, user_id: user.id,
-        outcome: outcome, created_at: now, updated_at: now }
+    comparison_rows = open_items_by_project.values.flat_map do |open_items|
+      hidden = open_items.shuffle(random: rng)
+                         .each_with_index.to_h { |item, index| [ item.id, Math.exp(-0.2 * index) ] }
+
+      Array.new(32) do
+        item_a, item_b = open_items.sample(2, random: rng)
+        outcome =
+          if rng.rand < 0.05
+            "draw"
+          elsif rng.rand < hidden[item_a.id] / (hidden[item_a.id] + hidden[item_b.id])
+            "a_wins"
+          else
+            "b_wins"
+          end
+        { item_a_id: item_a.id, item_b_id: item_b.id, user_id: user.id,
+          outcome: outcome, created_at: now, updated_at: now }
+      end
     end
 
     Comparison.insert_all(comparison_rows)

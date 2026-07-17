@@ -12,7 +12,13 @@
 
 <div class="level is-mobile">
   <div class="level-left"><h2 class="title is-4">Board (live)</h2></div>
-  <div class="level-right"><%= link_to "New item", new_project_item_path(@project), class: "button is-primary" %></div>
+  <div class="level-right">
+    <div class="buttons">
+      <%= link_to "Prioritize", prioritize_project_path(@project), class: "button" %>
+      <%= link_to "Priorities", priorities_project_path(@project), class: "button" %>
+      <%= link_to "New item", new_project_item_path(@project), class: "button is-primary" %>
+    </div>
+  </div>
 </div>
 <div data-controller="board-filter">
   <div class="field">

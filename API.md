@@ -58,7 +58,7 @@ envelope keyed by the collection name; only item indexes are paginated.
 - `tags` — names sorted alphabetically.
 - `notes_html` — the rendered rich-text HTML (wrapped in a `trix-content` div); `""` when notes are blank.
 - `notes_text` — plain-text rendering of the notes; `""` when blank.
-- `strength` / `points` — Bradley-Terry priority log-strength (float, organization-relative, mean-centered at 0; higher means higher priority) and estimation points (integer or null).
+- `strength` / `points` — Bradley-Terry priority log-strength (float; comparisons are project-scoped, so strengths order items within a project; higher means higher priority) and estimation points (integer or null).
 
 **Project** `{ id, name, created_at, updated_at }`
 **Status** `{ id, name, category, position }` — `category` is one of `open`, `in_progress`, `done`

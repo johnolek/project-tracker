@@ -55,7 +55,6 @@
               </div>
               <span class="navbar-item"><%= current_user.username %></span>
               <%= link_to "Projects", projects_path, class: "navbar-item" %>
-              <%= link_to "Priorities", priorities_path, class: "navbar-item" %>
               <%= link_to "API keys", settings_api_keys_path, class: "navbar-item" %>
               <div class="navbar-item">
                 <%= button_to "Sign out", logout_path, method: :delete, class: "button is-small",

@@ -7,25 +7,28 @@ class Comparison < ApplicationRecord
 
   validates :outcome, inclusion: { in: OUTCOMES }
   validate :items_differ
-  validate :items_in_same_organization
+  validate :items_in_same_project
 
   after_create :recompute_strengths
   after_destroy :recompute_strengths
 
   # All comparisons whose items belong to the given organization. Filtering on
-  # item_a alone is sufficient: the same-organization validation guarantees both
-  # items share an organization.
+  # item_a alone is sufficient: the same-project validation guarantees both
+  # items share a project (and therefore an organization).
   #
   # @param organization [Organization]
   scope :for_organization, ->(organization) {
     where(item_a_id: Item.joins(:project).where(projects: { organization_id: organization.id }).select(:id))
   }
 
-  # @param organization [Organization]
+  # @param project [Project]
+  scope :for_project, ->(project) { where(item_a_id: project.items.select(:id)) }
+
+  # @param project [Project]
   # @return [Hash{Integer => Integer}] item_id => number of comparisons it appears in
-  def self.counts_by_item(organization:)
+  def self.counts_by_item(project:)
     counts = Hash.new(0)
-    for_organization(organization).pluck(:item_a_id, :item_b_id).each do |item_a_id, item_b_id|
+    for_project(project).pluck(:item_a_id, :item_b_id).each do |item_a_id, item_b_id|
       counts[item_a_id] += 1
       counts[item_b_id] += 1
     end
@@ -66,13 +69,14 @@ class Comparison < ApplicationRecord
     errors.add(:item_b, "must be different from item A") if item_a_id == item_b_id
   end
 
-  # Same-organization (rather than same-project) is enforced: priority ranking
-  # spans a whole organization's backlog, which may cross projects.
-  def items_in_same_organization
+  # Prioritization is per-project: pairs are only meaningful inside one
+  # project's backlog, and keeping the comparison graph within a project keeps
+  # the fitted strengths honestly comparable.
+  def items_in_same_project
     return if item_a.nil? || item_b.nil?
 
-    if item_a.project.organization_id != item_b.project.organization_id
-      errors.add(:item_b, "must belong to the same organization as item A")
+    if item_a.project_id != item_b.project_id
+      errors.add(:item_b, "must belong to the same project as item A")
     end
   end
 end

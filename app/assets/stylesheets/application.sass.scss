@@ -155,12 +155,43 @@ rhino-editor {
     font-weight: 600;
   }
 
+  .board-card-strength {
+    float: right;
+    font-variant-numeric: tabular-nums;
+  }
+
   .sortable-ghost .board-card-link {
     opacity: 0.4;
   }
 
   .sortable-drag .board-card-link {
     border-color: var(--bulma-primary);
+  }
+}
+
+// Prioritize page: each candidate is one full-card submit button.
+.comparison-pair {
+  form {
+    height: 100%;
+  }
+
+  .comparison-card {
+    display: block;
+    width: 100%;
+    height: 100%;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--bulma-border-weak);
+    border-radius: var(--bulma-radius);
+    background: var(--bulma-scheme-main-bis);
+    color: var(--bulma-text);
+    text-align: left;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--bulma-primary);
+      background: var(--bulma-scheme-main-ter);
+    }
   }
 }
 
