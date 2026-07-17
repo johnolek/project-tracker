@@ -31,3 +31,45 @@
     </tbody>
   </table>
 </div>
+
+<section class="comment-thread">
+  <h2 class="title is-4">Comments</h2>
+
+  <% if @comments.any? %>
+    <ol class="comment-list">
+      <% @comments.each do |comment| %>
+        <li class="comment box">
+          <div class="comment-meta">
+            <span class="comment-author"><%= comment.user.username %></span>
+            <% if comment.from_api? %>
+              <span class="tag is-info is-small comment-source-tag">🤖 API</span>
+            <% end %>
+            <time class="comment-time has-text-weak" datetime="<%= comment.created_at.iso8601 %>">
+              <%= time_ago_in_words(comment.created_at) %> ago
+            </time>
+          </div>
+          <div class="content comment-body"><%= comment.body %></div>
+        </li>
+      <% end %>
+    </ol>
+  <% else %>
+    <p class="has-text-weak">No comments yet.</p>
+  <% end %>
+
+  <%= form_with model: [ @project, @item, @new_comment ] do |form| %>
+    <div class="field">
+      <%= form.label :body, "Add a comment", class: "label" %>
+      <div class="control">
+        <%= form.hidden_field :body, id: form.field_id(:body), value: @new_comment.body.try(:to_trix_html) %>
+        <rhino-editor
+          input="<%= form.field_id(:body) %>"
+          data-blob-url-template="<%= rails_service_blob_url(":signed_id", ":filename") %>"
+          data-direct-upload-url="<%= rails_direct_uploads_url %>"
+        ></rhino-editor>
+      </div>
+    </div>
+    <div class="field">
+      <%= form.submit "Post comment", class: "button is-primary" %>
+    </div>
+  <% end %>
+</section>

@@ -19,6 +19,7 @@ Rails.application.routes.draw do
     end
     resources :items do
       patch :move, on: :member
+      resources :comments, only: :create
     end
     resources :comparisons, only: :create
   end

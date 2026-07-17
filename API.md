@@ -63,7 +63,12 @@ envelope keyed by the collection name; only item indexes are paginated.
 **Project** `{ id, name, created_at, updated_at }`
 **Status** `{ id, name, category, position }` — `category` is one of `open`, `in_progress`, `done`
 **Tag** `{ id, name }`
-**Comment** `{ id, body, user: { id, username }, created_at }`
+**Comment** `{ id, body, body_html, body_text, source, user: { id, username }, created_at }`
+
+- `body_html` — the rendered rich-text HTML (wrapped in a `trix-content` div); `""` when blank.
+- `body_text` — plain-text rendering of the body; `""` when blank.
+- `body` — alias of `body_text`, kept for backward compatibility.
+- `source` — `"web"` (posted from the web UI) or `"api"` (posted through this API; every comment created via `POST` is stamped `"api"`).
 
 ## Projects
 
@@ -203,9 +208,12 @@ curl -X POST http://localhost:3000/api/v1/items/42/advance \
 # List (chronological, oldest first)
 curl http://localhost:3000/api/v1/items/42/comments \
   -H "Authorization: Bearer pt_YOUR_TOKEN"
-# => { "comments": [ { "id": 1, "body": "...", "user": { "id": 3, "username": "john" }, "created_at": "..." } ] }
+# => { "comments": [ { "id": 1, "body": "...", "body_html": "<div class=\"trix-content\">...</div>",
+#                      "body_text": "...", "source": "api",
+#                      "user": { "id": 3, "username": "john" }, "created_at": "..." } ] }
 
-# Create (201) — authored by the key's user
+# Create (201) — authored by the key's user, stamped source: "api".
+# body is plain text in; it is stored as rich text (HTML comes back in body_html).
 curl -X POST http://localhost:3000/api/v1/items/42/comments \
   -H "Authorization: Bearer pt_YOUR_TOKEN" \
   -H "Content-Type: application/json" \

@@ -371,6 +371,43 @@ rhino-editor {
   }
 }
 
+// Comment thread on the item detail page: a stack of adobe cards above the
+// rich-text compose form. Meta line carries author, an optional source badge,
+// and a muted relative timestamp; the badge reuses Bulma's contrast-checked
+// is-info tag so it holds AA in both schemes.
+.comment-thread {
+  margin-top: 2.5rem;
+
+  .comment-list {
+    list-style: none;
+    margin: 0 0 1.5rem;
+  }
+
+  .comment {
+    margin-bottom: 1rem;
+  }
+
+  .comment-meta {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .comment-author {
+    font-weight: 600;
+  }
+
+  .comment-time {
+    font-size: 0.85rem;
+  }
+
+  .comment-body:last-child {
+    margin-bottom: 0;
+  }
+}
+
 // Southwest box: flat adobe card in place of Bulma's floaty two-layer shadow.
 // Hairline border carries the edge (also in dark mode, where shadows vanish),
 // a whisper of warm shadow adds depth, and a terracotta band tops it off.

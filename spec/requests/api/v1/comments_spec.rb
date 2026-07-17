@@ -5,19 +5,25 @@ RSpec.describe "API v1 comments", type: :request do
   let(:item) { create(:item, project: project) }
 
   describe "GET /api/v1/items/:item_id/comments" do
-    it "lists comments chronologically with author details" do
-      older = create(:comment, item: item, user: api_user, body: "First", created_at: 2.hours.ago)
-      newer = create(:comment, item: item, user: api_user, body: "Second", created_at: 1.hour.ago)
+    it "lists comments chronologically with body, rich-text forms, source, and author" do
+      older = create(:comment, item: item, user: api_user, body: "First", source: "api", created_at: 2.hours.ago)
+      newer = create(:comment, item: item, user: api_user, body: "Second", source: "web", created_at: 1.hour.ago)
 
       get api_v1_item_comments_path(item), headers: auth_headers
 
       expect(response).to have_http_status(:ok)
       expect(json_body["comments"].map { |comment| comment["id"] }).to eq([ older.id, newer.id ])
-      expect(json_body["comments"].first).to include(
+
+      first = json_body["comments"].first
+      expect(first).to include(
         "body" => "First",
+        "body_text" => "First",
+        "source" => "api",
         "user" => { "id" => api_user.id, "username" => api_user.username }
       )
-      expect(json_body["comments"].first.keys).to match_array(%w[id body user created_at])
+      expect(first["body_html"]).to include("First")
+      expect(first.keys).to match_array(%w[id body body_html body_text source user created_at])
+      expect(json_body["comments"].second["source"]).to eq("web")
     end
 
     it "404s for another organization's item" do
@@ -28,15 +34,22 @@ RSpec.describe "API v1 comments", type: :request do
   end
 
   describe "POST /api/v1/items/:item_id/comments" do
-    it "creates a comment authored by the key's user" do
+    it "creates a comment authored by the key's user and stamped source: api" do
       expect do
         post api_v1_item_comments_path(item), params: { comment: { body: "Progress: done" } }, headers: auth_headers
       end.to change(item.comments, :count).by(1)
 
       expect(response).to have_http_status(:created)
       expect(json_body["body"]).to eq("Progress: done")
+      expect(json_body["body_text"]).to eq("Progress: done")
+      expect(json_body["body_html"]).to include("Progress: done")
+      expect(json_body["source"]).to eq("api")
       expect(json_body["user"]).to eq("id" => api_user.id, "username" => api_user.username)
-      expect(item.comments.last.user).to eq(api_user)
+
+      last = item.comments.last
+      expect(last.user).to eq(api_user)
+      expect(last.source).to eq("api")
+      expect(last.body.to_plain_text).to eq("Progress: done")
     end
 
     it "422s on a blank body" do

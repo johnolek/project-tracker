@@ -4,6 +4,8 @@ class ItemsController < ApplicationController
   before_action :set_item, only: %i[show edit update destroy move]
 
   def show
+    @comments = @item.comments.includes(:user).with_rich_text_body.order(:created_at)
+    @new_comment = @item.comments.new
   end
 
   def new
