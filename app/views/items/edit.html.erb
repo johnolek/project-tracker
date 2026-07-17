@@ -1,6 +1,20 @@
-<% content_for :title, "Edit item" %>
-<h1 class="title">Edit <%= @item.title %></h1>
+<% content_for :title, "Edit #{@item.title}" %>
 
-<%= render "form", item: @item %>
+<nav class="breadcrumb" aria-label="breadcrumbs">
+  <ul>
+    <li><%= link_to "Projects", projects_path %></li>
+    <li><%= link_to @project.name, project_path(@project) %></li>
+    <li><%= link_to @item.title, project_item_path(@project, @item) %></li>
+    <li class="is-active"><a href="#" aria-current="page">Edit</a></li>
+  </ul>
+</nav>
 
-<p><%= link_to "Back to item", project_item_path(@project, @item) %></p>
+<div class="columns">
+  <div class="column is-two-thirds">
+    <h1 class="title">Edit item</h1>
+
+    <%= render "form", item: @item %>
+
+    <p class="mt-4"><%= link_to "Back to item", project_item_path(@project, @item) %></p>
+  </div>
+</div>

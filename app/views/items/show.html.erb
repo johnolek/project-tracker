@@ -1,75 +1,137 @@
 <% content_for :title, @item.title %>
-<div class="level is-mobile">
-  <div class="level-left"><h1 class="title"><%= @item.title %></h1></div>
-  <div class="level-right">
-    <div class="buttons">
-      <%= link_to "Edit", edit_project_item_path(@project, @item), class: "button" %>
-      <%= button_to "Delete", project_item_path(@project, @item), method: :delete, class: "button is-danger is-outlined",
-            form: { data: { turbo_confirm: "Delete this item?" } } %>
-    </div>
-  </div>
-</div>
 
-<div class="table-container">
-  <table class="table">
-    <tbody>
-      <tr><th>Project</th><td><%= link_to @project.name, project_path(@project) %></td></tr>
-      <tr><th>Type</th><td><%= @item.item_type %></td></tr>
-      <tr><th>Status</th><td><%= @item.status.name %></td></tr>
-      <tr><th>Points</th><td><%= @item.points %></td></tr>
-      <tr>
-        <th>Tags</th>
-        <td>
-          <div class="tags">
-            <% @item.tags.each do |tag| %>
-              <span class="tag"><%= tag.name %></span>
-            <% end %>
-          </div>
-        </td>
-      </tr>
-      <tr><th>Notes</th><td class="content"><%= @item.notes %></td></tr>
-    </tbody>
-  </table>
-</div>
+<nav class="breadcrumb" aria-label="breadcrumbs">
+  <ul>
+    <li><%= link_to "Projects", projects_path %></li>
+    <li><%= link_to @project.name, project_path(@project) %></li>
+    <li class="is-active"><a href="#" aria-current="page"><%= @item.title %></a></li>
+  </ul>
+</nav>
 
-<section class="comment-thread">
-  <h2 class="title is-4">Comments</h2>
-
-  <% if @comments.any? %>
-    <ol class="comment-list">
-      <% @comments.each do |comment| %>
-        <li class="comment box">
-          <div class="comment-meta">
-            <span class="comment-author"><%= comment.user.username %></span>
-            <% if comment.from_api? %>
-              <span class="tag is-info is-small comment-source-tag">🤖 API</span>
-            <% end %>
-            <time class="comment-time has-text-weak" datetime="<%= comment.created_at.iso8601 %>">
-              <%= time_ago_in_words(comment.created_at) %> ago
-            </time>
-          </div>
-          <div class="content comment-body"><%= comment.body %></div>
-        </li>
-      <% end %>
-    </ol>
-  <% else %>
-    <p class="has-text-weak">No comments yet.</p>
-  <% end %>
-
-  <%= form_with model: [ @project, @item, @new_comment ] do |form| %>
-    <div class="field">
-      <%= form.label :body, "Add a comment", class: "label" %>
-      <div class="control">
-        <%= form.hidden_field :body, id: form.field_id(:body), value: @new_comment.body.try(:to_trix_html) %>
-        <rhino-editor
-          input="<%= form.field_id(:body) %>"
-          data-blob-url-template="<%= rails_service_blob_url(":signed_id", ":filename") %>"
-          data-direct-upload-url="<%= rails_direct_uploads_url %>"
-        ></rhino-editor>
+<div class="columns item-detail">
+  <div class="column">
+    <div class="level is-mobile mb-4">
+      <div class="level-left"><h1 class="title mb-0"><%= @item.title %></h1></div>
+      <div class="level-right">
+        <div class="buttons">
+          <%= link_to "Edit", edit_project_item_path(@project, @item), class: "button is-small" %>
+          <%= button_to "Delete", project_item_path(@project, @item), method: :delete,
+                class: "button is-small is-danger is-outlined",
+                form: { data: { turbo_confirm: "Delete this item?" } } %>
+        </div>
       </div>
     </div>
-    <div class="field">
-      <%= form.submit "Post comment", class: "button is-primary" %>
+
+    <div class="content item-notes">
+      <% if @item.notes.present? %>
+        <%= @item.notes %>
+      <% else %>
+        <p class="has-text-weak">No notes yet.</p>
+      <% end %>
     </div>
-  <% end %>
-</section>
+
+    <section class="comment-thread">
+      <h2 class="title is-4">Comments</h2>
+
+      <% if @comments.any? %>
+        <ol class="comment-list">
+          <% @comments.each do |comment| %>
+            <li class="comment box">
+              <div class="comment-meta">
+                <span class="comment-author"><%= comment.user.username %></span>
+                <% if comment.from_api? %>
+                  <span class="tag is-info is-small comment-source-tag">🤖 API</span>
+                <% end %>
+                <time class="comment-time has-text-weak" datetime="<%= comment.created_at.iso8601 %>">
+                  <%= time_ago_in_words(comment.created_at) %> ago
+                </time>
+              </div>
+              <div class="content comment-body"><%= comment.body %></div>
+            </li>
+          <% end %>
+        </ol>
+      <% else %>
+        <p class="has-text-weak">No comments yet.</p>
+      <% end %>
+
+      <%= form_with model: [ @project, @item, @new_comment ] do |form| %>
+        <div class="field">
+          <%= form.label :body, "Add a comment", class: "label" %>
+          <div class="control">
+            <%= form.hidden_field :body, id: form.field_id(:body), value: @new_comment.body.try(:to_trix_html) %>
+            <rhino-editor
+              input="<%= form.field_id(:body) %>"
+              data-blob-url-template="<%= rails_service_blob_url(":signed_id", ":filename") %>"
+              data-direct-upload-url="<%= rails_direct_uploads_url %>"
+            ></rhino-editor>
+          </div>
+        </div>
+        <div class="field">
+          <%= form.submit "Post comment", class: "button is-primary" %>
+        </div>
+      <% end %>
+    </section>
+  </div>
+
+  <div class="column is-one-third">
+    <aside class="box item-meta">
+      <dl class="item-meta-list">
+        <div class="item-meta-row">
+          <dt>Status</dt>
+          <dd>
+            <%= form_with model: [ @project, @item ], method: :patch, class: "item-status-form" do |form| %>
+              <div class="select is-small is-fullwidth">
+                <%= form.collection_select :status_id, @project.organization.statuses.ordered, :id, :name, {},
+                      onchange: "this.form.requestSubmit()", "aria-label": "Change status" %>
+              </div>
+            <% end %>
+          </dd>
+        </div>
+
+        <div class="item-meta-row">
+          <dt>Type</dt>
+          <dd><span class="item-type-tag item-type-<%= @item.item_type %>"><%= @item.item_type %></span></dd>
+        </div>
+
+        <div class="item-meta-row">
+          <dt>Points</dt>
+          <dd><%= @item.points || "—" %></dd>
+        </div>
+
+        <div class="item-meta-row">
+          <dt>Tags</dt>
+          <dd>
+            <% if @item.tags.any? %>
+              <div class="tags mb-0">
+                <% @item.tags.each do |tag| %>
+                  <span class="tag"><%= tag.name %></span>
+                <% end %>
+              </div>
+            <% else %>
+              <span class="has-text-weak">None</span>
+            <% end %>
+          </dd>
+        </div>
+
+        <div class="item-meta-row">
+          <dt>Strength</dt>
+          <dd><%= format("%+.1f", @item.strength) %></dd>
+        </div>
+
+        <div class="item-meta-row">
+          <dt>Created</dt>
+          <dd>
+            <time datetime="<%= @item.created_at.iso8601 %>"><%= @item.created_at.strftime("%b %-d, %Y") %></time>
+          </dd>
+        </div>
+
+        <div class="item-meta-row">
+          <dt>Updated</dt>
+          <dd>
+            <time datetime="<%= @item.updated_at.iso8601 %>"><%= @item.updated_at.strftime("%b %-d, %Y") %></time>
+          </dd>
+        </div>
+      </dl>
+    </aside>
+  </div>
+</div>

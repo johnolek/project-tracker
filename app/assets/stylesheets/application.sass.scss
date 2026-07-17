@@ -182,6 +182,22 @@ rhino-editor {
   }
 }
 
+// Uppercase type pill shared by the board card and the item detail sidebar.
+// Neutral today; per-type hooks (.item-type-bug / -task / -enhancement / -idea)
+// are reserved for a later coloring pass — override background/color there.
+.item-type-tag {
+  display: inline-block;
+  padding: 0.05rem 0.4rem;
+  border-radius: var(--bulma-radius-small);
+  background: var(--bulma-background);
+  color: var(--bulma-text);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.5;
+}
+
 // Board columns: each card is one clickable link that drags between status
 // groups. Keep the card body on --bulma-text (not link colour) so titles and
 // meta stay readable; tags carry their own Bulma colours. Every column keeps a
@@ -263,21 +279,10 @@ rhino-editor {
     }
   }
 
-  // Type label above the title. Neutral today; per-type hooks
-  // (.item-type-bug / -task / -enhancement / -idea) are reserved for a later
-  // coloring pass — override background/color there.
+  // Board card lays the type label above the title.
   .item-type-tag {
     align-self: flex-start;
     margin-bottom: 0.3rem;
-    padding: 0.05rem 0.4rem;
-    border-radius: var(--bulma-radius-small);
-    background: var(--bulma-background);
-    color: var(--bulma-text);
-    font-size: 0.65rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    line-height: 1.5;
   }
 
   .board-card-title {
@@ -530,6 +535,47 @@ rhino-editor {
 
   .comment-body:last-child {
     margin-bottom: 0;
+  }
+}
+
+// Jira-style item detail: wide main column (notes + comments) beside a compact
+// metadata sidebar. The sidebar reuses the adobe .box; each row is a muted label
+// stacked over its value. On the .comment-thread the default top margin is more
+// than the notes block needs, so tighten it in this context.
+.item-detail {
+  .item-notes {
+    margin-bottom: 2rem;
+  }
+
+  .comment-thread {
+    margin-top: 2rem;
+  }
+}
+
+.item-meta {
+  .item-meta-list {
+    margin: 0;
+  }
+
+  .item-meta-row + .item-meta-row {
+    margin-top: 1rem;
+  }
+
+  dt {
+    margin-bottom: 0.2rem;
+    color: var(--bulma-text-weak);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  dd {
+    margin: 0;
+  }
+
+  .item-status-form {
+    margin: 0;
   }
 }
 

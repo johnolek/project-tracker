@@ -38,6 +38,66 @@ RSpec.describe "Item moves", type: :request do
     end
   end
 
+  describe "the Jira-style item detail page" do
+    before { register_passkey(username: "owner") }
+
+    let(:organization) { User.find_by(username: "owner").default_organization }
+    let(:project) { organization.projects.create!(name: "Board") }
+
+    it "renders a breadcrumb and the sidebar metadata panel" do
+      item = create(:item, project: project, item_type: "bug", points: 5)
+      item.update!(tag_names: [ "urgent" ])
+
+      get project_item_path(project, item)
+
+      expect(response).to have_http_status(:ok)
+
+      breadcrumb = Nokogiri::HTML(response.body).at_css("nav.breadcrumb")
+      expect(breadcrumb).to be_present
+      expect(breadcrumb.at_css("a[href='#{projects_path}']")).to be_present
+      expect(breadcrumb.at_css("a[href='#{project_path(project)}']").text).to eq("Board")
+      expect(breadcrumb.at_css("li.is-active").text).to include(item.title)
+
+      sidebar = Nokogiri::HTML(response.body).at_css("aside.item-meta")
+      expect(sidebar).to be_present
+      expect(sidebar.at_css("span.item-type-tag.item-type-bug").text).to eq("bug")
+      expect(sidebar.text).to include(item.status.name)
+      expect(sidebar.text).to include("5")
+      expect(sidebar.text).to include(format("%+.1f", item.strength))
+      expect(sidebar.at_css("span.tag").text).to eq("urgent")
+    end
+
+    it "exposes the status as an inline select that PATCHes the update action" do
+      item = create(:item, project: project)
+
+      get project_item_path(project, item)
+
+      form = Nokogiri::HTML(response.body).at_css("aside.item-meta form.item-status-form")
+      expect(form).to be_present
+      expect(form["action"]).to eq(project_item_path(project, item))
+      select = form.at_css("select[name='item[status_id]']")
+      expect(select).to be_present
+      expect(select["onchange"]).to include("requestSubmit")
+    end
+  end
+
+  describe "PATCH update via the inline status select" do
+    before { register_passkey(username: "owner") }
+
+    let(:organization) { User.find_by(username: "owner").default_organization }
+    let(:project) { organization.projects.create!(name: "Board") }
+    let(:in_progress) { organization.statuses.find_by!(category: "in_progress") }
+
+    it "changes only the status and redirects back to the item" do
+      item = create(:item, project: project)
+
+      patch project_item_path(project, item), params: { item: { status_id: in_progress.id } }
+
+      expect(response).to redirect_to(project_item_path(project, item))
+      expect(item.reload.status).to eq(in_progress)
+    end
+  end
+
   context "when signed out" do
     it "redirects to the login page" do
       project = create(:project)
