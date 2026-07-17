@@ -19,7 +19,12 @@
   <div class="field">
     <%= form.label :notes, class: "label" %>
     <div class="control">
-      <%= form.text_area :notes, class: "textarea" %>
+      <%= form.hidden_field :notes, id: form.field_id(:notes), value: item.notes.try(:to_trix_html) %>
+      <rhino-editor
+        input="<%= form.field_id(:notes) %>"
+        data-blob-url-template="<%= rails_service_blob_url(":signed_id", ":filename") %>"
+        data-direct-upload-url="<%= rails_direct_uploads_url %>"
+      ></rhino-editor>
     </div>
   </div>
 

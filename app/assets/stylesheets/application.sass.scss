@@ -12,6 +12,9 @@
   $danger: hsl(2, 62%, 38%)
 );
 
+// Rhino editor (Trix-compatible look) for ActionText fields.
+@use "rhino-editor/exports/styles/trix.css";
+
 // Bulma's light theme hardcodes a white page background; warm it to sand.
 // These must stay scoped to light contexts: an unscoped :root block sits after
 // Bulma's dark media query in the cascade and would force light backgrounds
@@ -55,4 +58,75 @@
 // greys that clash with the warm scheme.
 .has-text-weak {
   color: var(--bulma-text-weak);
+}
+
+// Native form controls and light-dark()-based components (like Rhino's shadow
+// DOM styles) follow the CSS color-scheme property, which Bulma never sets.
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]):not(.theme-dark) {
+    color-scheme: light;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not(.theme-light) {
+    color-scheme: dark;
+  }
+}
+
+[data-theme="light"],
+.theme-light {
+  color-scheme: light;
+}
+
+[data-theme="dark"],
+.theme-dark {
+  color-scheme: dark;
+}
+
+// Rhino editor: map its theming hooks onto Bulma's theme-aware variables.
+// Custom properties pierce the shadow boundary; light and dark variants both
+// point at the same Bulma var because Bulma already flips values per theme.
+// The .trix-content selector is required too: trix.css declares the defaults
+// directly on that element, which beats values inherited from rhino-editor.
+rhino-editor,
+rhino-editor .trix-content {
+  --rhino-text-color: var(--bulma-text);
+  --rhino-dark-text-color: var(--bulma-text);
+  --rhino-border-color: var(--bulma-border);
+  --rhino-placeholder-text-color: var(--bulma-text-weak);
+  --rhino-dark-placeholder-text-color: var(--bulma-text-weak);
+  --rhino-toolbar-text-color: var(--bulma-text-weak);
+  --rhino-button-text-color: var(--bulma-text);
+  --rhino-button-dark-text-color: var(--bulma-text);
+  --rhino-button-border-color: var(--bulma-border);
+  --rhino-button-active-border-color: var(--bulma-primary);
+  --rhino-button-active-background-color: var(--bulma-primary-light);
+  --rhino-button-focus-background-color: var(--bulma-background);
+  --rhino-dialog-border-color: var(--bulma-border);
+  --rhino-fake-selection-color: hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.3);
+  --rhino-danger-border-color: var(--bulma-danger);
+  --rhino-danger-background-color: var(--bulma-danger-light);
+}
+
+rhino-editor {
+  .trix-content {
+    background: var(--bulma-scheme-main);
+    border-radius: var(--bulma-radius);
+    min-height: 8rem;
+  }
+
+  &::part(toolbar__button) {
+    background: var(--bulma-scheme-main-bis);
+  }
+}
+
+// Southwest box: flat adobe card in place of Bulma's floaty two-layer shadow.
+// Hairline border carries the edge (also in dark mode, where shadows vanish),
+// a whisper of warm shadow adds depth, and a terracotta band tops it off.
+// Bulma's own shadow color is a hardcoded cool grey that clashes here.
+.box {
+  --bulma-box-shadow: 0 1px 2px hsla(var(--bulma-scheme-h), var(--bulma-scheme-s), 10%, 0.08);
+  border: 1px solid var(--bulma-border-weak);
+  border-top: 3px solid var(--bulma-primary);
 }

@@ -10,9 +10,20 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_16_164212) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_17_030022) do
   # These are extensions that must be enabled in order to support this database
+  enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "action_text_rich_texts", force: :cascade do |t|
+    t.text "body"
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.bigint "record_id", null: false
+    t.string "record_type", null: false
+    t.datetime "updated_at", null: false
+    t.index ["record_type", "record_id", "name"], name: "index_action_text_rich_texts_uniqueness", unique: true
+  end
 
   create_table "active_storage_attachments", force: :cascade do |t|
     t.bigint "blob_id", null: false
@@ -79,7 +90,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_16_164212) do
   create_table "items", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "item_type", default: "task", null: false
-    t.text "notes"
     t.integer "points"
     t.bigint "project_id", null: false
     t.float "rating", default: 1500.0, null: false
@@ -267,7 +277,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_16_164212) do
     t.datetime "created_at", null: false
     t.bigint "default_organization_id"
     t.datetime "updated_at", null: false
-    t.string "username", null: false
+    t.citext "username", null: false
     t.string "webauthn_id", null: false
     t.index ["default_organization_id"], name: "index_users_on_default_organization_id"
     t.index ["username"], name: "index_users_on_username", unique: true

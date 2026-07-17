@@ -24,6 +24,13 @@ RSpec.describe "Passkey authentication", type: :request do
       post signup_options_path, params: { username: "alice" }, as: :json
       expect(response).to have_http_status(:unprocessable_entity)
     end
+
+    it "rejects a duplicate username that differs only in case" do
+      create(:user, username: "alice")
+
+      post signup_options_path, params: { username: "ALICE" }, as: :json
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
   end
 
   describe "sign in" do
@@ -46,6 +53,17 @@ RSpec.describe "Passkey authentication", type: :request do
     it "rejects an unknown username" do
       post login_options_path, params: { username: "nobody" }, as: :json
       expect(response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "authenticates regardless of username casing" do
+      client = WebAuthn::FakeClient.new(webauthn_origin)
+      register_passkey(username: "Bob", client: client)
+      delete logout_path
+
+      authenticate_passkey(username: "bob", client: client)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body["redirect_url"]).to eq(root_path)
     end
   end
 

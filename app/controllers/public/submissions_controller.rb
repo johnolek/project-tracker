@@ -32,6 +32,9 @@ module Public
     def submission_params
       permitted = params.require(:item).permit(:title, :notes, :item_type, :submitter_name, :submitter_email)
       permitted[:item_type] = "idea" unless ALLOWED_TYPES.include?(permitted[:item_type])
+      # The public form is a plain textarea; convert to paragraphs so line
+      # breaks survive in the rich-text body.
+      permitted[:notes] = helpers.simple_format(permitted[:notes]) if permitted[:notes].present?
       permitted
     end
 

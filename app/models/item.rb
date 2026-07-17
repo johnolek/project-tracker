@@ -2,6 +2,8 @@ class Item < ApplicationRecord
   ITEM_TYPES = %w[bug task enhancement idea].freeze
   SOURCES = %w[internal external].freeze
 
+  has_rich_text :notes
+
   belongs_to :project
   belongs_to :status
   has_many :comments, dependent: :destroy
