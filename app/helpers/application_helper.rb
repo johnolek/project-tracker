@@ -1,4 +1,27 @@
 module ApplicationHelper
+  # Renders an item's type as a colored chip. The class hooks match the Svelte
+  # board card (item-type-tag + item-type-<type>) so the board and the ERB
+  # renderings share one coloring pass; the color itself lives in the stylesheet.
+  #
+  # @param item [Item]
+  # @return [ActiveSupport::SafeBuffer]
+  def item_type_tag(item)
+    tag.span(item.item_type, class: "item-type-tag item-type-#{item.item_type}")
+  end
+
+  # Deterministic color class for a tag name. djb2 hash (seed 5381, times 33)
+  # over the lowercased UTF-8 bytes, masked to 32 bits, mod eight buckets. Must
+  # stay identical to app/javascript/tag_color.js so a tag gets the same
+  # .tag-color-N in ERB and on the Svelte board.
+  #
+  # @param name [String]
+  # @return [String]
+  def tag_color_class(name:)
+    hash = 5381
+    name.to_s.downcase.each_byte { |byte| hash = (hash * 33 + byte) & 0xffffffff }
+    "tag-color-#{hash % 8}"
+  end
+
   # Props for the Board Svelte island on the project page.
   #
   # @param project [Project]

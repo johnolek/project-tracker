@@ -3,6 +3,7 @@
   import { fade } from "svelte/transition"
   import Sortable from "sortablejs"
   import consumer from "../cable"
+  import tagColorClass from "../tag_color"
 
   let { projectId, storageKey, statuses, items: initialItems } = $props()
 
@@ -366,7 +367,7 @@
                     <span class="tags board-card-tags">
                       {#each item.tags as tag (tag)}
                         <span
-                          class="tag is-small board-card-tag"
+                          class="tag is-small board-card-tag {tagColorClass(tag)}"
                           class:is-active-filter={selectedTags.includes(tag)}
                           role="button"
                           tabindex="0"

@@ -44,13 +44,13 @@
           <tr>
             <td><%= link_to item.title, project_item_path(item.project, item) %></td>
             <td><%= link_to item.project.name, project_path(item.project) %></td>
-            <td><%= item.item_type %></td>
+            <td><%= item_type_tag(item) %></td>
             <td><%= item.status.name %></td>
             <td><%= item.points %></td>
             <td>
               <div class="tags">
                 <% item.tags.each do |tag| %>
-                  <span class="tag is-small"><%= tag.name %></span>
+                  <span class="tag is-small <%= tag_color_class(name: tag.name) %>"><%= tag.name %></span>
                 <% end %>
               </div>
             </td>

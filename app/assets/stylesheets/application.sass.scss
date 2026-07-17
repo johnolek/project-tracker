@@ -15,6 +15,8 @@
 // Rhino editor (Trix-compatible look) for ActionText fields.
 @use "rhino-editor/exports/styles/trix.css";
 
+@use "sass:list";
+
 // Bulma's light theme hardcodes a white page background; warm it to sand.
 // These must stay scoped to light contexts: an unscoped :root block sits after
 // Bulma's dark media query in the cascade and would force light backgrounds
@@ -279,7 +281,9 @@ rhino-editor {
     }
   }
 
-  // Board card lays the type label above the title.
+  // Board-only layout for the type label; the chip's visual styling and
+  // per-type colors are defined globally (.item-type-tag / .item-type-<type>)
+  // so the ERB renderings share the exact same coloring.
   .item-type-tag {
     align-self: flex-start;
     margin-bottom: 0.3rem;
@@ -362,6 +366,114 @@ rhino-editor {
 
   .sortable-drag .board-card-link {
     border-color: var(--bulma-primary);
+  }
+}
+
+// Item-type chip, shared by the Svelte board card and the ERB renderings
+// (item detail, priorities table, search results) via item_type_tag. Each type
+// carries a fixed hue drawn from the Southwest palette: bug reads danger (red),
+// task info (teal), enhancement success (green), idea warning (gold). Colors use
+// Bulma's contrast-checked light/dark pairings — the pale -light background with
+// -light-invert text in light contexts, flipped to the deep -dark background
+// with -dark-invert text in dark contexts, following the light/dark scoping the
+// rest of this file uses so overrides never leak across schemes.
+$item-type-colors: (
+  "bug": "danger",
+  "task": "info",
+  "enhancement": "success",
+  "idea": "warning"
+);
+
+.item-type-tag {
+  display: inline-block;
+  padding: 0.05rem 0.4rem;
+  border-radius: var(--bulma-radius-small);
+  background: var(--bulma-background);
+  color: var(--bulma-text);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.5;
+}
+
+@each $type, $color in $item-type-colors {
+  .item-type-#{$type} {
+    background-color: var(--bulma-#{$color}-light);
+    color: var(--bulma-#{$color}-light-invert);
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not(.theme-light) {
+    @each $type, $color in $item-type-colors {
+      .item-type-#{$type} {
+        background-color: var(--bulma-#{$color}-dark);
+        color: var(--bulma-#{$color}-dark-invert);
+      }
+    }
+  }
+}
+
+[data-theme="dark"],
+.theme-dark {
+  @each $type, $color in $item-type-colors {
+    .item-type-#{$type} {
+      background-color: var(--bulma-#{$color}-dark);
+      color: var(--bulma-#{$color}-dark-invert);
+    }
+  }
+}
+
+// Deterministic per-name tag colors, shared by the Svelte board (tag_color.js)
+// and ERB (tag_color_class). A curated palette of eight warm hues that harmonize
+// with the Southwest scheme; the djb2-hash selection lives in the helpers. Each
+// class holds an AA-compliant pairing in both schemes: a pale tint with deep
+// text in light contexts, a deep tint with pale text in dark contexts. Light is
+// the base; the dark overrides follow the same scoping as everything above.
+$tag-colors: (
+  0: (8, 55%),
+  1: (28, 60%),
+  2: (42, 70%),
+  3: (70, 45%),
+  4: (95, 38%),
+  5: (178, 45%),
+  6: (250, 40%),
+  7: (330, 42%)
+);
+
+@mixin tag-color-light($h, $s) {
+  background-color: hsl($h, $s, 90%);
+  color: hsl($h, $s, 28%);
+}
+
+@mixin tag-color-dark($h, $s) {
+  background-color: hsl($h, $s, 22%);
+  color: hsl($h, $s, 85%);
+}
+
+@each $index, $hs in $tag-colors {
+  .tag-color-#{$index} {
+    @include tag-color-light(list.nth($hs, 1), list.nth($hs, 2));
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not(.theme-light) {
+    @each $index, $hs in $tag-colors {
+      .tag-color-#{$index} {
+        @include tag-color-dark(list.nth($hs, 1), list.nth($hs, 2));
+      }
+    }
+  }
+}
+
+[data-theme="dark"],
+.theme-dark {
+  @each $index, $hs in $tag-colors {
+    .tag-color-#{$index} {
+      @include tag-color-dark(list.nth($hs, 1), list.nth($hs, 2));
+    }
   }
 }
 
