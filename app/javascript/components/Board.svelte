@@ -18,6 +18,10 @@
   let selectedTags = $state([])
   let tagMenuOpen = $state(false)
   let sort = $state(readSort())
+  // Where dragged cards were dropped, in drop order: [{ id, statusId, index }].
+  // A dropped card holds that spot instead of snapping to its sorted position.
+  // Session-only; choosing a sort is an explicit re-sort and clears them.
+  let dropPlacements = $state([])
   let dragging = false
   let pendingMessages = []
 
@@ -40,10 +44,13 @@
   const columns = $derived(
     statuses.map((status) => ({
       status,
-      items: items
-        .filter((item) => item.status_id === status.id)
-        .filter(matchesFilters)
-        .toSorted(compareItems),
+      items: applyPlacements(
+        items
+          .filter((item) => item.status_id === status.id)
+          .filter(matchesFilters)
+          .toSorted(compareItems),
+        status.id
+      ),
     }))
   )
 
@@ -114,12 +121,36 @@
     }
   }
 
+  // Re-inserts dropped cards at their drop index after filter + sort. Later
+  // drops apply last so the user's most recent placement wins.
+  function applyPlacements(sorted, statusId) {
+    let result = sorted
+    for (const placement of dropPlacements) {
+      if (placement.statusId !== statusId) continue
+      const from = result.findIndex((item) => item.id === placement.id)
+      if (from === -1) continue
+      result = [...result]
+      const [item] = result.splice(from, 1)
+      result.splice(Math.min(placement.index, result.length), 0, item)
+    }
+    return result
+  }
+
+  function recordPlacement({ id, statusId, index }) {
+    dropPlacements = [...dropPlacements.filter((placement) => placement.id !== id), { id, statusId, index }]
+  }
+
+  function clearPlacement(id) {
+    dropPlacements = dropPlacements.filter((placement) => placement.id !== id)
+  }
+
   function chooseSort(option) {
     const direction =
       sort?.key === option.key && sort.direction === option.defaultDirection
         ? option.defaultDirection === "asc" ? "desc" : "asc"
         : option.defaultDirection
     sort = { key: option.key, direction }
+    dropPlacements = []
     try {
       localStorage.setItem(storageKey, JSON.stringify(sort))
     } catch {
@@ -156,14 +187,19 @@
   }
 
   // Sortable mutates the DOM it does not own: put the card back where Svelte
-  // rendered it, then move it through state so the keyed lists re-derive.
-  // Column position within a list is always derived from the sort, so only the
-  // target status matters.
+  // rendered it, then move it through state so the keyed lists re-derive. The
+  // drop position is recorded as a placement so the card stays where it was
+  // dropped instead of jumping to its sorted slot.
   function finishDrag({ item: el, to, from, oldIndex, newIndex }) {
     dragging = false
     if (to !== from || oldIndex !== newIndex) {
       const shift = to === from && newIndex < oldIndex ? 1 : 0
       from.insertBefore(el, from.children[oldIndex + shift] ?? null)
+      recordPlacement({
+        id: Number(el.dataset.itemId),
+        statusId: Number(to.dataset.statusId),
+        index: newIndex,
+      })
     }
     if (to !== from) {
       moveItem(Number(el.dataset.itemId), Number(to.dataset.statusId))
@@ -189,7 +225,10 @@
       body: JSON.stringify({ status_id: statusId }),
     }).catch(() => null)
 
-    if (!response?.ok) item.status_id = previousStatusId
+    if (!response?.ok) {
+      item.status_id = previousStatusId
+      clearPlacement(itemId)
+    }
   }
 
   $effect(() => {
@@ -210,9 +249,14 @@
       const index = items.findIndex((item) => item.id === message.item.id)
       if (index === -1) items.push(message.item)
       else items[index] = message.item
+      // A placement only survives while the item still sits in the column it
+      // was dropped into; a move from elsewhere invalidates it.
+      const placement = dropPlacements.find((candidate) => candidate.id === message.item.id)
+      if (placement && placement.statusId !== message.item.status_id) clearPlacement(message.item.id)
     } else if (message.action === "remove") {
       const index = items.findIndex((item) => item.id === message.id)
       if (index !== -1) items.splice(index, 1)
+      clearPlacement(message.id)
     } else if (message.action === "strengths") {
       for (const item of items) {
         const value = message.strengths[item.id]
