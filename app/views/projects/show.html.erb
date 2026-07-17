@@ -10,42 +10,11 @@
   </div>
 </div>
 
-<h2 class="title is-4">Board (live)</h2>
-<%= turbo_stream_from @project, "items" %>
-<%= render "items/board", project: @project %>
-
-<div class="level is-mobile mt-5">
-  <div class="level-left"><h2 class="title is-4">Manage items</h2></div>
+<div class="level is-mobile">
+  <div class="level-left"><h2 class="title is-4">Board (live)</h2></div>
   <div class="level-right"><%= link_to "New item", new_project_item_path(@project), class: "button is-primary" %></div>
 </div>
-
-<% if @items.any? %>
-  <div class="table-container">
-    <table class="table is-fullwidth is-striped is-hoverable">
-      <thead>
-        <tr><th>Title</th><th>Type</th><th>Status</th><th>Points</th><th>Tags</th></tr>
-      </thead>
-      <tbody>
-        <% @items.each do |item| %>
-          <tr>
-            <td><%= link_to item.title, project_item_path(@project, item) %></td>
-            <td><%= item.item_type %></td>
-            <td><%= item.status.name %></td>
-            <td><%= item.points %></td>
-            <td>
-              <div class="tags">
-                <% item.tags.each do |tag| %>
-                  <span class="tag is-small"><%= tag.name %></span>
-                <% end %>
-              </div>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-  </div>
-<% else %>
-  <p class="has-text-weak">No items yet.</p>
-<% end %>
+<%= turbo_stream_from @project, "items" %>
+<%= render "items/board", project: @project %>
 
 <p class="mt-4"><%= link_to "Back to projects", projects_path %></p>

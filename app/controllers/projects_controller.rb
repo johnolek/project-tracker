@@ -7,7 +7,6 @@ class ProjectsController < ApplicationController
   end
 
   def show
-    @items = @project.items.includes(:status, :tags).order(created_at: :desc)
   end
 
   def new

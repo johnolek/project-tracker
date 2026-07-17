@@ -1,22 +1,29 @@
-<%= tag.div id: dom_id(project, :board), class: "columns is-multiline item-board" do %>
+<%= tag.div id: dom_id(project, :board), class: "columns is-multiline item-board",
+      data: { controller: "board",
+              action: "turbo:before-stream-render@document->board#beforeStreamRender" } do %>
   <% project.organization.statuses.ordered.each do |status| %>
     <div class="column is-one-quarter-widescreen is-half-tablet">
       <section class="box status-group">
         <h3 class="title is-6"><%= status.name %></h3>
         <% items = project.items.where(status_id: status.id).order(created_at: :desc) %>
-        <% if items.any? %>
-          <ul>
-            <% items.each do |item| %>
-              <li id="<%= dom_id(item) %>" class="mb-2">
-                <%= item.title %>
+        <ul class="status-cards" data-board-target="list" data-status-id="<%= status.id %>">
+          <% items.each do |item| %>
+            <li id="<%= dom_id(item) %>" class="board-card" data-move-url="<%= move_project_item_path(project, item) %>">
+              <%= link_to project_item_path(project, item), class: "board-card-link" do %>
+                <span class="board-card-title"><%= item.title %></span>
                 <small class="has-text-weak">(<%= item.item_type %><%= ", #{item.points} pts" if item.points %>)</small>
-                <% item.tags.each do |tag| %>
-                  <span class="tag is-small"><%= tag.name %></span>
+                <% if item.tags.any? %>
+                  <span class="tags mt-1">
+                    <% item.tags.each do |tag| %>
+                      <span class="tag is-small"><%= tag.name %></span>
+                    <% end %>
+                  </span>
                 <% end %>
-              </li>
-            <% end %>
-          </ul>
-        <% else %>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+        <% if items.none? %>
           <p class="has-text-weak is-size-7">Nothing here yet.</p>
         <% end %>
       </section>

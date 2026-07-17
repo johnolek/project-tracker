@@ -13,7 +13,9 @@ Rails.application.routes.draw do
   get "search", to: "search#show", as: :search
 
   resources :projects do
-    resources :items
+    resources :items do
+      patch :move, on: :member
+    end
   end
 
   namespace :settings do

@@ -1,7 +1,7 @@
 class ItemsController < ApplicationController
   before_action :require_login
   before_action :set_project
-  before_action :set_item, only: %i[show edit update destroy]
+  before_action :set_item, only: %i[show edit update destroy move]
 
   def show
   end
@@ -34,6 +34,15 @@ class ItemsController < ApplicationController
   def destroy
     @item.destroy
     redirect_to project_path(@project), notice: "Item deleted."
+  end
+
+  # Drag-and-drop status change from the board. Scopes the target status to the
+  # project's organization so a foreign status_id 404s rather than leaking across
+  # tenants; the Item#broadcast_board echo reconciles every subscribed board.
+  def move
+    status = @project.organization.statuses.find(params.require(:status_id))
+    @item.update!(status: status)
+    head :no_content
   end
 
   private
