@@ -38,4 +38,15 @@ module ApplicationHelper
                   .map { |type, message| { type: type, message: message } }
     { toasts: toasts }
   end
+
+  # @return [Array<Array(String, String)>] label/value pairs for a status category select
+  def status_category_options
+    Status::CATEGORIES.map { |category| [ status_category_label(category), category ] }
+  end
+
+  # @param category [String] one of Status::CATEGORIES
+  # @return [String] the humanized category label
+  def status_category_label(category)
+    category.humanize
+  end
 end

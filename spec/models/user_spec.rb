@@ -38,7 +38,12 @@ RSpec.describe User, type: :model do
 
     it "seeds the default statuses for the personal organization" do
       seeded = user.default_organization.statuses.ordered.map { |status| [ status.name, status.category ] }
-      expect(seeded).to eq([ [ "New", "open" ], [ "In Progress", "in_progress" ], [ "Completed", "done" ] ])
+      expect(seeded).to eq([
+        [ "New", "open" ],
+        [ "In Progress", "in_progress" ],
+        [ "Needs Verification", "in_progress" ],
+        [ "Completed", "done" ]
+      ])
     end
 
     it "always leaves the user with at least one organization" do

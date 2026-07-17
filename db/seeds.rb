@@ -17,7 +17,7 @@ if Rails.env.development?
     puts "Seeds skipped: demo data already present."
   else
     organization = user.default_organization
-    statuses = organization.statuses.index_by(&:category)
+    statuses = organization.statuses.ordered.group_by(&:category).transform_values(&:first)
 
     # Rows are [title, type, points, status category, tags, notes (optional)].
     demo_projects = {

@@ -309,6 +309,10 @@ RSpec.describe "API v1 items", type: :request do
 
       post advance_api_v1_item_path(item), headers: auth_headers
       expect(response).to have_http_status(:ok)
+      expect(json_body["status"]["name"]).to eq("Needs Verification")
+
+      post advance_api_v1_item_path(item), headers: auth_headers
+      expect(response).to have_http_status(:ok)
       expect(json_body["status"]["name"]).to eq("Completed")
 
       post advance_api_v1_item_path(item), headers: auth_headers

@@ -193,9 +193,9 @@ curl -X DELETE http://localhost:3000/api/v1/items/42 \
 ### Advance
 
 `POST /api/v1/items/:id/advance` moves the item to the next status by position
-in the organization's ordered statuses (e.g. New → In Progress → Completed).
-Returns 200 with the updated item, or, when already at the last status,
-422 `{ "error": "Item is already in the final status" }`.
+in the organization's ordered statuses (e.g. New → In Progress → Needs
+Verification → Completed). Returns 200 with the updated item, or, when already at
+the last status, 422 `{ "error": "Item is already in the final status" }`.
 
 ```bash
 curl -X POST http://localhost:3000/api/v1/items/42/advance \
@@ -220,14 +220,39 @@ curl -X POST http://localhost:3000/api/v1/items/42/comments \
   -d '{ "comment": { "body": "Reproduced on staging; fix in progress." } }'
 ```
 
-## Statuses and tags
+## Statuses
+
+Statuses are the board columns. Each has a `category` (`open`, `in_progress`, or
+`done`) and a `position` that orders the columns and drives `advance`.
 
 ```bash
-# Statuses, ordered by position
+# List, ordered by position
 curl http://localhost:3000/api/v1/statuses \
   -H "Authorization: Bearer pt_YOUR_TOKEN"
 # => { "statuses": [ { "id": 1, "name": "New", "category": "open", "position": 1 }, ... ] }
 
+# Create (201) — omit position to append at the end
+curl -X POST http://localhost:3000/api/v1/statuses \
+  -H "Authorization: Bearer pt_YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{ "status": { "name": "Blocked", "category": "in_progress" } }'
+# => { "id": 5, "name": "Blocked", "category": "in_progress", "position": 5 }
+
+# Update (200) — rename, recategorize, or reposition
+curl -X PATCH http://localhost:3000/api/v1/statuses/5 \
+  -H "Authorization: Bearer pt_YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{ "status": { "name": "On Hold", "position": 3 } }'
+
+# Delete (204). Blocked (422) while items still use the status:
+# { "error": "Cannot delete record because dependent items exist" }
+curl -X DELETE http://localhost:3000/api/v1/statuses/5 \
+  -H "Authorization: Bearer pt_YOUR_TOKEN"
+```
+
+## Tags
+
+```bash
 # Tags, ordered by name
 curl http://localhost:3000/api/v1/tags \
   -H "Authorization: Bearer pt_YOUR_TOKEN"
@@ -255,6 +280,7 @@ curl -s -X POST "$BASE/items/$ITEM_ID/comments" \
   -H "$AUTH" -H "Content-Type: application/json" \
   -d '{ "comment": { "body": "Started work; root cause identified." } }' > /dev/null
 
-# 4. Complete it (In Progress -> Completed)
+# 4. Advance toward done (In Progress -> Needs Verification -> Completed)
+curl -s -X POST "$BASE/items/$ITEM_ID/advance" -H "$AUTH" | jq '.status.name'
 curl -s -X POST "$BASE/items/$ITEM_ID/advance" -H "$AUTH" | jq '.status.name'
 ```

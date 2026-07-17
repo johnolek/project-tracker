@@ -1,0 +1,81 @@
+<% content_for :title, "Statuses" %>
+<h1 class="title">Statuses</h1>
+<p class="subtitle is-6 has-text-weak">Board columns for this organization, in order.</p>
+
+<%= form_with model: [ :settings, @status ] do |form| %>
+  <% if form.object.errors.any? %>
+    <div class="notification is-danger is-light">
+      <ul>
+        <% form.object.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field is-grouped is-align-items-flex-end">
+    <div class="control">
+      <%= form.label :name, class: "label" %>
+      <%= form.text_field :name, class: "input" %>
+    </div>
+    <div class="control">
+      <%= form.label :category, class: "label" %>
+      <div class="select">
+        <%= form.select :category, status_category_options %>
+      </div>
+    </div>
+    <div class="control">
+      <%= form.submit "Add status", class: "button is-primary" %>
+    </div>
+  </div>
+<% end %>
+
+<% if @statuses.any? %>
+  <table class="table is-fullwidth">
+    <thead>
+      <tr>
+        <th>Order</th>
+        <th>Name</th>
+        <th>Category</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @statuses.each_with_index do |status, index| %>
+        <tr>
+          <td>
+            <div class="buttons has-addons mb-0">
+              <%= button_to "↑", move_settings_status_path(status, direction: "up"), method: :patch,
+                    class: "button is-small", disabled: index.zero?, "aria-label": "Move #{status.name} up" %>
+              <%= button_to "↓", move_settings_status_path(status, direction: "down"), method: :patch,
+                    class: "button is-small", disabled: index == @statuses.size - 1, "aria-label": "Move #{status.name} down" %>
+            </div>
+          </td>
+          <td>
+            <%= form_with model: [ :settings, status ], class: "field has-addons mb-0" do |form| %>
+              <div class="control">
+                <%= form.text_field :name, class: "input is-small", "aria-label": "Name" %>
+              </div>
+              <div class="control">
+                <div class="select is-small">
+                  <%= form.select :category, status_category_options, {}, { "aria-label": "Category" } %>
+                </div>
+              </div>
+              <div class="control">
+                <%= form.submit "Save", class: "button is-small" %>
+              </div>
+            <% end %>
+          </td>
+          <td><%= status_category_label(status.category) %></td>
+          <td class="has-text-right">
+            <%= button_to "Delete", settings_status_path(status), method: :delete,
+                  class: "button is-danger is-light is-small",
+                  form: { data: { turbo_confirm: "Delete the \"#{status.name}\" status?" } } %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p class="has-text-weak">No statuses yet.</p>
+<% end %>

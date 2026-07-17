@@ -26,6 +26,9 @@ Rails.application.routes.draw do
 
   namespace :settings do
     resources :api_keys, only: %i[index create destroy]
+    resources :statuses, only: %i[index create update destroy] do
+      patch :move, on: :member
+    end
   end
 
   namespace :api do
@@ -37,7 +40,7 @@ Rails.application.routes.draw do
         member { post :advance }
         resources :comments, only: %i[index create]
       end
-      resources :statuses, only: :index
+      resources :statuses, only: %i[index create update destroy]
       resources :tags, only: :index
     end
   end

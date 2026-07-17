@@ -18,7 +18,8 @@ RSpec.describe Organization, type: :model do
       expect(seeded).to eq([
         [ "New", "open", 1 ],
         [ "In Progress", "in_progress", 2 ],
-        [ "Completed", "done", 3 ]
+        [ "Needs Verification", "in_progress", 3 ],
+        [ "Completed", "done", 4 ]
       ])
     end
   end

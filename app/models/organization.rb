@@ -2,6 +2,7 @@ class Organization < ApplicationRecord
   DEFAULT_STATUSES = [
     { name: "New", category: "open" },
     { name: "In Progress", category: "in_progress" },
+    { name: "Needs Verification", category: "in_progress" },
     { name: "Completed", category: "done" }
   ].freeze
 
