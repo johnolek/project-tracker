@@ -21,24 +21,65 @@ class Item < ApplicationRecord
   before_validation :assign_default_status, on: :create
   before_save :apply_pending_tag_names
 
-  after_create :broadcast_board
-  after_update :broadcast_board
-  after_destroy :broadcast_board
+  after_create_commit { broadcast_board_change(action: "upsert") }
+  after_update_commit { broadcast_board_change(action: "upsert") }
+  after_destroy_commit { broadcast_board_change(action: "remove") }
 
   # Refits Bradley-Terry log-strengths for every item in the organization from
   # all of its comparisons and persists them, writing with update_column so the
-  # per-item board broadcast (an after_update callback) does not fire once per
-  # item. Items with no comparisons are reset to the neutral 0.0.
+  # per-item board broadcast (an update callback) does not fire once per item.
+  # Boards instead get one bulk "strengths" message per affected project.
+  # Items with no comparisons are reset to the neutral 0.0.
   #
   # @param organization [Organization]
   # @return [void]
   def self.recompute_strengths(organization:)
     strengths = BradleyTerry.fit(comparisons: Comparison.for_organization(organization))
+    changed = Hash.new { |hash, project| hash[project] = {} }
 
-    joins(:project).where(projects: { organization_id: organization.id }).find_each do |item|
+    joins(:project).includes(:project).where(projects: { organization_id: organization.id }).find_each do |item|
       target = strengths.fetch(item.id, 0.0)
-      item.update_column(:strength, target) unless item.strength == target
+      next if item.strength == target
+
+      item.update_column(:strength, target)
+      changed[item.project][item.id] = target
     end
+
+    changed.each do |project, values|
+      BoardChannel.broadcast_to(project, { action: "strengths", strengths: values })
+    end
+  end
+
+  # JSON shape the Board Svelte island renders, both as initial props and as
+  # live "upsert" messages over BoardChannel.
+  #
+  # @return [Hash]
+  def board_payload
+    {
+      id: id,
+      title: title,
+      item_type: item_type,
+      points: points,
+      strength: strength,
+      status_id: status_id,
+      created_at: created_at.to_i,
+      tags: tags.sort_by(&:name).map(&:name),
+      url: Rails.application.routes.url_helpers.project_item_path(project_id, id),
+      move_url: Rails.application.routes.url_helpers.move_project_item_path(project_id, id)
+    }
+  end
+
+  # JSON shape the Prioritize Svelte island renders for a candidate card.
+  #
+  # @return [Hash]
+  def comparison_payload
+    {
+      id: id,
+      title: title,
+      item_type: item_type,
+      points: points,
+      notes: notes.to_plain_text.truncate(160)
+    }
   end
 
   # @return [Array<String>] tag names ordered alphabetically, or the pending
@@ -77,14 +118,10 @@ class Item < ApplicationRecord
     @pending_tag_names = nil
   end
 
-  # Re-renders the whole project board so items appear, move between status
-  # groups, and disappear live on every subscribed view.
-  def broadcast_board
-    broadcast_replace_to(
-      [ project, "items" ],
-      target: ActionView::RecordIdentifier.dom_id(project, :board),
-      partial: "items/board",
-      locals: { project: project }
-    )
+  # Pushes this item's change to every subscribed board so cards appear, move
+  # between status groups, and disappear live.
+  def broadcast_board_change(action:)
+    payload = action == "remove" ? { action: action, id: id } : { action: action, item: board_payload }
+    BoardChannel.broadcast_to(project, payload)
   end
 end

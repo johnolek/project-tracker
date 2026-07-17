@@ -5,6 +5,11 @@ class ComparisonsController < ApplicationController
   def new
     @pair = next_pair
     @comparison_count = Comparison.for_project(@project).count
+
+    respond_to do |format|
+      format.html
+      format.json { render json: pair_payload(pair: @pair, count: @comparison_count) }
+    end
   end
 
   def create
@@ -15,9 +20,15 @@ class ComparisonsController < ApplicationController
     comparison = Comparison.new(item_a: item_a, item_b: item_b, user: current_user, outcome: params[:outcome])
 
     if comparison.save
-      redirect_to prioritize_project_path(@project), notice: "Recorded. Here's another pair."
+      respond_to do |format|
+        format.html { redirect_to prioritize_project_path(@project), notice: "Recorded. Here's another pair." }
+        format.json { render json: pair_payload(pair: next_pair, count: Comparison.for_project(@project).count) }
+      end
     else
-      redirect_to prioritize_project_path(@project), alert: comparison.errors.full_messages.to_sentence
+      respond_to do |format|
+        format.html { redirect_to prioritize_project_path(@project), alert: comparison.errors.full_messages.to_sentence }
+        format.json { render json: { errors: comparison.errors.full_messages }, status: :unprocessable_entity }
+      end
     end
   end
 
@@ -25,6 +36,13 @@ class ComparisonsController < ApplicationController
 
   def set_project
     @project = current_organization.projects.find(params[:project_id] || params[:id])
+  end
+
+  # @param pair [Array<Item>, nil]
+  # @param count [Integer]
+  # @return [Hash] the JSON the Prioritize island consumes after each action
+  def pair_payload(pair:, count:)
+    { pair: pair&.map(&:comparison_payload), count: count }
   end
 
   # Picks the project's two open items that have appeared in the fewest

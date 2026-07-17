@@ -24,12 +24,11 @@
   </head>
 
   <body>
-    <nav class="navbar" role="navigation" aria-label="main navigation" data-controller="navbar">
+    <nav class="navbar" role="navigation" aria-label="main navigation">
       <div class="container">
         <div class="navbar-brand">
           <%= link_to "Project Tracker", root_path, class: "navbar-item has-text-weight-bold" %>
-          <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false"
-             data-navbar-target="burger" data-action="navbar#toggle">
+          <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
             <span aria-hidden="true"></span>
             <span aria-hidden="true"></span>
             <span aria-hidden="true"></span>
@@ -37,7 +36,7 @@
           </a>
         </div>
 
-        <div class="navbar-menu" data-navbar-target="menu">
+        <div class="navbar-menu">
           <div class="navbar-end">
             <% if signed_in? %>
               <div class="navbar-item">

@@ -65,15 +65,15 @@ RSpec.describe Comparison, type: :model do
       expect(item_b.reload.strength).to eq(0.0)
     end
 
-    it "persists strengths without broadcasting a board update per item" do
+    it "persists strengths with one bulk strengths broadcast instead of per-item upserts" do
       item_a
       item_b
       broadcasts = []
-      allow(ActionCable.server).to receive(:broadcast) { |_stream, message| broadcasts << message.to_s }
+      allow(ActionCable.server).to receive(:broadcast) { |_stream, message| broadcasts << message }
 
       create(:comparison, item_a: item_a, item_b: item_b, outcome: "a_wins", user: create(:user))
 
-      expect(broadcasts).to be_empty
+      expect(broadcasts.map { |message| message[:action] }).to eq([ "strengths" ])
     end
   end
 

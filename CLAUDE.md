@@ -1,6 +1,6 @@
 # Project Tracker
 
-Personal project/item tracker. Rails 8.1, PostgreSQL, passkey-only auth (WebAuthn), Hotwire, Bulma with a custom Southwest theme. Single real user; Claude drives it mostly through the JSON API.
+Personal project/item tracker. Rails 8.1, PostgreSQL, passkey-only auth (WebAuthn), Turbo for navigation with Svelte 5 islands for interactive UI, Bulma with a custom Southwest theme. Single real user; Claude drives it mostly through the JSON API.
 
 ## Using the tracker API
 
@@ -10,8 +10,8 @@ Personal project/item tracker. Rails 8.1, PostgreSQL, passkey-only auth (WebAuth
 
 ## Development
 
-- JS bundles with esbuild, CSS with dart-sass, both via yarn into `app/assets/builds/` (gitignored). No importmap, no foreman — `bin/dev` runs the server plus `watch:css`/`watch:js`; John usually runs the server through RubyMine instead, with the watch scripts as npm run configurations.
-- Stimulus controllers register explicitly in `app/javascript/controllers/index.js`.
+- JS bundles with esbuild via `build.mjs` (esbuild-svelte plugin), CSS with dart-sass, both via yarn into `app/assets/builds/` (gitignored). No importmap, no foreman — `bin/dev` runs the server plus `watch:css`/`watch:js`; John usually runs the server through RubyMine instead, with the watch scripts as npm run configurations.
+- Interactive UI is Svelte 5 (runes), no Stimulus. Components live in `app/javascript/components/` and register in `app/javascript/islands.js`; views mount them with `data-svelte-component` + `data-props` (JSON, built by helpers in `app/helpers/application_helper.rb`). Keep component styles in `application.sass.scss` (no `<style>` blocks) so sass stays the only writer of `application.css`. Live board updates arrive over ActionCable (`BoardChannel`) as JSON upsert/remove/strengths messages — not Turbo Stream partial swaps — and the cable connection requires a signed-in session.
 - Tests: `bundle exec rspec`. Request specs authenticate with `register_passkey(username:)` (WebAuthn FakeClient); API specs use `spec/support/api_helpers.rb`.
 - Browser verification: Playwright (devDependency) with a CDP virtual authenticator handles the passkey flow; see the pattern in past session scratchpads if needed.
 - `bin/rails db:seed` (development only) fills an organization with demo projects, items, and comparisons for manual testing. Register a passkey user first; it targets `SEED_USER=<username>` or the oldest user with a credential.

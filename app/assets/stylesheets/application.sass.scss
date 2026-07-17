@@ -179,12 +179,6 @@ rhino-editor {
   flex-wrap: wrap;
   gap: 1rem;
 
-  .comparison-choice {
-    display: flex;
-    flex: 1 1 16rem;
-    max-width: 22rem;
-  }
-
   .comparison-equal {
     align-self: center;
     flex: 0 0 auto;
@@ -192,7 +186,8 @@ rhino-editor {
 
   .comparison-card {
     display: block;
-    width: 100%;
+    flex: 1 1 16rem;
+    max-width: 22rem;
     padding: 1rem 1.25rem;
     border: 1px solid var(--bulma-border-weak);
     border-radius: var(--bulma-radius);

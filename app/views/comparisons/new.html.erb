@@ -10,20 +10,8 @@
 </div>
 
 <% if @pair %>
-  <% item_a, item_b = @pair %>
-  <div class="comparison-pair">
-    <%= render "choice", project: @project, item_a: item_a, item_b: item_b, item: item_a, outcome: "a_wins" %>
-    <%= button_to "Equal priority", project_comparisons_path(@project),
-          params: { item_a_id: item_a.id, item_b_id: item_b.id, outcome: "draw" },
-          class: "button", form_class: "comparison-equal" %>
-    <%= render "choice", project: @project, item_a: item_a, item_b: item_b, item: item_b, outcome: "b_wins" %>
-  </div>
-
-  <div class="buttons is-centered mt-4">
-    <%= link_to "Skip", prioritize_project_path(@project), class: "button is-light" %>
-  </div>
-
-  <p class="has-text-centered has-text-weak"><%= pluralize(@comparison_count, "comparison") %> recorded so far.</p>
+  <div data-svelte-component="Prioritize"
+       data-props="<%= prioritize_props(project: @project, pair: @pair, count: @comparison_count).to_json %>"></div>
 <% else %>
   <div class="notification is-info is-light">
     <p>You need at least two open items in this project to prioritize. Add or reopen some items, then come back.</p>

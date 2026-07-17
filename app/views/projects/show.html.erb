@@ -15,31 +15,6 @@
 </div>
 
 <h2 class="title is-4">Board (live)</h2>
-<div data-controller="board-filter board-sort"
-     data-board-sort-storage-key-value="<%= dom_id(@project, :board_sort) %>"
-     data-action="board:dragStart->board-sort#pause board:dragEnd->board-sort#resume">
-  <div class="field">
-    <div class="control">
-      <input class="input" type="search" placeholder="Filter cards by title…"
-             aria-label="Filter cards by title"
-             data-board-filter-target="input" data-action="input->board-filter#filter">
-    </div>
-  </div>
-  <div class="field">
-    <div class="buttons has-addons" role="group" aria-label="Sort cards">
-      <button type="button" class="button" data-label="Priority"
-              data-board-sort-target="button" data-board-sort-key-param="strength"
-              data-action="board-sort#choose">Priority</button>
-      <button type="button" class="button" data-label="Date"
-              data-board-sort-target="button" data-board-sort-key-param="created"
-              data-action="board-sort#choose">Date</button>
-      <button type="button" class="button" data-label="Points"
-              data-board-sort-target="button" data-board-sort-key-param="points"
-              data-action="board-sort#choose">Points</button>
-    </div>
-  </div>
-  <%= turbo_stream_from @project, "items" %>
-  <%= render "items/board", project: @project %>
-</div>
+<div data-svelte-component="Board" data-props="<%= board_props(@project).to_json %>"></div>
 
 <p class="mt-4"><%= link_to "Back to projects", projects_path %></p>

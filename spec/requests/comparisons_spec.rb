@@ -54,6 +54,17 @@ RSpec.describe "Comparisons", type: :request do
 
         expect(response.body).to include("at least two open items")
       end
+
+      it "serves the current pair and count as JSON for skip refreshes" do
+        create(:item, project: project, title: "First matters")
+        create(:item, project: project, title: "Second matters")
+
+        get prioritize_project_path(project, format: :json)
+
+        payload = response.parsed_body
+        expect(payload["pair"].map { |item| item["title"] }).to match_array([ "First matters", "Second matters" ])
+        expect(payload["count"]).to eq(0)
+      end
     end
 
     describe "POST /projects/:project_id/comparisons" do
@@ -74,6 +85,26 @@ RSpec.describe "Comparisons", type: :request do
 
         expect(Comparison.last.outcome).to eq("draw")
         expect(item_a.reload.strength).to be_within(1e-9).of(item_b.reload.strength)
+      end
+
+      it "returns the next pair and count as JSON so the island continues without a reload" do
+        post project_comparisons_path(project),
+             params: { item_a_id: item_a.id, item_b_id: item_b.id, outcome: "a_wins" },
+             as: :json
+
+        expect(response).to have_http_status(:ok)
+        payload = response.parsed_body
+        expect(payload["count"]).to eq(1)
+        expect(payload["pair"].map { |item| item["title"] }).to match_array([ "Item A", "Item B" ])
+      end
+
+      it "returns validation errors as JSON" do
+        post project_comparisons_path(project),
+             params: { item_a_id: item_a.id, item_b_id: item_a.id, outcome: "a_wins" },
+             as: :json
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(response.parsed_body["errors"]).to be_present
       end
 
       it "404s when an item belongs to a different project" do

@@ -1,4 +1,5 @@
 import "@hotwired/turbo-rails"
-import "./controllers"
+import "./navbar"
+import "./islands"
 import "./passkey"
 import "rhino-editor"

@@ -38,7 +38,7 @@ class ItemsController < ApplicationController
 
   # Drag-and-drop status change from the board. Scopes the target status to the
   # project's organization so a foreign status_id 404s rather than leaking across
-  # tenants; the Item#broadcast_board echo reconciles every subscribed board.
+  # tenants; the BoardChannel upsert echo reconciles every subscribed board.
   def move
     status = @project.organization.statuses.find(params.require(:status_id))
     @item.update!(status: status)

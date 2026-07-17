@@ -30,17 +30,16 @@ RSpec.describe "Projects", type: :request do
       expect(response.body).to include("Docs")
     end
 
-    it "renders the board toolbar with filter and sort controls, and sortable card data" do
+    it "renders the board as a Svelte island with items and statuses in its props" do
       project = organization.projects.create!(name: "Docs")
       create(:item, project: project, title: "Sortable", points: 3)
 
       get project_path(project)
 
-      expect(response.body).to include("Filter cards by title")
-      expect(response.body).to include('data-board-sort-key-param="strength"')
-      expect(response.body).to include('data-board-sort-key-param="created"')
-      expect(response.body).to include('data-board-sort-key-param="points"')
-      expect(response.body).to include('data-points="3"')
+      expect(response.body).to include('data-svelte-component="Board"')
+      expect(response.body).to include("&quot;title&quot;:&quot;Sortable&quot;")
+      expect(response.body).to include("&quot;points&quot;:3")
+      expect(response.body).to include("&quot;statuses&quot;")
     end
 
     it "updates a project" do
