@@ -1,19 +1,27 @@
 <% content_for :title, @item.title %>
-<h1><%= @item.title %></h1>
+<div class="level is-mobile">
+  <div class="level-left"><h1 class="title"><%= @item.title %></h1></div>
+  <div class="level-right">
+    <div class="buttons">
+      <%= link_to "Edit", edit_project_item_path(@project, @item), class: "button" %>
+      <%= button_to "Delete", project_item_path(@project, @item), method: :delete, class: "button is-danger is-outlined",
+            form: { data: { turbo_confirm: "Delete this item?" } } %>
+    </div>
+  </div>
+</div>
 
-<dl>
-  <dt>Project</dt><dd><%= link_to @project.name, project_path(@project) %></dd>
-  <dt>Type</dt><dd><%= @item.item_type %></dd>
-  <dt>Status</dt><dd><%= @item.status.name %></dd>
-  <dt>Points</dt><dd><%= @item.points %></dd>
-  <dt>Source</dt><dd><%= @item.source %></dd>
-  <% if @item.source == "external" %>
-    <dt>Submitted by</dt><dd><%= @item.submitter_name.presence || "Anonymous" %> <%= @item.submitter_email %></dd>
-  <% end %>
-  <dt>Notes</dt><dd><%= simple_format(@item.notes.to_s) %></dd>
-</dl>
-
-<p>
-  <%= link_to "Edit", edit_project_item_path(@project, @item) %>
-  <%= button_to "Delete", project_item_path(@project, @item), method: :delete, form: { data: { turbo_confirm: "Delete this item?" } } %>
-</p>
+<div class="table-container">
+  <table class="table">
+    <tbody>
+      <tr><th>Project</th><td><%= link_to @project.name, project_path(@project) %></td></tr>
+      <tr><th>Type</th><td><%= @item.item_type %></td></tr>
+      <tr><th>Status</th><td><%= @item.status.name %></td></tr>
+      <tr><th>Points</th><td><%= @item.points %></td></tr>
+      <tr><th>Source</th><td><%= @item.source %></td></tr>
+      <% if @item.source == "external" %>
+        <tr><th>Submitted by</th><td><%= @item.submitter_name.presence || "Anonymous" %> <%= @item.submitter_email %></td></tr>
+      <% end %>
+      <tr><th>Notes</th><td><%= simple_format(@item.notes.to_s) %></td></tr>
+    </tbody>
+  </table>
+</div>

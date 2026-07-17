@@ -1,43 +1,53 @@
 <% content_for :title, @project.name %>
-<h1><%= @project.name %></h1>
+<div class="level is-mobile">
+  <div class="level-left"><h1 class="title"><%= @project.name %></h1></div>
+  <div class="level-right">
+    <div class="buttons">
+      <%= link_to "Edit", edit_project_path(@project), class: "button" %>
+      <%= button_to "Delete", @project, method: :delete, class: "button is-danger is-outlined",
+            form: { data: { turbo_confirm: "Delete this project?" } } %>
+    </div>
+  </div>
+</div>
 
-<p>
-  <%= link_to "Edit", edit_project_path(@project) %>
-  <%= button_to "Delete", @project, method: :delete, form: { data: { turbo_confirm: "Delete this project?" } } %>
-</p>
+<h2 class="title is-4">Public links</h2>
+<div class="content">
+  <ul>
+    <li>Board: <%= link_to public_project_url(@project.public_token), public_project_path(@project.public_token) %></li>
+    <li>Submissions: <%= link_to new_public_submission_url(@project.public_token), new_public_submission_path(@project.public_token) %></li>
+  </ul>
+</div>
 
-<h2>Public links</h2>
-<ul>
-  <li>Board: <%= link_to public_project_url(@project.public_token), public_project_path(@project.public_token) %></li>
-  <li>Submissions: <%= link_to new_public_submission_url(@project.public_token), new_public_submission_path(@project.public_token) %></li>
-</ul>
-
-<h2>Board (live)</h2>
+<h2 class="title is-4">Board (live)</h2>
 <%= turbo_stream_from @project, "items" %>
 <%= render "items/board", project: @project %>
 
-<h2>Manage items</h2>
-<p><%= link_to "New item", new_project_item_path(@project) %></p>
+<div class="level is-mobile mt-5">
+  <div class="level-left"><h2 class="title is-4">Manage items</h2></div>
+  <div class="level-right"><%= link_to "New item", new_project_item_path(@project), class: "button is-primary" %></div>
+</div>
 
 <% if @items.any? %>
-  <table>
-    <thead>
-      <tr><th>Title</th><th>Type</th><th>Status</th><th>Points</th><th>Source</th></tr>
-    </thead>
-    <tbody>
-      <% @items.each do |item| %>
-        <tr>
-          <td><%= link_to item.title, project_item_path(@project, item) %></td>
-          <td><%= item.item_type %></td>
-          <td><%= item.status.name %></td>
-          <td><%= item.points %></td>
-          <td><%= item.source %></td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
+  <div class="table-container">
+    <table class="table is-fullwidth is-striped is-hoverable">
+      <thead>
+        <tr><th>Title</th><th>Type</th><th>Status</th><th>Points</th><th>Source</th></tr>
+      </thead>
+      <tbody>
+        <% @items.each do |item| %>
+          <tr>
+            <td><%= link_to item.title, project_item_path(@project, item) %></td>
+            <td><%= item.item_type %></td>
+            <td><%= item.status.name %></td>
+            <td><%= item.points %></td>
+            <td><%= item.source %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
 <% else %>
-  <p>No items yet.</p>
+  <p class="has-text-weak">No items yet.</p>
 <% end %>
 
-<p><%= link_to "Back to projects", projects_path %></p>
+<p class="mt-4"><%= link_to "Back to projects", projects_path %></p>

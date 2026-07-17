@@ -1,0 +1,58 @@
+// Southwest theme: warm terracotta/sand palette over Bulma 1.x.
+// Bulma derives full palettes, hover states, and contrast-checked text colors
+// from these seed values at build time.
+@use "bulma/sass" with (
+  $scheme-h: 32,
+  $scheme-s: 28%,
+  $primary: hsl(14, 58%, 40%),
+  $link: hsl(16, 65%, 34%),
+  $info: hsl(178, 55%, 27%),
+  $success: hsl(95, 25%, 31%),
+  $warning: hsl(42, 92%, 50%),
+  $danger: hsl(2, 62%, 38%)
+);
+
+// Bulma's light theme hardcodes a white page background; warm it to sand.
+// These must stay scoped to light contexts: an unscoped :root block sits after
+// Bulma's dark media query in the cascade and would force light backgrounds
+// under dark-theme text.
+@mixin southwest-light {
+  --bulma-scheme-main-l: 96%;
+  --bulma-scheme-main-bis-l: 93%;
+  --bulma-scheme-main-ter-l: 90%;
+  --bulma-background-l: 92%;
+  --bulma-border-l: 78%;
+  --bulma-border-weak-l: 85%;
+  // Bulma tuned 48% against a white page; on sand it falls below 4.5:1.
+  --bulma-text-weak-l: 40%;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]):not(.theme-dark) {
+    @include southwest-light;
+  }
+}
+
+[data-theme="light"],
+.theme-light {
+  @include southwest-light;
+}
+
+// Terracotta at 40% lightness sits below the 3:1 non-text contrast minimum
+// against the dark scheme background, so lift it in dark mode.
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bulma-primary-l: 47%;
+  }
+}
+
+[data-theme="dark"],
+.theme-dark {
+  --bulma-primary-l: 47%;
+}
+
+// Bulma has no scheme-aware muted-text helper; its grey helpers are fixed cool
+// greys that clash with the warm scheme.
+.has-text-weak {
+  color: var(--bulma-text-weak);
+}

@@ -1,36 +1,54 @@
 <%= form_with model: [ @project, item ] do |form| %>
   <% if item.errors.any? %>
-    <ul class="errors">
-      <% item.errors.full_messages.each do |message| %>
-        <li><%= message %></li>
-      <% end %>
-    </ul>
+    <div class="notification is-danger is-light">
+      <ul>
+        <% item.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
   <% end %>
 
-  <div>
-    <%= form.label :title %>
-    <%= form.text_field :title %>
+  <div class="field">
+    <%= form.label :title, class: "label" %>
+    <div class="control">
+      <%= form.text_field :title, class: "input" %>
+    </div>
   </div>
 
-  <div>
-    <%= form.label :notes %>
-    <%= form.text_area :notes %>
+  <div class="field">
+    <%= form.label :notes, class: "label" %>
+    <div class="control">
+      <%= form.text_area :notes, class: "textarea" %>
+    </div>
   </div>
 
-  <div>
-    <%= form.label :item_type, "Type" %>
-    <%= form.select :item_type, Item::ITEM_TYPES.map { |type| [ type.humanize, type ] } %>
+  <div class="field">
+    <%= form.label :item_type, "Type", class: "label" %>
+    <div class="control">
+      <div class="select">
+        <%= form.select :item_type, Item::ITEM_TYPES.map { |type| [ type.humanize, type ] } %>
+      </div>
+    </div>
   </div>
 
-  <div>
-    <%= form.label :status_id, "Status" %>
-    <%= form.collection_select :status_id, @project.organization.statuses.ordered, :id, :name %>
+  <div class="field">
+    <%= form.label :status_id, "Status", class: "label" %>
+    <div class="control">
+      <div class="select">
+        <%= form.collection_select :status_id, @project.organization.statuses.ordered, :id, :name %>
+      </div>
+    </div>
   </div>
 
-  <div>
-    <%= form.label :points %>
-    <%= form.number_field :points %>
+  <div class="field">
+    <%= form.label :points, class: "label" %>
+    <div class="control">
+      <%= form.number_field :points, class: "input" %>
+    </div>
   </div>
 
-  <%= form.submit %>
+  <div class="field">
+    <%= form.submit class: "button is-primary" %>
+  </div>
 <% end %>

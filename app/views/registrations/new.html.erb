@@ -1,17 +1,27 @@
 <% content_for :title, "Register" %>
-<h1>Create your account</h1>
-<p>Registration uses a passkey stored on your device. There is no password.</p>
+<div class="columns is-centered">
+  <div class="column is-half-tablet is-one-third-widescreen">
+    <h1 class="title">Create your account</h1>
+    <p class="subtitle is-6">Registration uses a passkey stored on your device. There is no password.</p>
 
-<%= form_with url: signup_path, method: :post,
-      data: { passkey: "register", options_url: signup_options_path, callback_url: signup_path, turbo: false } do |form| %>
-  <div>
-    <%= form.label :username %>
-    <%= form.text_field :username, autocomplete: "username webauthn", required: true %>
+    <div class="box">
+      <%= form_with url: signup_path, method: :post,
+            data: { passkey: "register", options_url: signup_options_path, callback_url: signup_path, turbo: false } do |form| %>
+        <div class="field">
+          <%= form.label :username, class: "label" %>
+          <div class="control">
+            <%= form.text_field :username, class: "input", autocomplete: "username webauthn", required: true %>
+          </div>
+        </div>
+
+        <p data-passkey-error class="help is-danger"></p>
+
+        <div class="field">
+          <%= form.submit "Register with a passkey", class: "button is-primary is-fullwidth" %>
+        </div>
+      <% end %>
+    </div>
+
+    <p><%= link_to "Already have an account? Sign in", login_path %></p>
   </div>
-
-  <p data-passkey-error class="passkey-error"></p>
-
-  <%= form.submit "Register with a passkey" %>
-<% end %>
-
-<p><%= link_to "Already have an account? Sign in", login_path %></p>
+</div>

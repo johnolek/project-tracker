@@ -24,26 +24,49 @@
   </head>
 
   <body>
-    <header class="site-header">
-      <%= link_to "Project Tracker", root_path, class: "site-title" %>
-      <nav>
-        <% if signed_in? %>
-          <span><%= current_user.username %></span>
-          <%= link_to "Projects", projects_path %>
-          <%= button_to "Sign out", logout_path, method: :delete, form: { data: { turbo: false } } %>
-        <% else %>
-          <%= link_to "Sign in", login_path %>
-          <%= link_to "Register", signup_path %>
+    <nav class="navbar" role="navigation" aria-label="main navigation" data-controller="navbar">
+      <div class="container">
+        <div class="navbar-brand">
+          <%= link_to "Project Tracker", root_path, class: "navbar-item has-text-weight-bold" %>
+          <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false"
+             data-navbar-target="burger" data-action="navbar#toggle">
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+          </a>
+        </div>
+
+        <div class="navbar-menu" data-navbar-target="menu">
+          <div class="navbar-end">
+            <% if signed_in? %>
+              <span class="navbar-item"><%= current_user.username %></span>
+              <%= link_to "Projects", projects_path, class: "navbar-item" %>
+              <div class="navbar-item">
+                <%= button_to "Sign out", logout_path, method: :delete, class: "button is-small",
+                      form: { data: { turbo: false } } %>
+              </div>
+            <% else %>
+              <%= link_to "Sign in", login_path, class: "navbar-item" %>
+              <div class="navbar-item">
+                <%= link_to "Register", signup_path, class: "button is-primary is-small" %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <main class="section">
+      <div class="container">
+        <% flash.each do |type, message| %>
+          <div class="notification <%= { "notice" => "is-success", "alert" => "is-danger" }.fetch(type, "is-info") %>">
+            <%= message %>
+          </div>
         <% end %>
-      </nav>
-    </header>
 
-    <% flash.each do |type, message| %>
-      <p class="flash flash-<%= type %>"><%= message %></p>
-    <% end %>
-
-    <main>
-      <%= yield %>
+        <%= yield %>
+      </div>
     </main>
   </body>
 </html>

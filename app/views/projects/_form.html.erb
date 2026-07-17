@@ -1,16 +1,22 @@
 <%= form_with model: project do |form| %>
   <% if project.errors.any? %>
-    <ul class="errors">
-      <% project.errors.full_messages.each do |message| %>
-        <li><%= message %></li>
-      <% end %>
-    </ul>
+    <div class="notification is-danger is-light">
+      <ul>
+        <% project.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
   <% end %>
 
-  <div>
-    <%= form.label :name %>
-    <%= form.text_field :name %>
+  <div class="field">
+    <%= form.label :name, class: "label" %>
+    <div class="control">
+      <%= form.text_field :name, class: "input" %>
+    </div>
   </div>
 
-  <%= form.submit %>
+  <div class="field">
+    <%= form.submit class: "button is-primary" %>
+  </div>
 <% end %>
