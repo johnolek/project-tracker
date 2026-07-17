@@ -10,7 +10,7 @@ module Api
           title: item.title,
           item_type: item.item_type,
           points: item.points,
-          rating: item.rating,
+          strength: item.strength,
           status: StatusSerializer.render(item.status),
           project: {
             id: item.project.id,

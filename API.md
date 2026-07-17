@@ -44,7 +44,7 @@ envelope keyed by the collection name; only item indexes are paginated.
   "title": "Fix login crash",
   "item_type": "bug",
   "points": 3,
-  "rating": 1500.0,
+  "strength": 0.0,
   "status": { "id": 1, "name": "New", "category": "open", "position": 1 },
   "project": { "id": 7, "name": "Tracker" },
   "tags": ["backend", "urgent"],
@@ -58,7 +58,7 @@ envelope keyed by the collection name; only item indexes are paginated.
 - `tags` — names sorted alphabetically.
 - `notes_html` — the rendered rich-text HTML (wrapped in a `trix-content` div); `""` when notes are blank.
 - `notes_text` — plain-text rendering of the notes; `""` when blank.
-- `rating` / `points` — Glicko rating (float) and estimation points (integer or null).
+- `strength` / `points` — Bradley-Terry priority log-strength (float, organization-relative, mean-centered at 0; higher means higher priority) and estimation points (integer or null).
 
 **Project** `{ id, name, created_at, updated_at }`
 **Status** `{ id, name, category, position }` — `category` is one of `open`, `in_progress`, `done`
@@ -117,7 +117,7 @@ All filters combine (AND) and are available on both routes:
 | `points` | Exact points value |
 | `points_lt` / `points_lte` / `points_gt` / `points_gte` | Points comparisons (items with null points never match) |
 | `q` | Case-insensitive substring match on title |
-| `sort` | `created_at` (default), `points`, `rating`, `title` |
+| `sort` | `created_at` (default), `points`, `strength`, `title` |
 | `direction` | `asc` or `desc`. Defaults: `desc` for `created_at`, `asc` for the others. Ties break by `id` in the same direction. |
 | `page` | Page number, default 1 |
 | `per_page` | Default 25, max 100 |

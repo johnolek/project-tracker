@@ -19,7 +19,8 @@ USAGE = <<~TEXT
     create-project --name NAME        Create a project
     items [--status NAME] [--type T] [--tags a,b] [--tags-match all]
           [--points N | --points-lt/-lte/-gt/-gte N] [--q TEXT]
-          [--project-id ID] [--sort F] [--direction asc|desc]
+          [--project-id ID] [--sort created_at|points|strength|title]
+          [--direction asc|desc]
           [--page N] [--per-page N]   List/filter items across the org
     item ID                           Show one item
     create-item PROJECT_ID --title T [--notes HTML] [--type T]

@@ -107,11 +107,11 @@ RSpec.describe "API v1 items", type: :request do
       expect(item_ids).to eq([ dark_mode.id, crash.id, polish.id, docs.id ])
     end
 
-    it "sorts by rating descending" do
-      crash.update_column(:rating, 1700.0)
-      dark_mode.update_column(:rating, 1300.0)
+    it "sorts by strength descending" do
+      crash.update_column(:strength, 2.5)
+      dark_mode.update_column(:strength, -1.5)
 
-      get api_v1_items_path, params: { sort: "rating", direction: "desc" }, headers: auth_headers
+      get api_v1_items_path, params: { sort: "strength", direction: "desc" }, headers: auth_headers
 
       expect(item_ids.first).to eq(crash.id)
       expect(item_ids.last).to eq(dark_mode.id)
@@ -176,14 +176,14 @@ RSpec.describe "API v1 items", type: :request do
 
       expect(response).to have_http_status(:ok)
       expect(json_body.keys).to match_array(
-        %w[id title item_type points rating status project tags notes_html notes_text created_at updated_at]
+        %w[id title item_type points strength status project tags notes_html notes_text created_at updated_at]
       )
       expect(json_body).to include(
         "id" => item.id,
         "title" => "Shaped",
         "item_type" => "task",
         "points" => 2,
-        "rating" => 1500.0,
+        "strength" => 0.0,
         "tags" => %w[alpha beta],
         "notes_text" => "Hello world"
       )

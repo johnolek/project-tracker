@@ -1,7 +1,7 @@
 module Api
   module V1
     class ItemsController < BaseController
-      SORT_COLUMNS = %w[created_at points rating title].freeze
+      SORT_COLUMNS = %w[created_at points strength title].freeze
       DEFAULT_PER_PAGE = 25
       MAX_PER_PAGE = 100
 

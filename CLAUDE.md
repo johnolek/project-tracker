@@ -23,5 +23,5 @@ Personal project/item tracker. Rails 8.1, PostgreSQL, passkey-only auth (WebAuth
 
 ## Direction
 
-- Item ranking (future) uses Bradley-Terry fitted from the `comparisons` table — not Elo/Glicko. The Glicko columns on items are vestigial until then.
+- Item ranking uses Bradley-Terry fitted from the `comparisons` table (not Elo/Glicko). The fit lives in `app/models/bradley_terry.rb`; `Item.recompute_strengths` persists org-relative log-strengths into `items.strength` on every comparison create/destroy. Compare pairs at `/prioritize`, view the ranking at `/priorities`.
 - Public board/anonymous submissions were removed deliberately; don't reintroduce.
