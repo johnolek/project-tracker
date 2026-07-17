@@ -1,0 +1,43 @@
+<% content_for :title, "Prioritize" %>
+<div class="level is-mobile">
+  <div class="level-left"><h1 class="title">Which matters more?</h1></div>
+  <div class="level-right"><%= link_to "View priorities", priorities_path, class: "button" %></div>
+</div>
+
+<% if @pair %>
+  <% item_a, item_b = @pair %>
+  <div class="columns">
+    <% { item_a => "a_wins", item_b => "b_wins" }.each do |item, outcome| %>
+      <div class="column">
+        <div class="box">
+          <p class="title is-5"><%= item.title %></p>
+          <p class="subtitle is-6 has-text-weak"><%= item.project.name %></p>
+          <div class="tags">
+            <span class="tag"><%= item.item_type %></span>
+            <% if item.points %><span class="tag">Points: <%= item.points %></span><% end %>
+          </div>
+          <% notes = item.notes.to_plain_text %>
+          <% if notes.present? %>
+            <p class="has-text-weak"><%= truncate(notes, length: 160) %></p>
+          <% end %>
+          <%= button_to "This one matters more", comparisons_path,
+                params: { item_a_id: item_a.id, item_b_id: item_b.id, outcome: outcome },
+                class: "button is-primary is-fullwidth mt-4" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="buttons is-centered">
+    <%= button_to "Equal priority", comparisons_path,
+          params: { item_a_id: item_a.id, item_b_id: item_b.id, outcome: "draw" },
+          class: "button" %>
+    <%= link_to "Skip", prioritize_path, class: "button is-light" %>
+  </div>
+
+  <p class="has-text-centered has-text-weak"><%= pluralize(@comparison_count, "comparison") %> recorded so far.</p>
+<% else %>
+  <div class="notification is-info is-light">
+    <p>You need at least two open items to prioritize. Add or reopen some items, then come back.</p>
+  </div>
+<% end %>

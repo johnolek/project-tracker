@@ -18,6 +18,10 @@ Rails.application.routes.draw do
     end
   end
 
+  get "priorities", to: "priorities#index"
+  get "prioritize", to: "comparisons#new"
+  resources :comparisons, only: :create
+
   namespace :settings do
     resources :api_keys, only: %i[index create destroy]
   end
