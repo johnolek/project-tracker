@@ -26,4 +26,16 @@ module ApplicationHelper
       count: count
     }
   end
+
+  # Server flash mapped to props for the Toasts island. The api_key_token key is
+  # skipped: the API keys settings view renders that token inline itself, and it
+  # must never surface as a toast.
+  #
+  # @param flash [ActionDispatch::Flash::FlashHash]
+  # @return [Hash]
+  def toast_props(flash)
+    toasts = flash.reject { |type, _message| type == "api_key_token" }
+                  .map { |type, message| { type: type, message: message } }
+    { toasts: toasts }
+  end
 end

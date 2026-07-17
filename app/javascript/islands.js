@@ -5,8 +5,9 @@
 import { mount, unmount } from "svelte"
 import Board from "./components/Board.svelte"
 import Prioritize from "./components/Prioritize.svelte"
+import Toasts from "./components/Toasts.svelte"
 
-const registry = { Board, Prioritize }
+const registry = { Board, Prioritize, Toasts }
 const active = new Map()
 
 function mountIslands() {

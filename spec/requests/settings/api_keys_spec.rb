@@ -34,6 +34,22 @@ RSpec.describe "Settings::ApiKeys", type: :request do
       expect(response.body).not_to match(/pt_[a-zA-Z0-9]{32}/)
     end
 
+    it "keeps the api_key_token flash out of the Toasts island props" do
+      post settings_api_keys_path, params: { api_key: { name: "CI" } }
+      follow_redirect!
+
+      toast_props = response.body[/data-svelte-component="Toasts" data-props="([^"]*)"/, 1]
+
+      expect(toast_props).to be_present
+      # The "API key created." notice still surfaces as a toast...
+      expect(toast_props).to include("&quot;message&quot;:&quot;API key created.&quot;")
+      # ...but the secret token (shown inline by the view) never leaks into props.
+      expect(toast_props).not_to include("api_key_token")
+      expect(toast_props).not_to match(/pt_[a-zA-Z0-9]{32}/)
+      # It is still rendered inline elsewhere on the page.
+      expect(response.body).to match(/pt_[a-zA-Z0-9]{32}/)
+    end
+
     it "revokes a key" do
       api_key = create(:api_key, user: user)
 

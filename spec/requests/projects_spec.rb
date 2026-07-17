@@ -22,6 +22,15 @@ RSpec.describe "Projects", type: :request do
       expect(response).to redirect_to(Project.last)
     end
 
+    it "renders the create flash as a Toasts island (props JSON is HTML-escaped)" do
+      post projects_path, params: { project: { name: "Flashy" } }
+      follow_redirect!
+
+      expect(response.body).to include('data-svelte-component="Toasts"')
+      expect(response.body).to include("&quot;type&quot;:&quot;notice&quot;")
+      expect(response.body).to include("&quot;message&quot;:&quot;Project created.&quot;")
+    end
+
     it "shows a project" do
       project = organization.projects.create!(name: "Docs")
 

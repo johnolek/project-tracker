@@ -72,15 +72,12 @@
 
     <main class="section">
       <div class="container">
-        <% flash.each do |type, message| %>
-          <% next if type == "api_key_token" %>
-          <div class="notification <%= { "notice" => "is-success", "alert" => "is-danger" }.fetch(type, "is-info") %>">
-            <%= message %>
-          </div>
-        <% end %>
-
         <%= yield %>
       </div>
     </main>
+
+    <%# Flash surfaces as dismissible toasts in a fixed overlay (never pushes page
+        content down). Always mounted so client-raised "toast" events land too. %>
+    <div data-svelte-component="Toasts" data-props="<%= toast_props(flash).to_json %>"></div>
   </body>
 </html>
