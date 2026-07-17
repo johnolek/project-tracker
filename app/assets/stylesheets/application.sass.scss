@@ -136,27 +136,93 @@ rhino-editor {
     margin-bottom: 0.5rem;
   }
 
+  // Jira/Linear-style card: type label above a focal title, then a meta row
+  // with tags on the left and the estimate/strength badges pinned right. Flat
+  // adobe surface with a hairline border and a whisper shadow that lifts on
+  // hover (matching the .box treatment further down).
   .board-card-link {
-    display: block;
-    padding: 0.5rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    padding: 0.6rem 0.75rem;
     border: 1px solid var(--bulma-border-weak);
     border-radius: var(--bulma-radius);
     background: var(--bulma-scheme-main-bis);
     color: var(--bulma-text);
     cursor: pointer;
+    box-shadow: 0 1px 2px hsla(var(--bulma-scheme-h), var(--bulma-scheme-s), 10%, 0.08);
+    transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
 
     &:hover {
       border-color: var(--bulma-primary);
       background: var(--bulma-scheme-main-ter);
+      box-shadow: 0 3px 8px hsla(var(--bulma-scheme-h), var(--bulma-scheme-s), 10%, 0.14);
+      transform: translateY(-1px);
     }
+  }
+
+  // Type label above the title. Neutral today; per-type hooks
+  // (.item-type-bug / -task / -enhancement / -idea) are reserved for a later
+  // coloring pass — override background/color there.
+  .item-type-tag {
+    align-self: flex-start;
+    margin-bottom: 0.3rem;
+    padding: 0.05rem 0.4rem;
+    border-radius: var(--bulma-radius-small);
+    background: var(--bulma-background);
+    color: var(--bulma-text);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    line-height: 1.5;
   }
 
   .board-card-title {
     font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .board-card-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    margin-top: 0.5rem;
+  }
+
+  .board-card-tags {
+    margin-bottom: 0;
+
+    .tag {
+      margin-bottom: 0;
+    }
+  }
+
+  // Strength (quieter) and points sit together, pushed to the card's corner.
+  .board-card-badges {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-left: auto;
   }
 
   .board-card-strength {
-    float: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  // Distinct rounded estimate badge, glanceable in the corner like Jira points.
+  .board-card-points {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    height: 1.4rem;
+    padding: 0 0.45rem;
+    border-radius: 0.7rem;
+    background: var(--bulma-primary);
+    color: var(--bulma-primary-invert);
+    font-size: 0.72rem;
+    font-weight: 700;
     font-variant-numeric: tabular-nums;
   }
 

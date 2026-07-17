@@ -190,16 +190,23 @@
               out:fade={{ duration: 100 }}
             >
               <a class="board-card-link" href={item.url}>
+                <span class="item-type-tag item-type-{item.item_type}">{item.item_type}</span>
                 <span class="board-card-title">{item.title}</span>
-                <span class="board-card-strength tag is-small" title="Priority strength">{formatStrength(item.strength)}</span>
-                <small class="has-text-weak">({item.item_type}{item.points ? `, ${item.points} pts` : ""})</small>
-                {#if item.tags.length}
-                  <span class="tags mt-1">
-                    {#each item.tags as tag (tag)}
-                      <span class="tag is-small">{tag}</span>
-                    {/each}
+                <div class="board-card-meta">
+                  {#if item.tags.length}
+                    <span class="tags board-card-tags">
+                      {#each item.tags as tag (tag)}
+                        <span class="tag is-small">{tag}</span>
+                      {/each}
+                    </span>
+                  {/if}
+                  <span class="board-card-badges">
+                    <span class="board-card-strength tag is-small" title="Priority strength">{formatStrength(item.strength)}</span>
+                    {#if item.points}
+                      <span class="board-card-points" title="{item.points} points">{item.points}</span>
+                    {/if}
                   </span>
-                {/if}
+                </div>
               </a>
             </li>
           {/each}
