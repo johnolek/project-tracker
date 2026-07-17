@@ -30,6 +30,19 @@ RSpec.describe "Projects", type: :request do
       expect(response.body).to include("Docs")
     end
 
+    it "renders the board toolbar with filter and sort controls, and sortable card data" do
+      project = organization.projects.create!(name: "Docs")
+      create(:item, project: project, title: "Sortable", points: 3)
+
+      get project_path(project)
+
+      expect(response.body).to include("Filter cards by title")
+      expect(response.body).to include('data-board-sort-key-param="strength"')
+      expect(response.body).to include('data-board-sort-key-param="created"')
+      expect(response.body).to include('data-board-sort-key-param="points"')
+      expect(response.body).to include('data-points="3"')
+    end
+
     it "updates a project" do
       project = organization.projects.create!(name: "Old")
 

@@ -21,7 +21,10 @@ export default class extends Controller {
         group: "board",
         animation: 150,
         draggable: ".board-card",
-        onStart: () => { this.dragging = true },
+        onStart: () => {
+          this.dragging = true
+          this.dispatch("dragStart")
+        },
         onEnd: (event) => this.onEnd(event)
       })
     )
@@ -34,6 +37,7 @@ export default class extends Controller {
 
   onEnd(event) {
     this.dragging = false
+    this.dispatch("dragEnd")
 
     if (event.to.dataset.statusId === event.from.dataset.statusId) {
       this.flushDeferredRender()

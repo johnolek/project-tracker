@@ -20,12 +20,27 @@
     </div>
   </div>
 </div>
-<div data-controller="board-filter">
-  <div class="field">
-    <div class="control">
+<div data-controller="board-filter board-sort"
+     data-board-sort-storage-key-value="<%= dom_id(@project, :board_sort) %>"
+     data-action="board:dragStart->board-sort#pause board:dragEnd->board-sort#resume">
+  <div class="field is-grouped is-grouped-multiline">
+    <div class="control is-expanded">
       <input class="input" type="search" placeholder="Filter cards by title…"
              aria-label="Filter cards by title"
              data-board-filter-target="input" data-action="input->board-filter#filter">
+    </div>
+    <div class="control">
+      <div class="buttons has-addons mb-0" role="group" aria-label="Sort cards">
+        <button type="button" class="button" data-label="Priority"
+                data-board-sort-target="button" data-board-sort-key-param="strength"
+                data-action="board-sort#choose">Priority</button>
+        <button type="button" class="button" data-label="Date"
+                data-board-sort-target="button" data-board-sort-key-param="created"
+                data-action="board-sort#choose">Date</button>
+        <button type="button" class="button" data-label="Points"
+                data-board-sort-target="button" data-board-sort-key-param="points"
+                data-action="board-sort#choose">Points</button>
+      </div>
     </div>
   </div>
   <%= turbo_stream_from @project, "items" %>

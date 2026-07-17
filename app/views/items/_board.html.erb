@@ -8,7 +8,8 @@
         <% items = project.items.where(status_id: status.id).order(created_at: :desc) %>
         <ul class="status-cards" data-board-target="list" data-status-id="<%= status.id %>">
           <% items.each do |item| %>
-            <li id="<%= dom_id(item) %>" class="board-card" data-move-url="<%= move_project_item_path(project, item) %>">
+            <li id="<%= dom_id(item) %>" class="board-card" data-move-url="<%= move_project_item_path(project, item) %>"
+                data-strength="<%= item.strength %>" data-created="<%= item.created_at.to_i %>" data-points="<%= item.points %>">
               <%= link_to project_item_path(project, item), class: "board-card-link" do %>
                 <span class="board-card-title"><%= item.title %></span>
                 <span class="board-card-strength tag is-small" title="Priority strength"><%= format("%+.1f", item.strength) %></span>

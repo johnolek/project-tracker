@@ -10,3 +10,6 @@ application.register("board", BoardController)
 
 import BoardFilterController from "./board_filter_controller"
 application.register("board-filter", BoardFilterController)
+
+import BoardSortController from "./board_sort_controller"
+application.register("board-sort", BoardSortController)
