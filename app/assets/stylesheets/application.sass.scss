@@ -524,6 +524,34 @@ $tag-colors: (
     }
   }
 
+  // Rendered rich-text notes: clamped with a fade-out mask until expanded.
+  // The mask clips the text itself, so it holds on any background and theme.
+  .comparison-notes {
+    font-size: 0.9rem;
+
+    &.is-clamped {
+      max-height: 9rem;
+      overflow: hidden;
+      mask-image: linear-gradient(to bottom, black 70%, transparent);
+    }
+  }
+
+  .comparison-notes-toggle {
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--bulma-text-weak);
+    font-size: 0.8rem;
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--bulma-text);
+    }
+  }
+
   .comparison-pin {
     position: absolute;
     top: 0.5rem;

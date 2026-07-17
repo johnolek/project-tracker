@@ -74,6 +74,19 @@ RSpec.describe "Item moves", type: :request do
       expect(sidebar_props["statuses"].map { |status| status["name"] }).to include(item.status.name)
       expect(sidebar_props["allTags"]).to include("urgent")
     end
+
+    it "links straight into prioritize mode with the item pinned, unless the item is done" do
+      item = create(:item, project: project)
+
+      get project_item_path(project, item)
+      expect(response.body).to include(prioritize_project_path(project, pinned_item_id: item.id))
+
+      done = organization.statuses.find_by!(category: "done")
+      item.update!(status: done)
+
+      get project_item_path(project, item)
+      expect(response.body).not_to include("Prioritize this")
+    end
   end
 
   describe "PATCH update from the inline-editing islands" do

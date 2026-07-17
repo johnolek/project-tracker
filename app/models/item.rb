@@ -87,6 +87,8 @@ class Item < ApplicationRecord
   end
 
   # JSON shape the Prioritize Svelte island renders for a candidate card.
+  # Notes ship as rendered rich-text HTML; the island clamps and expands them
+  # client-side rather than the server truncating markup.
   #
   # @return [Hash]
   def comparison_payload
@@ -95,7 +97,7 @@ class Item < ApplicationRecord
       title: title,
       item_type: item_type,
       points: points,
-      notes: notes.to_plain_text.truncate(160)
+      notes_html: notes.present? ? notes.to_s : ""
     }
   end
 

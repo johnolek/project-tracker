@@ -3,13 +3,13 @@ class ComparisonsController < ApplicationController
   before_action :set_project
 
   def new
-    pinned = pinned_item
-    @pair = next_pair(pinned: pinned)
+    @pinned = pinned_item
+    @pair = next_pair(pinned: @pinned)
     @comparison_count = Comparison.for_project(@project).count
 
     respond_to do |format|
       format.html
-      format.json { render json: pair_payload(pair: @pair, count: @comparison_count, pinned: pinned) }
+      format.json { render json: pair_payload(pair: @pair, count: @comparison_count, pinned: @pinned) }
     end
   end
 

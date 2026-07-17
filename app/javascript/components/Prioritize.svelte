@@ -1,7 +1,7 @@
 <script>
   import { fade } from "svelte/transition"
 
-  let { createUrl, refreshUrl, pair: initialPair, count: initialCount } = $props()
+  let { createUrl, refreshUrl, pair: initialPair, count: initialCount, pinned: initialPinned, pinnedCount: initialPinnedCount } = $props()
 
   // svelte-ignore state_referenced_locally -- islands remount per visit; props seed state once
   let pair = $state(initialPair)
@@ -12,8 +12,37 @@
 
   // The anchored item (full object so its title shows even when no opponent is
   // left) and its running comparison total, both synced from server responses.
-  let pinnedItem = $state(null)
-  let pinnedCount = $state(0)
+  // Seeded from props so ?pinned_item_id=… deep links (the item page's
+  // "Prioritize this" button) start pinned.
+  // svelte-ignore state_referenced_locally -- islands remount per visit; props seed state once
+  let pinnedItem = $state(initialPinned ?? null)
+  // svelte-ignore state_referenced_locally -- same
+  let pinnedCount = $state(initialPinnedCount ?? 0)
+
+  // Per-item notes state, reset with every new pair: whether the clamped notes
+  // actually overflow (drives the toggle) and whether they are expanded.
+  let expanded = $state({})
+  let overflowing = $state({})
+
+  // The whole card records an outcome, but reading must stay safe: clicks on
+  // links or the expand toggle, and click-throughs from selecting text, are
+  // not votes.
+  function chooseCard(event, outcome) {
+    if (busy) return
+    if (event.target.closest("a, .comparison-notes-toggle")) return
+    if (window.getSelection()?.toString()) return
+    record(outcome)
+  }
+
+  function trackOverflow(node, id) {
+    const measure = () => {
+      if (!expanded[id]) overflowing[id] = node.scrollHeight > node.clientHeight + 1
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(node)
+    return { destroy: () => observer.disconnect() }
+  }
 
   function pinnedRefreshUrl() {
     const id = pinnedItem?.id
@@ -27,6 +56,8 @@
   function applyPair(data) {
     pair = data.pair
     count = data.count
+    expanded = {}
+    overflowing = {}
 
     if (data.pinned_id == null) {
       pinnedItem = null
@@ -89,16 +120,46 @@
 {#snippet choice(item, outcome)}
   {@const isPinned = pinnedItem?.id === item.id}
   <div class="comparison-card-wrap">
-    <button type="button" class="comparison-card" disabled={busy} onclick={() => record(outcome)}>
+    <div
+      class="comparison-card"
+      role="button"
+      tabindex="0"
+      aria-disabled={busy}
+      onclick={(event) => chooseCard(event, outcome)}
+      onkeydown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault()
+          record(outcome)
+        }
+      }}
+    >
       <span class="title is-5 is-block mb-2">{item.title}</span>
       <span class="tags mb-2">
         <span class="tag">{item.item_type}</span>
         {#if item.points}<span class="tag">Points: {item.points}</span>{/if}
       </span>
-      {#if item.notes}
-        <span class="is-block has-text-weak">{item.notes}</span>
+      {#if item.notes_html}
+        <div
+          class="content comparison-notes"
+          class:is-clamped={!expanded[item.id]}
+          use:trackOverflow={item.id}
+        >
+          {@html item.notes_html}
+        </div>
+        {#if overflowing[item.id] || expanded[item.id]}
+          <button
+            type="button"
+            class="comparison-notes-toggle"
+            onclick={(event) => {
+              event.stopPropagation()
+              expanded[item.id] = !expanded[item.id]
+            }}
+          >
+            {expanded[item.id] ? "Show less" : "Show more"}
+          </button>
+        {/if}
       {/if}
-    </button>
+    </div>
     <button
       type="button"
       class="comparison-pin"

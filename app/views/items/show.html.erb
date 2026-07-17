@@ -12,6 +12,10 @@
   </div>
   <div class="level-right">
     <div class="buttons">
+      <% if @item.status.category != "done" %>
+        <%= link_to "Prioritize this", prioritize_project_path(@project, pinned_item_id: @item.id),
+              class: "button is-small", title: "Compare this item against the rest of the project" %>
+      <% end %>
       <%= link_to "Edit form", edit_project_item_path(@project, @item), class: "button is-small" %>
       <%= button_to "Delete", project_item_path(@project, @item), method: :delete,
             class: "button is-small is-danger is-outlined",

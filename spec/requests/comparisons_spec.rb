@@ -65,6 +65,31 @@ RSpec.describe "Comparisons", type: :request do
         expect(payload["pair"].map { |item| item["title"] }).to match_array([ "First matters", "Second matters" ])
         expect(payload["count"]).to eq(0)
       end
+
+      it "ships each candidate's notes as rendered rich-text HTML" do
+        create(:item, project: project, title: "Rich A", notes: "<p>Water <strong>deeply</strong> before noon</p>")
+        create(:item, project: project, title: "Rich B", notes: "<p>Plain enough</p>")
+
+        get prioritize_project_path(project, format: :json)
+
+        notes = response.parsed_body["pair"].map { |item| item["notes_html"] }.join
+        expect(notes).to include("<strong>deeply</strong>")
+        expect(notes).not_to include("truncate")
+      end
+
+      it "seeds the island props with the pin from a pinned_item_id deep link" do
+        anchor = create(:item, project: project, title: "Anchor me")
+        create(:item, project: project, title: "Opponent one")
+        create(:item, project: project, title: "Opponent two")
+
+        get prioritize_project_path(project, pinned_item_id: anchor.id)
+
+        island = Nokogiri::HTML(response.body).at_css('[data-svelte-component="Prioritize"]')
+        props = JSON.parse(island["data-props"])
+        expect(props["pinned"]["id"]).to eq(anchor.id)
+        expect(props["pinnedCount"]).to eq(0)
+        expect(props["pair"].first["id"]).to eq(anchor.id)
+      end
     end
 
     describe "POST /projects/:project_id/comparisons" do
