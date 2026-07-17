@@ -9,7 +9,7 @@ class ItemsController < ApplicationController
   end
 
   def new
-    @item = @project.items.new
+    @item = @project.items.new(status: preselected_status)
   end
 
   def edit
@@ -51,6 +51,17 @@ class ItemsController < ApplicationController
 
   def set_project
     @project = current_organization.projects.find(params[:project_id])
+  end
+
+  # Status shown selected on the new-item form. The board's add-card button
+  # passes params[:status_id]; it is honored only when it belongs to the org
+  # (a foreign or unknown id is ignored) and otherwise falls back to the org's
+  # default so the form mirrors the status create would assign.
+  #
+  # @return [Status, nil]
+  def preselected_status
+    requested = current_organization.statuses.find_by(id: params[:status_id]) if params[:status_id].present?
+    requested || current_organization.default_status
   end
 
   def set_item

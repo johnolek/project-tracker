@@ -7,7 +7,9 @@ module ApplicationHelper
     {
       projectId: project.id,
       storageKey: dom_id(project, :board_sort),
-      statuses: project.organization.statuses.ordered.map { |status| { id: status.id, name: status.name } },
+      statuses: project.organization.statuses.ordered.map do |status|
+        { id: status.id, name: status.name, new_item_url: new_project_item_path(project, status_id: status.id) }
+      end,
       items: project.items.includes(:tags).map(&:board_payload)
     }
   end

@@ -179,7 +179,16 @@
   {#each columns as column (column.status.id)}
     <div class="column is-one-quarter-widescreen is-half-tablet">
       <section class="box status-group">
-        <h3 class="title is-6">{column.status.name}</h3>
+        <header class="status-group-header">
+          <h3 class="title is-6">{column.status.name}</h3>
+          <a
+            class="button is-small status-add"
+            href={column.status.new_item_url}
+            aria-label="Add item to {column.status.name}"
+          >
+            <span aria-hidden="true">+</span>
+          </a>
+        </header>
         <ul class="status-cards" data-status-id={column.status.id} use:sortable>
           {#each column.items as item (item.id)}
             <li
