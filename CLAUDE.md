@@ -7,6 +7,7 @@ Personal project/item tracker. Rails 8.1, PostgreSQL, passkey-only auth (WebAuth
 - Use `bin/tracker` — it reads `config/claude_api.key` (gitignored, `URL=`/`TOKEN=` lines) and wraps the whole API: `bin/tracker items --status new --points-lte 2`, `create-item`, `advance`, `comment`, etc. Run it with no args for the full command list. (John's machine also has a user-level `tracker` skill documenting this for sessions in other repos.)
 - Raw endpoints are documented in `API.md` (`Authorization: Bearer <TOKEN>`) if the CLI doesn't cover something.
 - Workflow conventions: advance an item when starting/finishing work, log progress as comments, reuse existing tags where sensible (tags auto-create on use).
+- Statuses are configurable per org (web: /settings/statuses, API: statuses CRUD). Default flow: New → In Progress → Needs Verification → Completed; `advance` walks positions, so completing an item takes two advances from In Progress — Needs Verification is where work waits for John's (or a Playwright) check.
 
 ## Development
 
