@@ -1,46 +1,41 @@
 <% content_for :title, @project.name %>
-<div class="level is-mobile">
-  <div class="level-left"><h1 class="title"><%= @project.name %></h1></div>
-  <div class="level-right">
-    <div class="buttons">
-      <%= link_to "Edit", edit_project_path(@project), class: "button" %>
-      <%= button_to "Delete", @project, method: :delete, class: "button is-danger is-outlined",
-            form: { data: { turbo_confirm: "Delete this project?" } } %>
-    </div>
+<div class="is-flex is-align-items-center is-flex-wrap-wrap mb-3">
+  <h1 class="title mb-0 mr-3"><%= @project.name %></h1>
+  <div class="buttons mb-0">
+    <%= link_to "Edit", edit_project_path(@project), class: "button is-small mb-0" %>
+    <%= button_to "Delete", @project, method: :delete, class: "button is-small is-danger is-outlined mb-0",
+          form: { data: { turbo_confirm: "Delete this project?" }, class: "mb-0" } %>
   </div>
 </div>
 
-<div class="level is-mobile">
-  <div class="level-left"><h2 class="title is-4">Board (live)</h2></div>
-  <div class="level-right">
-    <div class="buttons">
-      <%= link_to "Prioritize", prioritize_project_path(@project), class: "button" %>
-      <%= link_to "Priorities", priorities_project_path(@project), class: "button" %>
-      <%= link_to "New item", new_project_item_path(@project), class: "button is-primary" %>
-    </div>
-  </div>
+<div class="buttons mb-4">
+  <%= link_to "New item", new_project_item_path(@project), class: "button is-primary" %>
+  <%= link_to "Prioritize", prioritize_project_path(@project), class: "button" %>
+  <%= link_to "Priorities", priorities_project_path(@project), class: "button" %>
 </div>
+
+<h2 class="title is-4">Board (live)</h2>
 <div data-controller="board-filter board-sort"
      data-board-sort-storage-key-value="<%= dom_id(@project, :board_sort) %>"
      data-action="board:dragStart->board-sort#pause board:dragEnd->board-sort#resume">
-  <div class="field is-grouped is-grouped-multiline">
-    <div class="control is-expanded">
+  <div class="field">
+    <div class="control">
       <input class="input" type="search" placeholder="Filter cards by title…"
              aria-label="Filter cards by title"
              data-board-filter-target="input" data-action="input->board-filter#filter">
     </div>
-    <div class="control">
-      <div class="buttons has-addons mb-0" role="group" aria-label="Sort cards">
-        <button type="button" class="button" data-label="Priority"
-                data-board-sort-target="button" data-board-sort-key-param="strength"
-                data-action="board-sort#choose">Priority</button>
-        <button type="button" class="button" data-label="Date"
-                data-board-sort-target="button" data-board-sort-key-param="created"
-                data-action="board-sort#choose">Date</button>
-        <button type="button" class="button" data-label="Points"
-                data-board-sort-target="button" data-board-sort-key-param="points"
-                data-action="board-sort#choose">Points</button>
-      </div>
+  </div>
+  <div class="field">
+    <div class="buttons has-addons" role="group" aria-label="Sort cards">
+      <button type="button" class="button" data-label="Priority"
+              data-board-sort-target="button" data-board-sort-key-param="strength"
+              data-action="board-sort#choose">Priority</button>
+      <button type="button" class="button" data-label="Date"
+              data-board-sort-target="button" data-board-sort-key-param="created"
+              data-action="board-sort#choose">Date</button>
+      <button type="button" class="button" data-label="Points"
+              data-board-sort-target="button" data-board-sort-key-param="points"
+              data-action="board-sort#choose">Points</button>
     </div>
   </div>
   <%= turbo_stream_from @project, "items" %>
