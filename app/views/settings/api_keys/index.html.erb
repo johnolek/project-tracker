@@ -1,0 +1,63 @@
+<% content_for :title, "API keys" %>
+<h1 class="title">API keys</h1>
+
+<% if flash[:api_key_token] %>
+  <div class="notification is-success">
+    <p>Your new API key is <code><%= flash[:api_key_token] %></code></p>
+    <p>Copy it now — it will never be shown again.</p>
+  </div>
+<% end %>
+
+<%= form_with model: [ :settings, @api_key || ApiKey.new ] do |form| %>
+  <% if form.object.errors.any? %>
+    <div class="notification is-danger is-light">
+      <ul>
+        <% form.object.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= form.label :name, class: "label" %>
+    <div class="control">
+      <%= form.text_field :name, class: "input" %>
+    </div>
+  </div>
+
+  <div class="field">
+    <%= form.submit "Create key", class: "button is-primary" %>
+  </div>
+<% end %>
+
+<% if @api_keys.any? %>
+  <table class="table is-fullwidth">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Key</th>
+        <th>Created</th>
+        <th>Last used</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @api_keys.each do |api_key| %>
+        <tr>
+          <td><%= api_key.name %></td>
+          <td><code><%= "#{ApiKey::TOKEN_PREFIX}…#{api_key.last4}" %></code></td>
+          <td><%= api_key.created_at.to_date %></td>
+          <td><%= api_key.last_used_at ? "#{time_ago_in_words(api_key.last_used_at)} ago" : "never" %></td>
+          <td class="has-text-right">
+            <%= button_to "Revoke", settings_api_key_path(api_key), method: :delete,
+                  class: "button is-danger is-light is-small",
+                  form: { data: { turbo_confirm: "Revoke this API key? Anything using it will stop working." } } %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p class="has-text-weak">No API keys yet.</p>
+<% end %>

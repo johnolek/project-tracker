@@ -53,6 +53,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_17_030022) do
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
+  create_table "api_keys", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "last4", null: false
+    t.datetime "last_used_at"
+    t.string "name", null: false
+    t.bigint "organization_id", null: false
+    t.string "token_digest", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["organization_id"], name: "index_api_keys_on_organization_id"
+    t.index ["token_digest"], name: "index_api_keys_on_token_digest", unique: true
+    t.index ["user_id"], name: "index_api_keys_on_user_id"
+  end
+
   create_table "comments", force: :cascade do |t|
     t.text "body", null: false
     t.datetime "created_at", null: false
@@ -85,6 +99,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_17_030022) do
     t.bigint "user_id", null: false
     t.index ["external_id"], name: "index_credentials_on_external_id", unique: true
     t.index ["user_id"], name: "index_credentials_on_user_id"
+  end
+
+  create_table "item_tags", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "item_id", null: false
+    t.bigint "tag_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["item_id", "tag_id"], name: "index_item_tags_on_item_id_and_tag_id", unique: true
+    t.index ["item_id"], name: "index_item_tags_on_item_id"
+    t.index ["tag_id"], name: "index_item_tags_on_tag_id"
   end
 
   create_table "items", force: :cascade do |t|
@@ -268,6 +292,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_17_030022) do
     t.index ["organization_id"], name: "index_statuses_on_organization_id"
   end
 
+  create_table "tags", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.citext "name", null: false
+    t.bigint "organization_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["organization_id", "name"], name: "index_tags_on_organization_id_and_name", unique: true
+    t.index ["organization_id"], name: "index_tags_on_organization_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "default_organization_id"
@@ -281,12 +314,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_17_030022) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "api_keys", "organizations"
+  add_foreign_key "api_keys", "users"
   add_foreign_key "comments", "items"
   add_foreign_key "comments", "users"
   add_foreign_key "comparisons", "items", column: "item_a_id"
   add_foreign_key "comparisons", "items", column: "item_b_id"
   add_foreign_key "comparisons", "users"
   add_foreign_key "credentials", "users"
+  add_foreign_key "item_tags", "items"
+  add_foreign_key "item_tags", "tags"
   add_foreign_key "items", "projects"
   add_foreign_key "items", "statuses"
   add_foreign_key "memberships", "organizations"
@@ -299,5 +336,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_17_030022) do
   add_foreign_key "solid_queue_recurring_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_scheduled_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "statuses", "organizations"
+  add_foreign_key "tags", "organizations"
   add_foreign_key "users", "organizations", column: "default_organization_id"
 end

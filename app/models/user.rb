@@ -4,6 +4,7 @@ class User < ApplicationRecord
   has_many :credentials, dependent: :destroy
   has_many :comments, dependent: :destroy
   has_many :comparisons, dependent: :destroy
+  has_many :api_keys, dependent: :destroy
   belongs_to :default_organization, class_name: "Organization", optional: true
 
   validates :username, presence: true, uniqueness: true

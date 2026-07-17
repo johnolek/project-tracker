@@ -42,6 +42,7 @@
             <% if signed_in? %>
               <span class="navbar-item"><%= current_user.username %></span>
               <%= link_to "Projects", projects_path, class: "navbar-item" %>
+              <%= link_to "API keys", settings_api_keys_path, class: "navbar-item" %>
               <div class="navbar-item">
                 <%= button_to "Sign out", logout_path, method: :delete, class: "button is-small",
                       form: { data: { turbo: false } } %>
@@ -60,6 +61,7 @@
     <main class="section">
       <div class="container">
         <% flash.each do |type, message| %>
+          <% next if type == "api_key_token" %>
           <div class="notification <%= { "notice" => "is-success", "alert" => "is-danger" }.fetch(type, "is-info") %>">
             <%= message %>
           </div>

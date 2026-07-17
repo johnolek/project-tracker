@@ -14,6 +14,10 @@ Rails.application.routes.draw do
     resources :items
   end
 
+  namespace :settings do
+    resources :api_keys, only: %i[index create destroy]
+  end
+
   get "up", to: "rails/health#show", as: :rails_health_check
 
   root "projects#index"
