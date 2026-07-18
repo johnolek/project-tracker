@@ -108,8 +108,8 @@ module ApplicationHelper
       statuses: organization.statuses.ordered.map { |status| { id: status.id, name: status.name } },
       itemTypes: item_type_options(project.organization),
       pointOptions: Item::POINT_OPTIONS,
-      allTags: organization.tags.order(:name).pluck(:name),
-      parentOptions: item.parent_candidates.map do |candidate|
+      allTags: organization.tags.order(created_at: :desc).pluck(:name),
+      parentOptions: item.parent_candidates.reorder(created_at: :desc).map do |candidate|
         { id: candidate.id, label: "#{candidate.key} — #{candidate.title}", url: project_item_path(project, candidate) }
       end
     }

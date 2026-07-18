@@ -2,7 +2,7 @@
 
 <div class="level is-mobile mb-0">
   <div class="level-left">
-    <nav class="breadcrumb" aria-label="breadcrumbs">
+    <nav class="breadcrumb mb-0" aria-label="breadcrumbs">
       <ul>
         <li><%= link_to "Projects", projects_path %></li>
         <li><%= link_to @project.name, project_path(@project) %></li>
@@ -12,6 +12,8 @@
         <li class="is-active"><a href="#" aria-current="page"><%= @item.key %></a></li>
       </ul>
     </nav>
+    <div class="breadcrumb-copy" data-svelte-component="CopyButton"
+         data-props="<%= { text: @item.key }.to_json %>"></div>
   </div>
   <div class="level-right">
     <div class="buttons">

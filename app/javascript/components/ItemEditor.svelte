@@ -9,27 +9,6 @@
   let titleDraft = $state("")
   let editingNotes = $state(false)
   let saving = $state(false)
-  let copied = $state(false)
-  let copyTimer
-
-  async function copyKey() {
-    try {
-      await navigator.clipboard.writeText(item.key)
-    } catch {
-      // Fallback for browsers/contexts without the async clipboard API.
-      const scratch = document.createElement("textarea")
-      scratch.value = item.key
-      scratch.style.position = "fixed"
-      scratch.style.opacity = "0"
-      document.body.appendChild(scratch)
-      scratch.select()
-      try { document.execCommand("copy") } catch { /* nothing else to try */ }
-      document.body.removeChild(scratch)
-    }
-    copied = true
-    clearTimeout(copyTimer)
-    copyTimer = setTimeout(() => (copied = false), 1500)
-  }
 
   // svelte-ignore state_referenced_locally -- the id never changes after mount
   const notesInputId = `item-notes-input-${initialItem.id}`
@@ -87,28 +66,6 @@
     }
   }
 </script>
-
-<div class="item-key-line">
-  <span class="item-key">{item.key}</span>
-  <button
-    type="button"
-    class="item-key-copy"
-    class:is-copied={copied}
-    title={`Copy ${item.key}`}
-    aria-label={`Copy ${item.key} to clipboard`}
-    onclick={copyKey}
-  >
-    {#if copied}
-      <span class="item-key-copied">Copied!</span>
-    {:else}
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-      </svg>
-    {/if}
-  </button>
-</div>
 
 {#if editingTitle}
   <input

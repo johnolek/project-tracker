@@ -393,6 +393,26 @@ rhino-editor {
     }
   }
 
+  // The type chip doubles as a type filter: keep its own hue, and mark the active
+  // filter with a ring rather than recoloring (which would hide that color).
+  .board-card-type {
+    cursor: pointer;
+    transition: box-shadow 120ms ease;
+
+    &:hover {
+      box-shadow: inset 0 0 0 1px var(--bulma-primary);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--bulma-primary);
+      outline-offset: 1px;
+    }
+
+    &.is-active-filter {
+      box-shadow: 0 0 0 2px var(--bulma-primary);
+    }
+  }
+
   // Strength (quieter) and points sit together, pushed to the card's corner.
   .board-card-badges {
     display: inline-flex;
@@ -918,19 +938,11 @@ $tag-colors: (
 }
 
 // Human key (PROJ-12) sitting quietly above the item title.
-.item-key {
-  color: var(--bulma-text-weak);
-  font-size: 0.85rem;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.03em;
-}
-
-.item-key-line {
-  display: flex;
+// Copy-key button sits just to the right of the breadcrumb on the item page.
+.breadcrumb-copy {
+  display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  margin-bottom: 0.25rem;
+  margin-left: 0.15rem;
 }
 
 .item-key-copy {
