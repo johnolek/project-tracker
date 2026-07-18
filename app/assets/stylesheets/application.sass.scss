@@ -959,12 +959,45 @@ $tag-colors: (
 
 // Human key (PROJ-12) sitting quietly above the item title.
 .item-key {
-  margin-bottom: 0.25rem;
   color: var(--bulma-text-weak);
   font-size: 0.85rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.03em;
+}
+
+.item-key-line {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.25rem;
+}
+
+.item-key-copy {
+  display: inline-flex;
+  align-items: center;
+  border: 0;
+  padding: 0.1rem 0.25rem;
+  background: transparent;
+  color: var(--bulma-text-weak);
+  cursor: pointer;
+  border-radius: 4px;
+  line-height: 1;
+
+  &:hover {
+    color: var(--bulma-primary);
+    background: var(--bulma-background);
+  }
+
+  &.is-copied {
+    color: var(--bulma-primary);
+  }
+
+  .item-key-copied {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
 }
 
 .item-title-input {
