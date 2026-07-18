@@ -59,6 +59,8 @@ RSpec.describe "Item moves", type: :request do
       expect(breadcrumb.at_css("li.is-active").text).to include(item.key)
 
       document = Nokogiri::HTML(response.body)
+      expect(document.at_css("title").text).to eq("Board | #{item.key}")
+
       editor = document.at_css('[data-svelte-component="ItemEditor"]')
       expect(editor).to be_present
       editor_props = JSON.parse(editor["data-props"])
