@@ -281,12 +281,24 @@ rhino-editor {
     }
   }
 
-  // Board-only layout for the type label; the chip's visual styling and
-  // per-type colors are defined globally (.item-type-tag / .item-type-<type>)
-  // so the ERB renderings share the exact same coloring.
-  .item-type-tag {
-    align-self: flex-start;
+  // Top row of the card: type chip left, human key (PROJ-12) pinned right.
+  // The chip's visual styling and per-type colors are defined globally
+  // (.item-type-tag / .item-type-<type>) so the ERB renderings share the
+  // exact same coloring.
+  .board-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.35rem;
     margin-bottom: 0.3rem;
+  }
+
+  .board-card-key {
+    font-size: 0.72rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--bulma-text-weak);
+    white-space: nowrap;
   }
 
   .board-card-title {
@@ -727,6 +739,16 @@ $tag-colors: (
     border-color: var(--bulma-border-weak);
     background: var(--bulma-scheme-main-bis);
   }
+}
+
+// Human key (PROJ-12) sitting quietly above the item title.
+.item-key {
+  margin-bottom: 0.25rem;
+  color: var(--bulma-text-weak);
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em;
 }
 
 .item-title-input {

@@ -7,6 +7,7 @@ module Api
         {
           id: project.id,
           name: project.name,
+          slug: project.slug,
           created_at: project.created_at,
           updated_at: project.updated_at
         }

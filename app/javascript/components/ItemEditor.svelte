@@ -67,6 +67,8 @@
   }
 </script>
 
+<p class="item-key">{item.key}</p>
+
 {#if editingTitle}
   <input
     class="input item-title-input mb-4"

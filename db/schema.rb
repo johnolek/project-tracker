@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_17_050200) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_17_230000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -114,12 +114,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_17_050200) do
   create_table "items", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "item_type", default: "task", null: false
+    t.integer "number", null: false
     t.integer "points"
     t.bigint "project_id", null: false
     t.bigint "status_id", null: false
     t.float "strength", default: 0.0, null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
+    t.index ["project_id", "number"], name: "index_items_on_project_id_and_number", unique: true
     t.index ["project_id"], name: "index_items_on_project_id"
     t.index ["status_id"], name: "index_items_on_status_id"
   end
@@ -143,9 +145,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_17_050200) do
 
   create_table "projects", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.integer "last_item_number", default: 0, null: false
     t.string "name", null: false
     t.bigint "organization_id", null: false
+    t.string "slug", null: false
     t.datetime "updated_at", null: false
+    t.index ["organization_id", "slug"], name: "index_projects_on_organization_id_and_slug", unique: true
     t.index ["organization_id"], name: "index_projects_on_organization_id"
   end
 

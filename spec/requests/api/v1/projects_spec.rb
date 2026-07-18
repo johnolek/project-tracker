@@ -20,8 +20,8 @@ RSpec.describe "API v1 projects", type: :request do
       get api_v1_project_path(project), headers: auth_headers
 
       expect(response).to have_http_status(:ok)
-      expect(json_body).to include("id" => project.id, "name" => "Docs")
-      expect(json_body.keys).to match_array(%w[id name created_at updated_at])
+      expect(json_body).to include("id" => project.id, "name" => "Docs", "slug" => "DOCS")
+      expect(json_body.keys).to match_array(%w[id name slug created_at updated_at])
     end
   end
 
@@ -33,6 +33,14 @@ RSpec.describe "API v1 projects", type: :request do
 
       expect(response).to have_http_status(:created)
       expect(json_body["name"]).to eq("New API Project")
+      expect(json_body["slug"]).to eq("NEW")
+    end
+
+    it "accepts an explicit slug" do
+      post api_v1_projects_path, params: { project: { name: "Website Redesign", slug: "web" } }, headers: auth_headers
+
+      expect(response).to have_http_status(:created)
+      expect(json_body["slug"]).to eq("WEB")
     end
 
     it "returns validation errors for a blank name" do
@@ -58,6 +66,26 @@ RSpec.describe "API v1 projects", type: :request do
 
       expect(response).to have_http_status(:ok)
       expect(project.reload.name).to eq("Renamed")
+    end
+
+    it "changes the slug while the project has no items" do
+      project = api_organization.projects.create!(name: "Old")
+
+      patch api_v1_project_path(project), params: { project: { slug: "FRESH" } }, headers: auth_headers
+
+      expect(response).to have_http_status(:ok)
+      expect(project.reload.slug).to eq("FRESH")
+    end
+
+    it "refuses a slug change once the project has items" do
+      project = api_organization.projects.create!(name: "Old")
+      create(:item, project: project)
+
+      patch api_v1_project_path(project), params: { project: { slug: "OTHER" } }, headers: auth_headers
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(json_body["errors"]).to include("Slug can't be changed once the project has items")
+      expect(project.reload.slug).to eq("OLD")
     end
   end
 

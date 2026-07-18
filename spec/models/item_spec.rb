@@ -82,6 +82,40 @@ RSpec.describe Item, type: :model do
     end
   end
 
+  describe "numbering and key" do
+    let(:project) { create(:project, name: "Project Tracker") }
+
+    it "assigns sequential per-project numbers on create" do
+      first = project.items.create!(title: "First")
+      second = project.items.create!(title: "Second")
+
+      expect(first.number).to eq(1)
+      expect(second.number).to eq(2)
+    end
+
+    it "scopes the sequence to the project" do
+      other_project = create(:project)
+      project.items.create!(title: "First here")
+
+      expect(other_project.items.create!(title: "First there").number).to eq(1)
+    end
+
+    it "never reuses a number after deletion" do
+      project.items.create!(title: "First")
+      project.items.create!(title: "Second").destroy!
+
+      expect(project.items.create!(title: "Third").number).to eq(3)
+    end
+
+    it "composes the key from the project slug and number" do
+      item = project.items.create!(title: "First")
+
+      expect(item.key).to eq("PROJ-1")
+      expect(item.board_payload[:key]).to eq("PROJ-1")
+      expect(item.detail_payload[:key]).to eq("PROJ-1")
+    end
+  end
+
   describe "column defaults" do
     it "starts at neutral Bradley-Terry strength and task type" do
       item = Item.new

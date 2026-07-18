@@ -404,7 +404,10 @@
               out:fade={{ duration: 100 }}
             >
               <a class="board-card-link" href={item.url}>
-                <span class="item-type-tag item-type-{item.item_type}">{item.item_type}</span>
+                <span class="board-card-top">
+                  <span class="item-type-tag item-type-{item.item_type}">{item.item_type}</span>
+                  <span class="board-card-key">{item.key}</span>
+                </span>
                 <span class="board-card-title">{item.title}</span>
                 <div class="board-card-meta">
                   {#if item.tags.length}

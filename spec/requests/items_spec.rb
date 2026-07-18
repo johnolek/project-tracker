@@ -56,7 +56,7 @@ RSpec.describe "Item moves", type: :request do
       expect(breadcrumb).to be_present
       expect(breadcrumb.at_css("a[href='#{projects_path}']")).to be_present
       expect(breadcrumb.at_css("a[href='#{project_path(project)}']").text).to eq("Board")
-      expect(breadcrumb.at_css("li.is-active").text).to include(item.title)
+      expect(breadcrumb.at_css("li.is-active").text).to include(item.key)
 
       document = Nokogiri::HTML(response.body)
       editor = document.at_css('[data-svelte-component="ItemEditor"]')

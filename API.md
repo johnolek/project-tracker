@@ -41,12 +41,14 @@ envelope keyed by the collection name; only item indexes are paginated.
 ```json
 {
   "id": 42,
+  "key": "TRAC-12",
+  "number": 12,
   "title": "Fix login crash",
   "item_type": "bug",
   "points": 3,
   "strength": 0.0,
   "status": { "id": 1, "name": "New", "category": "open", "position": 1 },
-  "project": { "id": 7, "name": "Tracker" },
+  "project": { "id": 7, "name": "Tracker", "slug": "TRAC" },
   "tags": ["backend", "urgent"],
   "notes_html": "<div class=\"trix-content\">\n  <p>Steps to reproduce...</p>\n</div>\n",
   "notes_text": "Steps to reproduce...",
@@ -55,12 +57,13 @@ envelope keyed by the collection name; only item indexes are paginated.
 }
 ```
 
+- `key` / `number` — human-readable reference (`<project slug>-<number>`) and the item's project-scoped sequence number. Numbers are assigned on creation and never reused, even after deletion. Endpoints still address items by `id`.
 - `tags` — names sorted alphabetically.
 - `notes_html` — the rendered rich-text HTML (wrapped in a `trix-content` div); `""` when notes are blank.
 - `notes_text` — plain-text rendering of the notes; `""` when blank.
 - `strength` / `points` — Bradley-Terry priority log-strength (float; comparisons are project-scoped, so strengths order items within a project; higher means higher priority) and estimation points (integer or null).
 
-**Project** `{ id, name, created_at, updated_at }`
+**Project** `{ id, name, slug, created_at, updated_at }` — `slug` is 1-10 uppercase letters/digits starting with a letter (e.g. `TRAC`), unique per organization
 **Status** `{ id, name, category, position }` — `category` is one of `open`, `in_progress`, `done`
 **Tag** `{ id, name }`
 **Comment** `{ id, body, body_html, body_text, source, user: { id, username }, created_at }`
@@ -82,13 +85,15 @@ curl http://localhost:3000/api/v1/projects \
 curl http://localhost:3000/api/v1/projects/7 \
   -H "Authorization: Bearer pt_YOUR_TOKEN"
 
-# Create (201)
+# Create (201). slug is optional — derived from the name when omitted
+# (first word, upcased, cut to 4 chars: "Website Redesign" -> "WEBS").
 curl -X POST http://localhost:3000/api/v1/projects \
   -H "Authorization: Bearer pt_YOUR_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{ "project": { "name": "Website Redesign" } }'
+  -d '{ "project": { "name": "Website Redesign", "slug": "WEB" } }'
 
-# Rename
+# Rename. slug may also be changed here, but only while the project has no
+# items — once items exist the slug is frozen so keys stay stable (422).
 curl -X PATCH http://localhost:3000/api/v1/projects/7 \
   -H "Authorization: Bearer pt_YOUR_TOKEN" \
   -H "Content-Type: application/json" \

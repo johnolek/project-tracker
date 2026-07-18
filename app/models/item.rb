@@ -23,6 +23,7 @@ class Item < ApplicationRecord
   scope :not_done, -> { joins(:status).where.not(statuses: { category: "done" }) }
 
   before_validation :assign_default_status, on: :create
+  before_create :assign_number
   before_save :apply_pending_tag_names
 
   after_create_commit { broadcast_board_change(action: "upsert") }
@@ -54,6 +55,15 @@ class Item < ApplicationRecord
     end
   end
 
+  # Human-readable Jira-style reference composed from the project slug and the
+  # item's per-project sequence number, e.g. "PROJ-12". Stable for the item's
+  # lifetime: slugs freeze once items exist and numbers are never reused.
+  #
+  # @return [String]
+  def key
+    "#{project.slug}-#{number}"
+  end
+
   # JSON shape the Board Svelte island renders, both as initial props and as
   # live "upsert" messages over BoardChannel.
   #
@@ -61,6 +71,7 @@ class Item < ApplicationRecord
   def board_payload
     {
       id: id,
+      key: key,
       title: title,
       item_type: item_type,
       points: points,
@@ -126,6 +137,10 @@ class Item < ApplicationRecord
 
   def assign_default_status
     self.status ||= project&.organization&.default_status
+  end
+
+  def assign_number
+    self.number ||= project.claim_next_item_number!
   end
 
   def apply_pending_tag_names

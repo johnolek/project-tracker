@@ -176,10 +176,12 @@ RSpec.describe "API v1 items", type: :request do
 
       expect(response).to have_http_status(:ok)
       expect(json_body.keys).to match_array(
-        %w[id title item_type points strength status project tags notes_html notes_text created_at updated_at]
+        %w[id key number title item_type points strength status project tags notes_html notes_text created_at updated_at]
       )
       expect(json_body).to include(
         "id" => item.id,
+        "key" => "#{project.slug}-#{item.number}",
+        "number" => item.number,
         "title" => "Shaped",
         "item_type" => "task",
         "points" => 2,
@@ -189,7 +191,7 @@ RSpec.describe "API v1 items", type: :request do
       )
       expect(json_body["notes_html"]).to include("<strong>world</strong>")
       expect(json_body["status"]).to include("name" => "New", "category" => "open", "position" => 1)
-      expect(json_body["project"]).to eq("id" => project.id, "name" => "Tracker")
+      expect(json_body["project"]).to eq("id" => project.id, "name" => "Tracker", "slug" => project.slug)
     end
   end
 
