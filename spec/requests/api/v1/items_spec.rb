@@ -201,7 +201,7 @@ RSpec.describe "API v1 items", type: :request do
       expect(response).to have_http_status(:ok)
       expect(json_body.keys).to match_array(
         %w[id key number title item_type points strength source ai_reviewed_at provenance
-           status project parent children tags notes_html notes_text created_at updated_at]
+           status project parent children links tags notes_html notes_text created_at updated_at]
       )
       expect(json_body).to include(
         "id" => item.id,

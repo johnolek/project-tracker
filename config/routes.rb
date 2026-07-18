@@ -20,6 +20,7 @@ Rails.application.routes.draw do
     resources :items do
       patch :move, on: :member
       resources :comments, only: :create
+      resources :links, only: %i[create destroy]
     end
     resources :comparisons, only: :create
   end
@@ -39,7 +40,9 @@ Rails.application.routes.draw do
       resources :items, only: %i[index show update destroy] do
         member { post :advance }
         resources :comments, only: %i[index create]
+        resources :links, only: :create
       end
+      resources :links, only: :destroy
       resources :statuses, only: %i[index create update destroy]
       resources :tags, only: :index
     end

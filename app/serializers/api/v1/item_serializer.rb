@@ -7,7 +7,9 @@ module Api
       #   ("" when blank), notes_text its plain-text form; tags are names
       #   sorted alphabetically; provenance derives from source +
       #   ai_reviewed_at (user_created / ai_created / ai_reviewed); parent is
-      #   nil for root items; children are direct sub-items by ascending number
+      #   nil for root items; children are direct sub-items by ascending number;
+      #   links buckets typed relationships (blocks / blocked_by / relates_to)
+      #   as references carrying the link_id used to DELETE the link
       def self.render(item)
         {
           id: item.id,
@@ -28,6 +30,9 @@ module Api
           },
           parent: item.parent && reference(item.parent),
           children: item.children.map { |child| reference(child) },
+          links: item.grouped_links.transform_values do |pairs|
+            pairs.map { |link, other| reference(other).merge(link_id: link.id) }
+          end,
           tags: item.tags.map(&:name).sort,
           notes_html: item.notes.to_s,
           notes_text: item.notes.to_plain_text,

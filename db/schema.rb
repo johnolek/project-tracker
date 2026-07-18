@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_18_054756) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_18_055410) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -99,6 +99,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_18_054756) do
     t.bigint "user_id", null: false
     t.index ["external_id"], name: "index_credentials_on_external_id", unique: true
     t.index ["user_id"], name: "index_credentials_on_user_id"
+  end
+
+  create_table "item_links", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "kind", null: false
+    t.bigint "source_id", null: false
+    t.bigint "target_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["source_id", "target_id", "kind"], name: "index_item_links_on_source_id_and_target_id_and_kind", unique: true
+    t.index ["source_id"], name: "index_item_links_on_source_id"
+    t.index ["target_id"], name: "index_item_links_on_target_id"
   end
 
   create_table "item_tags", force: :cascade do |t|
@@ -329,6 +340,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_18_054756) do
   add_foreign_key "comparisons", "items", column: "item_b_id"
   add_foreign_key "comparisons", "users"
   add_foreign_key "credentials", "users"
+  add_foreign_key "item_links", "items", column: "source_id"
+  add_foreign_key "item_links", "items", column: "target_id"
   add_foreign_key "item_tags", "items"
   add_foreign_key "item_tags", "tags"
   add_foreign_key "items", "items", column: "parent_id"

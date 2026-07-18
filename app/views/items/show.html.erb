@@ -36,18 +36,52 @@
     <% if @children.any? %>
       <section class="sub-items">
         <h2 class="title is-5">Sub-items</h2>
-        <ul class="sub-item-list">
+        <ul class="item-row-list">
           <% @children.each do |child| %>
-            <li class="sub-item">
-              <%= link_to child.key, project_item_path(@project, child), class: "sub-item-key" %>
-              <%= link_to child.title, project_item_path(@project, child), class: "sub-item-title" %>
+            <li class="item-row">
+              <%= link_to child.key, project_item_path(@project, child), class: "item-row-key" %>
+              <%= link_to child.title, project_item_path(@project, child), class: "item-row-title" %>
               <%= item_type_tag(child) %>
-              <span class="tag is-small sub-item-status"><%= child.status.name %></span>
+              <span class="tag is-small"><%= child.status.name %></span>
             </li>
           <% end %>
         </ul>
       </section>
     <% end %>
+
+    <section class="item-links">
+      <h2 class="title is-5">Relationships</h2>
+
+      <% { blocks: "Blocks", blocked_by: "Blocked by", relates_to: "Related to" }.each do |bucket, label| %>
+        <% next if @links[bucket].empty? %>
+        <h3 class="item-links-label"><%= label %></h3>
+        <ul class="item-row-list">
+          <% @links[bucket].each do |link, other| %>
+            <li class="item-row">
+              <%= link_to other.key, project_item_path(other.project_id, other), class: "item-row-key" %>
+              <%= link_to other.title, project_item_path(other.project_id, other), class: "item-row-title" %>
+              <span class="tag is-small"><%= other.status.name %></span>
+              <%= button_to "", project_item_link_path(@project, @item, link),
+                    method: :delete, class: "delete is-small",
+                    form: { class: "item-row-remove" },
+                    "aria-label": "Remove #{label.downcase} link to #{other.key}" %>
+            </li>
+          <% end %>
+        </ul>
+      <% end %>
+
+      <%= form_with url: project_item_links_path(@project, @item), scope: :link, class: "item-links-form" do |form| %>
+        <div class="select is-small">
+          <%= form.select :kind, [ [ "Blocks", "blocks" ], [ "Blocked by", "blocked_by" ], [ "Related to", "relates_to" ] ] %>
+        </div>
+        <div class="select is-small">
+          <%= form.select :target_id,
+                @link_targets.map { |target| [ "#{target.key} — #{target.title}", target.id ] },
+                { include_blank: "Choose an item…" } %>
+        </div>
+        <%= form.submit "Add link", class: "button is-small" %>
+      <% end %>
+    </section>
 
     <section class="comment-thread">
       <h2 class="title is-4">Comments</h2>

@@ -21,6 +21,10 @@ class Item < ApplicationRecord
   belongs_to :parent, class_name: "Item", optional: true, inverse_of: :children
   has_many :children, -> { order(:number) }, class_name: "Item", foreign_key: :parent_id,
            inverse_of: :parent, dependent: :nullify
+  has_many :outgoing_links, class_name: "ItemLink", foreign_key: :source_id,
+           inverse_of: :source, dependent: :destroy
+  has_many :incoming_links, class_name: "ItemLink", foreign_key: :target_id,
+           inverse_of: :target, dependent: :destroy
   has_many :comments, dependent: :destroy
   has_many :comparisons_as_item_a, class_name: "Comparison", foreign_key: :item_a_id, dependent: :destroy, inverse_of: :item_a
   has_many :comparisons_as_item_b, class_name: "Comparison", foreign_key: :item_b_id, dependent: :destroy, inverse_of: :item_b
@@ -144,6 +148,21 @@ class Item < ApplicationRecord
       SELECT id FROM descendants
     SQL
     self.class.connection.select_values(sql)
+  end
+
+  # Link rows bucketed for display, each as the ItemLink paired with the other
+  # endpoint: :blocks (this item blocks the other), :blocked_by (the other
+  # blocks this item), :relates_to (symmetric, either stored direction).
+  # Buckets sort by the other item's key.
+  #
+  # @return [Hash{Symbol => Array<Array(ItemLink, Item)>}]
+  def grouped_links
+    {
+      blocks: outgoing_links.select { |link| link.kind == "blocks" }.map { |link| [ link, link.target ] },
+      blocked_by: incoming_links.select { |link| link.kind == "blocks" }.map { |link| [ link, link.source ] },
+      relates_to: outgoing_links.select { |link| link.kind == "relates_to" }.map { |link| [ link, link.target ] } +
+        incoming_links.select { |link| link.kind == "relates_to" }.map { |link| [ link, link.source ] }
+    }.transform_values { |pairs| pairs.sort_by { |_link, other| [ other.project.slug, other.number ] } }
   end
 
   # Same-project items eligible to become this item's parent: everything except

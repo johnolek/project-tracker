@@ -809,18 +809,20 @@ $tag-colors: (
   }
 }
 
-// Sub-items on the item detail page (PROJ-37 parent trees): one row per direct
-// child — key, title link, then type/status chips — separated by the theme
-// border so the list reads as rows without card chrome.
-.sub-items {
+// Linked-item rows on the item detail page — sub-items (PROJ-37 parent trees)
+// and relationships (PROJ-40 blockers): one row per item — key, title link,
+// then chips — separated by the theme border so lists read as rows without
+// card chrome.
+.sub-items,
+.item-links {
   margin-top: 2rem;
 
-  .sub-item-list {
+  .item-row-list {
     list-style: none;
     margin: 0;
   }
 
-  .sub-item {
+  .item-row {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
@@ -833,15 +835,40 @@ $tag-colors: (
     }
   }
 
-  .sub-item-key {
+  .item-row-key {
     font-weight: 600;
     white-space: nowrap;
   }
 
-  .sub-item-title {
+  .item-row-title {
     flex: 1;
     min-width: 12rem;
     color: var(--bulma-text);
+  }
+
+  .item-row-remove {
+    margin-left: auto;
+  }
+}
+
+// Relationship buckets get a muted mini-heading (matching the sidebar's dt
+// treatment), and the add-link form sits in one compact row.
+.item-links {
+  .item-links-label {
+    margin: 1rem 0 0.25rem;
+    color: var(--bulma-text-weak);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .item-links-form {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
   }
 }
 

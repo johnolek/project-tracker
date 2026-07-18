@@ -14,6 +14,7 @@ module Api
                      .offset((page - 1) * per_page)
                      .limit(per_page)
                      .includes(:status, :project, :tags, :children, { parent: :project },
+                               { outgoing_links: { target: :project }, incoming_links: { source: :project } },
                                rich_text_notes: { embeds_attachments: :blob })
 
         render json: {

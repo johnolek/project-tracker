@@ -54,6 +54,11 @@ envelope keyed by the collection name; only item indexes are paginated.
   "project": { "id": 7, "name": "Tracker", "slug": "TRAC" },
   "parent": { "id": 40, "key": "TRAC-10", "title": "Login hardening" },
   "children": [{ "id": 44, "key": "TRAC-14", "title": "Add captcha" }],
+  "links": {
+    "blocks": [],
+    "blocked_by": [{ "id": 39, "key": "TRAC-9", "title": "Pick a captcha vendor", "link_id": 3 }],
+    "relates_to": []
+  },
   "tags": ["backend", "urgent"],
   "notes_html": "<div class=\"trix-content\">\n  <p>Steps to reproduce...</p>\n</div>\n",
   "notes_text": "Steps to reproduce...",
@@ -71,6 +76,7 @@ envelope keyed by the collection name; only item indexes are paginated.
 - `ai_reviewed_at` — timestamp of the LLM's sign-off after revising a person-created item, or null. Set/cleared with the `ai_reviewed` boolean on update.
 - `provenance` — derived display state: `"ai_created"` (source is api), `"ai_reviewed"` (web-created with `ai_reviewed_at` set), else `"user_created"`.
 - `parent` / `children` — the item's place in the parent tree, as compact `{ id, key, title }` references (`parent` is `null` for root items; `children` are direct sub-items by ascending number). Parents are same-project only and may nest to any depth; set with the `parent` field on create/update.
+- `links` — typed relationships to other items, bucketed by how they read from this item: `blocks` (this item blocks the listed ones), `blocked_by`, `relates_to` (symmetric). Each entry is the compact reference plus the `link_id` that deletes the link. Links may cross projects within the organization; manage them with the link endpoints below.
 
 **Project** `{ id, name, slug, created_at, updated_at }` — `slug` is 1-10 uppercase letters/digits starting with a letter (e.g. `TRAC`), unique per organization
 **Status** `{ id, name, category, position }` — `category` is one of `open`, `in_progress`, `done`
@@ -211,6 +217,29 @@ curl -X PATCH http://localhost:3000/api/v1/items/42 \
 
 # Delete (204)
 curl -X DELETE http://localhost:3000/api/v1/items/42 \
+  -H "Authorization: Bearer pt_YOUR_TOKEN"
+```
+
+### Links (blockers and other relationships)
+
+`POST /api/v1/items/:id/links` relates two items → 201 with the full source
+item (see its `links` buckets). Fields:
+
+- `kind` — `blocks` (this item blocks the target), `blocked_by` (sugar: stores the reversed `blocks` edge), or `relates_to` (symmetric). Unknown → 422 `{ "error": "Unknown kind: ..." }`.
+- `target` — item id or key, resolved within the organization (cross-project is fine). Unresolvable → 422 `{ "error": "Unknown target: <ref>" }`; the item itself or an already-linked pair → 422 with validation errors.
+
+`DELETE /api/v1/links/:link_id` → 204. `link_id` comes from the `links`
+entries in the item JSON.
+
+```bash
+# TRAC-12 can't ship until TRAC-9 lands
+curl -X POST http://localhost:3000/api/v1/items/TRAC-12/links \
+  -H "Authorization: Bearer pt_YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{ "link": { "kind": "blocked_by", "target": "TRAC-9" } }'
+
+# Remove it later
+curl -X DELETE http://localhost:3000/api/v1/links/3 \
   -H "Authorization: Bearer pt_YOUR_TOKEN"
 ```
 
