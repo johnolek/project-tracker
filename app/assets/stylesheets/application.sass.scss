@@ -809,6 +809,42 @@ $tag-colors: (
   }
 }
 
+// Sub-items on the item detail page (PROJ-37 parent trees): one row per direct
+// child — key, title link, then type/status chips — separated by the theme
+// border so the list reads as rows without card chrome.
+.sub-items {
+  margin-top: 2rem;
+
+  .sub-item-list {
+    list-style: none;
+    margin: 0;
+  }
+
+  .sub-item {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--bulma-border);
+
+    &:first-child {
+      border-top: 1px solid var(--bulma-border);
+    }
+  }
+
+  .sub-item-key {
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .sub-item-title {
+    flex: 1;
+    min-width: 12rem;
+    color: var(--bulma-text);
+  }
+}
+
 // Jira-style item detail: wide main column (notes + comments) beside a compact
 // metadata sidebar. The sidebar reuses the adobe .box; each row is a muted label
 // stacked over its value. On the .comment-thread the default top margin is more

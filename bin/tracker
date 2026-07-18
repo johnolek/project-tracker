@@ -22,13 +22,16 @@ USAGE = <<~TEXT
                                       the name when omitted)
     items [--status NAME] [--type T] [--tags a,b] [--tags-match all]
           [--points N | --points-lt/-lte/-gt/-gte N] [--q TEXT]
-          [--project-id ID] [--sort created_at|points|strength|title]
+          [--parent KEY|ID|none] [--project-id ID]
+          [--sort created_at|points|strength|title]
           [--direction asc|desc]
           [--page N] [--per-page N]   List/filter items across the org
+                                      (--parent X: direct sub-items of X;
+                                      --parent none: root items only)
     item ID                           Show one item
     create-item PROJECT_ID --title T [--notes HTML] [--type T]
-          [--points N] [--tags a,b] [--status NAME]
-    update-item ID [same flags as create-item]
+          [--points N] [--tags a,b] [--status NAME] [--parent KEY|ID]
+    update-item ID [same flags as create-item; --parent none clears]
     delete-item ID
     advance ID                        Move item to the next status
     comments ID                       List an item's comments

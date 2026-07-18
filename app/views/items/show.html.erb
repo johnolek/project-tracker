@@ -6,6 +6,9 @@
       <ul>
         <li><%= link_to "Projects", projects_path %></li>
         <li><%= link_to @project.name, project_path(@project) %></li>
+        <% @item.ancestors.reverse_each do |ancestor| %>
+          <li><%= link_to ancestor.key, project_item_path(@project, ancestor) %></li>
+        <% end %>
         <li class="is-active"><a href="#" aria-current="page"><%= @item.key %></a></li>
       </ul>
     </nav>
@@ -16,6 +19,7 @@
         <%= link_to "Prioritize this", prioritize_project_path(@project, pinned_item_id: @item.id),
               class: "button is-small", title: "Compare this item against the rest of the project" %>
       <% end %>
+      <%= link_to "Add sub-item", new_project_item_path(@project, parent_id: @item.id), class: "button is-small" %>
       <%= link_to "Edit form", edit_project_item_path(@project, @item), class: "button is-small" %>
       <%= button_to "Delete", project_item_path(@project, @item), method: :delete,
             class: "button is-small is-danger is-outlined",
@@ -28,6 +32,22 @@
   <div class="column">
     <div data-svelte-component="ItemEditor"
          data-props="<%= item_editor_props(project: @project, item: @item).to_json %>"></div>
+
+    <% if @children.any? %>
+      <section class="sub-items">
+        <h2 class="title is-5">Sub-items</h2>
+        <ul class="sub-item-list">
+          <% @children.each do |child| %>
+            <li class="sub-item">
+              <%= link_to child.key, project_item_path(@project, child), class: "sub-item-key" %>
+              <%= link_to child.title, project_item_path(@project, child), class: "sub-item-title" %>
+              <%= item_type_tag(child) %>
+              <span class="tag is-small sub-item-status"><%= child.status.name %></span>
+            </li>
+          <% end %>
+        </ul>
+      </section>
+    <% end %>
 
     <section class="comment-thread">
       <h2 class="title is-4">Comments</h2>

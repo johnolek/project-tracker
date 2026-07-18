@@ -147,4 +147,63 @@ RSpec.describe Item, type: :model do
       expect(Item.new(item_type: "bogus")).not_to be_valid
     end
   end
+
+  describe "parent items" do
+    let(:project) { create(:project) }
+    let(:root) { create(:item, project: project) }
+
+    it "groups items under a parent to arbitrary depth" do
+      child = create(:item, project: project, parent: root)
+      grandchild = create(:item, project: project, parent: child)
+
+      expect(root.children).to eq([ child ])
+      expect(grandchild.ancestors).to eq([ child, root ])
+      expect(root.descendant_ids).to match_array([ child.id, grandchild.id ])
+    end
+
+    it "orders children by number" do
+      later = create(:item, project: project, parent: root)
+      create(:item, project: project)
+      earlier = create(:item, project: project)
+      earlier.update!(parent: root)
+
+      expect(root.children).to eq([ later, earlier ].sort_by(&:number))
+    end
+
+    it "rejects a parent from another project" do
+      foreign = create(:item)
+      item = build(:item, project: project, parent: foreign)
+
+      expect(item).not_to be_valid
+      expect(item.errors[:parent]).to include("must belong to the same project")
+    end
+
+    it "rejects the item itself and its descendants as parent" do
+      child = create(:item, project: project, parent: root)
+      grandchild = create(:item, project: project, parent: child)
+
+      root.parent = root
+      expect(root).not_to be_valid
+
+      root.parent = grandchild
+      expect(root).not_to be_valid
+      expect(root.errors[:parent]).to include("can't be the item itself or one of its sub-items")
+    end
+
+    it "excludes the item and its descendants from parent_candidates" do
+      child = create(:item, project: project, parent: root)
+      sibling = create(:item, project: project)
+
+      expect(root.parent_candidates).to contain_exactly(sibling)
+      expect(child.parent_candidates).to contain_exactly(root, sibling)
+    end
+
+    it "promotes children to roots when the parent is destroyed" do
+      child = create(:item, project: project, parent: root)
+
+      root.destroy!
+
+      expect(child.reload.parent).to be_nil
+    end
+  end
 end

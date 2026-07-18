@@ -13,7 +13,8 @@ module Api
         items = items.order(sort_order)
                      .offset((page - 1) * per_page)
                      .limit(per_page)
-                     .includes(:status, :project, :tags, rich_text_notes: { embeds_attachments: :blob })
+                     .includes(:status, :project, :tags, :children, { parent: :project },
+                               rich_text_notes: { embeds_attachments: :blob })
 
         render json: {
           items: items.map { |item| ItemSerializer.render(item) },
@@ -33,6 +34,7 @@ module Api
         project = current_organization.projects.find(params[:project_id])
         item = project.items.new(item_attributes.merge(source: "api"))
         return unless assign_status(item: item)
+        return unless assign_parent(item: item)
 
         item.save!
         render json: ItemSerializer.render(item), status: :created
@@ -42,6 +44,7 @@ module Api
         @item.assign_attributes(item_attributes)
         apply_ai_reviewed(item: @item)
         return unless assign_status(item: @item)
+        return unless assign_parent(item: @item)
 
         @item.save!
         render json: ItemSerializer.render(@item)
@@ -76,7 +79,7 @@ module Api
       end
 
       def item_params
-        params.require(:item).permit(:title, :notes, :item_type, :points, :status, :tags, :ai_reviewed, tags: [])
+        params.require(:item).permit(:title, :notes, :item_type, :points, :status, :parent, :tags, :ai_reviewed, tags: [])
       end
 
       def item_attributes
@@ -99,6 +102,28 @@ module Api
         else
           item.ai_reviewed_at = nil
         end
+      end
+
+      # Resolves the optional parent param — an item id or human key, or
+      # "none"/"" to clear — within the key's organization. Renders a 422 and
+      # returns false when the reference doesn't resolve; same-project and
+      # cycle rules are the model's validations.
+      #
+      # @param item [Item]
+      # @return [Boolean] whether the request should proceed
+      def assign_parent(item:)
+        return true unless item_params.key?(:parent)
+
+        reference = item_params[:parent].to_s.strip
+        if reference.empty? || reference.casecmp("none").zero?
+          item.parent = nil
+        else
+          item.parent = find_organization_item(reference)
+        end
+        true
+      rescue ActiveRecord::RecordNotFound
+        render json: { error: "Unknown parent: #{reference}" }, status: :unprocessable_entity
+        false
       end
 
       # Resolves the optional status-by-name param, case-insensitively, within
@@ -128,6 +153,7 @@ module Api
         items = filter_points(items)
         items = filter_source(items)
         items = filter_ai_reviewed(items)
+        items = filter_parent(items)
         filter_title(items)
       end
 
@@ -196,6 +222,15 @@ module Api
         else
           items.where(ai_reviewed_at: nil)
         end
+      end
+
+      # parent=<id or key> keeps the direct sub-items of that item (404 when it
+      # doesn't resolve, like the project_id filter); parent=none keeps roots.
+      def filter_parent(items)
+        return items if params[:parent].blank?
+        return items.where(parent_id: nil) if params[:parent].casecmp("none").zero?
+
+        items.where(parent_id: find_organization_item(params[:parent]).id)
       end
 
       def filter_title(items)

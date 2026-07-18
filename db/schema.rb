@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_18_051558) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_18_054756) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -116,6 +116,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_18_051558) do
     t.datetime "created_at", null: false
     t.string "item_type", default: "feature", null: false
     t.integer "number", null: false
+    t.bigint "parent_id"
     t.integer "points"
     t.bigint "project_id", null: false
     t.string "source", default: "web", null: false
@@ -123,6 +124,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_18_051558) do
     t.float "strength", default: 0.0, null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
+    t.index ["parent_id"], name: "index_items_on_parent_id"
     t.index ["project_id", "number"], name: "index_items_on_project_id_and_number", unique: true
     t.index ["project_id"], name: "index_items_on_project_id"
     t.index ["status_id"], name: "index_items_on_status_id"
@@ -329,6 +331,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_18_051558) do
   add_foreign_key "credentials", "users"
   add_foreign_key "item_tags", "items"
   add_foreign_key "item_tags", "tags"
+  add_foreign_key "items", "items", column: "parent_id"
   add_foreign_key "items", "projects"
   add_foreign_key "items", "statuses"
   add_foreign_key "memberships", "organizations"

@@ -18,6 +18,9 @@ class Item < ApplicationRecord
 
   belongs_to :project
   belongs_to :status
+  belongs_to :parent, class_name: "Item", optional: true, inverse_of: :children
+  has_many :children, -> { order(:number) }, class_name: "Item", foreign_key: :parent_id,
+           inverse_of: :parent, dependent: :nullify
   has_many :comments, dependent: :destroy
   has_many :comparisons_as_item_a, class_name: "Comparison", foreign_key: :item_a_id, dependent: :destroy, inverse_of: :item_a
   has_many :comparisons_as_item_b, class_name: "Comparison", foreign_key: :item_b_id, dependent: :destroy, inverse_of: :item_b
@@ -29,6 +32,8 @@ class Item < ApplicationRecord
   validates :item_type, inclusion: { in: ITEM_TYPES }
   validates :source, inclusion: { in: SOURCES }
   validates :points, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
+  validate :parent_in_same_project
+  validate :parent_not_circular
 
   scope :not_done, -> { joins(:status).where.not(statuses: { category: "done" }) }
 
@@ -105,8 +110,51 @@ class Item < ApplicationRecord
       notes_trix: notes.body&.to_trix_html.to_s,
       provenance: provenance,
       ai_reviewed_at: ai_reviewed_at&.to_i,
-      updated_at: updated_at.to_i
+      updated_at: updated_at.to_i,
+      parent_id: parent_id
     )
+  end
+
+  # Parent chain from the immediate parent up to the root. Guards against a
+  # corrupted cycle in the data so rendering can never loop forever.
+  #
+  # @return [Array<Item>]
+  def ancestors
+    chain = []
+    node = parent
+    while node && node.id != id && chain.none? { |seen| seen.id == node.id }
+      chain << node
+      node = node.parent
+    end
+    chain
+  end
+
+  # Ids of every item below this one in the parent tree, any depth.
+  #
+  # @return [Array<Integer>]
+  def descendant_ids
+    return [] if new_record?
+
+    sql = self.class.sanitize_sql_array([ <<~SQL, id ])
+      WITH RECURSIVE descendants AS (
+        SELECT id FROM items WHERE parent_id = ?
+        UNION ALL
+        SELECT items.id FROM items JOIN descendants ON items.parent_id = descendants.id
+      )
+      SELECT id FROM descendants
+    SQL
+    self.class.connection.select_values(sql)
+  end
+
+  # Same-project items eligible to become this item's parent: everything except
+  # the item itself and its descendants (either would create a cycle).
+  #
+  # @return [ActiveRecord::Relation<Item>]
+  def parent_candidates
+    scope = project.items.includes(:project).order(:number)
+    return scope if new_record?
+
+    scope.where.not(id: [ id, *descendant_ids ])
   end
 
   # JSON shape the Prioritize Svelte island renders for a candidate card.
@@ -171,6 +219,32 @@ class Item < ApplicationRecord
   end
 
   private
+
+  def parent_in_same_project
+    return if parent.nil? || parent.project_id == project_id
+
+    errors.add(:parent, "must belong to the same project")
+  end
+
+  # Rejects a parent assignment that would close a loop: the item itself or
+  # anything already below it in the tree. Walks up from the proposed parent
+  # with a seen-set so even corrupted data can't hang the validation.
+  def parent_not_circular
+    return if parent.nil? || new_record?
+
+    seen = Set.new
+    node = parent
+    while node
+      if node.id == id
+        errors.add(:parent, "can't be the item itself or one of its sub-items")
+        return
+      end
+      break if seen.include?(node.id)
+
+      seen << node.id
+      node = node.parent
+    end
+  end
 
   def assign_default_status
     self.status ||= project&.organization&.default_status

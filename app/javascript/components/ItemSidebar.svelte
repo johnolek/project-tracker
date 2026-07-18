@@ -2,7 +2,7 @@
   import saveItem from "../save_item"
   import tagColorClass from "../tag_color"
 
-  let { item: initialItem, updateUrl, statuses, itemTypes, pointOptions, allTags } = $props()
+  let { item: initialItem, updateUrl, statuses, itemTypes, pointOptions, allTags, parentOptions } = $props()
 
   const PROVENANCE_LABELS = {
     user_created: "User created",
@@ -136,6 +136,25 @@
             <option value="">No estimate</option>
             {#each offeredPoints as option (option)}
               <option value={String(option)}>{option}</option>
+            {/each}
+          </select>
+        </div>
+      </dd>
+    </div>
+
+    <div class="item-meta-row">
+      <dt>Parent</dt>
+      <dd>
+        <div class="select is-small is-fullwidth">
+          <select
+            aria-label="Change parent"
+            disabled={saving}
+            value={item.parent_id == null ? "" : String(item.parent_id)}
+            onchange={(event) => save({ parent_id: event.target.value === "" ? null : Number(event.target.value) })}
+          >
+            <option value="">No parent</option>
+            {#each parentOptions as option (option.id)}
+              <option value={String(option.id)}>{option.label}</option>
             {/each}
           </select>
         </div>

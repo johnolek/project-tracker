@@ -201,7 +201,7 @@ RSpec.describe "API v1 items", type: :request do
       expect(response).to have_http_status(:ok)
       expect(json_body.keys).to match_array(
         %w[id key number title item_type points strength source ai_reviewed_at provenance
-           status project tags notes_html notes_text created_at updated_at]
+           status project parent children tags notes_html notes_text created_at updated_at]
       )
       expect(json_body).to include(
         "id" => item.id,
@@ -393,6 +393,84 @@ RSpec.describe "API v1 items", type: :request do
       expect(response).to have_http_status(:unprocessable_entity)
       expect(json_body).to eq("error" => "Unknown status: Bogus")
       expect(item.reload.title).to eq("Stable")
+    end
+  end
+
+  describe "parent trees" do
+    let!(:epic) { create(:item, project: project, title: "Epic") }
+
+    it "sets a parent by key on create and serializes both directions" do
+      post api_v1_project_items_path(project), headers: auth_headers,
+           params: { item: { title: "Child", parent: epic.key } }
+
+      expect(response).to have_http_status(:created)
+      expect(json_body["parent"]).to eq("id" => epic.id, "key" => epic.key, "title" => "Epic")
+
+      get api_v1_item_path(epic), headers: auth_headers
+      expect(json_body["parent"]).to be_nil
+      expect(json_body["children"]).to contain_exactly(
+        hash_including("key" => "#{project.slug}-2", "title" => "Child")
+      )
+    end
+
+    it "reassigns and clears the parent on update" do
+      child = create(:item, project: project, parent: epic)
+
+      patch api_v1_item_path(child), headers: auth_headers, params: { item: { parent: "none" } }
+      expect(response).to have_http_status(:ok)
+      expect(child.reload.parent).to be_nil
+
+      patch api_v1_item_path(child), headers: auth_headers, params: { item: { parent: epic.id.to_s } }
+      expect(child.reload.parent).to eq(epic)
+    end
+
+    it "422s on an unresolvable parent reference" do
+      post api_v1_project_items_path(project), headers: auth_headers,
+           params: { item: { title: "Orphan", parent: "NOPE-99" } }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(json_body).to eq("error" => "Unknown parent: NOPE-99")
+    end
+
+    it "422s when the parent lives in another project" do
+      other = api_organization.projects.create!(name: "Elsewhere")
+      foreign = create(:item, project: other)
+
+      post api_v1_project_items_path(project), headers: auth_headers,
+           params: { item: { title: "Crosses projects", parent: foreign.key } }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(json_body["errors"]).to include("Parent must belong to the same project")
+    end
+
+    it "422s when the parent would create a cycle" do
+      child = create(:item, project: project, parent: epic)
+
+      patch api_v1_item_path(epic), headers: auth_headers, params: { item: { parent: child.key } }
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(json_body["errors"]).to include("Parent can't be the item itself or one of its sub-items")
+      expect(epic.reload.parent).to be_nil
+    end
+
+    it "filters direct sub-items with parent=<key> and roots with parent=none" do
+      child = create(:item, project: project, parent: epic)
+      grandchild = create(:item, project: project, parent: child)
+
+      get api_v1_items_path, headers: auth_headers, params: { parent: epic.key }
+      expect(item_ids).to eq([ child.id ])
+
+      get api_v1_items_path, headers: auth_headers, params: { parent: "none" }
+      expect(item_ids).to eq([ epic.id ])
+
+      get api_v1_items_path, headers: auth_headers, params: { parent: child.id }
+      expect(item_ids).to eq([ grandchild.id ])
+    end
+
+    it "404s a parent filter that doesn't resolve in the organization" do
+      get api_v1_items_path, headers: auth_headers, params: { parent: "NOPE-1" }
+
+      expect(response).to have_http_status(:not_found)
     end
   end
 

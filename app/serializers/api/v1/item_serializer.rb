@@ -6,7 +6,8 @@ module Api
       #   project-scoped sequence; notes_html is the rendered rich-text HTML
       #   ("" when blank), notes_text its plain-text form; tags are names
       #   sorted alphabetically; provenance derives from source +
-      #   ai_reviewed_at (user_created / ai_created / ai_reviewed)
+      #   ai_reviewed_at (user_created / ai_created / ai_reviewed); parent is
+      #   nil for root items; children are direct sub-items by ascending number
       def self.render(item)
         {
           id: item.id,
@@ -25,12 +26,23 @@ module Api
             name: item.project.name,
             slug: item.project.slug
           },
+          parent: item.parent && reference(item.parent),
+          children: item.children.map { |child| reference(child) },
           tags: item.tags.map(&:name).sort,
           notes_html: item.notes.to_s,
           notes_text: item.notes.to_plain_text,
           created_at: item.created_at,
           updated_at: item.updated_at
         }
+      end
+
+      # Compact form for tree neighbors (parent/children) — enough to follow
+      # up with a show call without embedding whole items recursively.
+      #
+      # @param item [Item]
+      # @return [Hash]
+      def self.reference(item)
+        { id: item.id, key: item.key, title: item.title }
       end
     end
   end

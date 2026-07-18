@@ -52,6 +52,8 @@ envelope keyed by the collection name; only item indexes are paginated.
   "provenance": "user_created",
   "status": { "id": 1, "name": "New", "category": "open", "position": 1 },
   "project": { "id": 7, "name": "Tracker", "slug": "TRAC" },
+  "parent": { "id": 40, "key": "TRAC-10", "title": "Login hardening" },
+  "children": [{ "id": 44, "key": "TRAC-14", "title": "Add captcha" }],
   "tags": ["backend", "urgent"],
   "notes_html": "<div class=\"trix-content\">\n  <p>Steps to reproduce...</p>\n</div>\n",
   "notes_text": "Steps to reproduce...",
@@ -68,6 +70,7 @@ envelope keyed by the collection name; only item indexes are paginated.
 - `source` — `"web"` (created from the web UI) or `"api"` (created through this API; every item created via `POST` is stamped `"api"`).
 - `ai_reviewed_at` — timestamp of the LLM's sign-off after revising a person-created item, or null. Set/cleared with the `ai_reviewed` boolean on update.
 - `provenance` — derived display state: `"ai_created"` (source is api), `"ai_reviewed"` (web-created with `ai_reviewed_at` set), else `"user_created"`.
+- `parent` / `children` — the item's place in the parent tree, as compact `{ id, key, title }` references (`parent` is `null` for root items; `children` are direct sub-items by ascending number). Parents are same-project only and may nest to any depth; set with the `parent` field on create/update.
 
 **Project** `{ id, name, slug, created_at, updated_at }` — `slug` is 1-10 uppercase letters/digits starting with a letter (e.g. `TRAC`), unique per organization
 **Status** `{ id, name, category, position }` — `category` is one of `open`, `in_progress`, `done`
@@ -134,6 +137,7 @@ All filters combine (AND) and are available on both routes:
 | `points_lt` / `points_lte` / `points_gt` / `points_gte` | Points comparisons (items with null points never match) |
 | `source` | `web` or `api` — where the item was created |
 | `ai_reviewed` | `true` — only items an LLM has signed off; anything else — only items without a sign-off |
+| `parent` | Direct sub-items of the given item (id or key, e.g. `parent=TRAC-10`; unknown → 404). `parent=none` — root items only. |
 | `q` | Case-insensitive substring match on title |
 | `sort` | `created_at` (default), `points`, `strength`, `title` |
 | `direction` | `asc` or `desc`. Defaults: `desc` for `created_at`, `asc` for the others. Ties break by `id` in the same direction. |
@@ -165,6 +169,7 @@ Fields (all optional except `title`):
 - `item_type` — defaults to `feature` (legacy `task`/`enhancement` are accepted and stored as `feature`)
 - `points` — positive integer or null
 - `status` — status **name**, case-insensitive, resolved within the organization. Omitted → the organization's default (first open) status. Unknown name → 422 `{ "error": "Unknown status: <name>" }`.
+- `parent` — item id or key to group this item under (`"none"` or `""` clears it on update). Unresolvable reference → 422 `{ "error": "Unknown parent: <ref>" }`; a parent in another project or one of the item's own sub-items → 422 with a validation error.
 - `tags` — array of names **or** one comma-separated string; unknown tags are created automatically
 
 ```bash

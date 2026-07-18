@@ -77,6 +77,28 @@ RSpec.describe "Item moves", type: :request do
       expect(sidebar_props["allTags"]).to include("urgent")
     end
 
+    it "walks ancestors in the breadcrumb and lists sub-items with an add button" do
+      root = create(:item, project: project, title: "Epic")
+      middle = create(:item, project: project, parent: root)
+      leaf = create(:item, project: project, parent: middle, title: "Leaf task")
+
+      get project_item_path(project, leaf)
+
+      breadcrumb = Nokogiri::HTML(response.body).at_css("nav.breadcrumb")
+      expect(breadcrumb.css("a").map(&:text)).to include(root.key, middle.key)
+
+      get project_item_path(project, middle)
+
+      document = Nokogiri::HTML(response.body)
+      sub_items = document.at_css(".sub-items")
+      expect(sub_items.text).to include(leaf.key, "Leaf task")
+      expect(response.body).to include(new_project_item_path(project, parent_id: middle.id))
+
+      sidebar_props = JSON.parse(document.at_css('[data-svelte-component="ItemSidebar"]')["data-props"])
+      expect(sidebar_props["item"]["parent_id"]).to eq(root.id)
+      expect(sidebar_props["parentOptions"].map { |option| option["id"] }).to contain_exactly(root.id)
+    end
+
     it "links straight into prioritize mode with the item pinned, unless the item is done" do
       item = create(:item, project: project)
 
@@ -143,6 +165,29 @@ RSpec.describe "Item moves", type: :request do
       expect(response).to have_http_status(:unprocessable_entity)
       expect(response.parsed_body["errors"]).to be_present
       expect(item.reload.title).to be_present
+    end
+
+    it "sets and clears the parent from the sidebar select" do
+      epic = create(:item, project: project)
+      item = create(:item, project: project)
+
+      patch project_item_path(project, item), params: { item: { parent_id: epic.id } }, as: :json
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body["parent_id"]).to eq(epic.id)
+      expect(item.reload.parent).to eq(epic)
+
+      patch project_item_path(project, item), params: { item: { parent_id: nil } }, as: :json
+      expect(item.reload.parent).to be_nil
+    end
+
+    it "rejects a cycle-creating parent as a JSON validation error" do
+      epic = create(:item, project: project)
+      child = create(:item, project: project, parent: epic)
+
+      patch project_item_path(project, epic), params: { item: { parent_id: child.id } }, as: :json
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(epic.reload.parent).to be_nil
     end
   end
 

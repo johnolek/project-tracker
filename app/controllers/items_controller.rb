@@ -4,12 +4,13 @@ class ItemsController < ApplicationController
   before_action :set_item, only: %i[show edit update destroy move]
 
   def show
+    @children = @item.children.includes(:status, :project)
     @comments = @item.comments.includes(:user).with_rich_text_body.order(:created_at)
     @new_comment = @item.comments.new
   end
 
   def new
-    @item = @project.items.new(status: preselected_status)
+    @item = @project.items.new(status: preselected_status, parent: preselected_parent)
   end
 
   def edit
@@ -70,6 +71,15 @@ class ItemsController < ApplicationController
     requested || current_organization.default_status
   end
 
+  # Parent preselected on the new-item form via params[:parent_id] (the
+  # "Add sub-item" button on an item page). Ignored unless it names an item
+  # in this project.
+  #
+  # @return [Item, nil]
+  def preselected_parent
+    @project.items.find_by(id: params[:parent_id]) if params[:parent_id].present?
+  end
+
   def set_item
     @item = @project.items.find(params[:id])
   end
@@ -77,6 +87,6 @@ class ItemsController < ApplicationController
   # tag_names is permitted in both shapes: the classic form posts one
   # comma-separated string, the inline sidebar PATCHes a JSON array.
   def item_params
-    params.require(:item).permit(:title, :notes, :points, :item_type, :status_id, :tag_names, tag_names: [])
+    params.require(:item).permit(:title, :notes, :points, :item_type, :status_id, :parent_id, :tag_names, tag_names: [])
   end
 end
