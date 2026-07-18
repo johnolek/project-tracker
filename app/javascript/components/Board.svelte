@@ -3,9 +3,8 @@
   import { fade } from "svelte/transition"
   import Sortable from "sortablejs"
   import consumer from "../cable"
-  import tagColorClass from "../tag_color"
   import ItemFilters from "./ItemFilters.svelte"
-  import itemTypeStyle from "../item_type_style"
+  import ItemCardBody from "./ItemCardBody.svelte"
 
   let { projectId, storageKey, statuses, itemTypes, items: initialItems } = $props()
 
@@ -166,10 +165,6 @@
     return metric(a) - metric(b) || b.id - a.id
   }
 
-  function formatStrength(value) {
-    return `${value >= 0 ? "+" : ""}${value.toFixed(1)}`
-  }
-
   function sortable(node) {
     const instance = Sortable.create(node, {
       group: "board",
@@ -315,45 +310,14 @@
               out:fade={{ duration: 100 }}
             >
               <a class="board-card-link" href={item.url}>
-                <span class="board-card-top">
-                  <span
-                    class="item-type-tag board-card-type"
-                    class:is-active-filter={itemType === item.item_type}
-                    style={itemTypeStyle(itemTypes, item.item_type)}
-                    role="button"
-                    tabindex="0"
-                    aria-pressed={itemType === item.item_type}
-                    title={`Filter by ${item.item_type}`}
-                    onclick={(event) => filterByType(event, item.item_type)}
-                    onkeydown={(event) => { if (event.key === "Enter" || event.key === " ") filterByType(event, item.item_type) }}
-                  >{item.item_type}</span>
-                  <span class="board-card-key">{item.key}</span>
-                </span>
-                <span class="board-card-title">{item.title}</span>
-                <div class="board-card-meta">
-                  {#if item.tags.length}
-                    <span class="tags board-card-tags">
-                      {#each item.tags as tag (tag)}
-                        <span
-                          class="tag is-small board-card-tag {tagColorClass(tag)}"
-                          class:is-active-filter={selectedTags.includes(tag)}
-                          role="button"
-                          tabindex="0"
-                          aria-pressed={selectedTags.includes(tag)}
-                          title={`Filter by ${tag}`}
-                          onclick={(event) => filterByTag(event, tag)}
-                          onkeydown={(event) => { if (event.key === "Enter" || event.key === " ") filterByTag(event, tag) }}
-                        >{tag}</span>
-                      {/each}
-                    </span>
-                  {/if}
-                  <span class="board-card-badges">
-                    <span class="board-card-strength tag is-small" title="Priority strength">{formatStrength(item.strength)}</span>
-                    {#if item.points}
-                      <span class="board-card-points" title="{item.points} points">{item.points}</span>
-                    {/if}
-                  </span>
-                </div>
+                <ItemCardBody
+                  {item}
+                  {itemTypes}
+                  onFilterType={filterByType}
+                  onFilterTag={filterByTag}
+                  activeType={itemType}
+                  activeTags={selectedTags}
+                />
               </a>
             </li>
           {/each}

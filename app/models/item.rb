@@ -195,6 +195,8 @@ class Item < ApplicationRecord
       title: title,
       item_type: item_type,
       points: points,
+      strength: strength,
+      tags: tags.sort_by(&:name).map(&:name),
       notes_html: notes.present? ? notes.to_s : "",
       url: Rails.application.routes.url_helpers.project_item_path(project, self),
       move_url: Rails.application.routes.url_helpers.move_project_item_path(project, self)

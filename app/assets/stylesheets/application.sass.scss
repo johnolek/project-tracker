@@ -330,117 +330,6 @@ rhino-editor {
     }
   }
 
-  // Top row of the card: type chip left, human key (PROJ-12) pinned right.
-  // The chip's visual styling and per-type colors are defined globally
-  // (.item-type-tag / .item-type-<type>) so the ERB renderings share the
-  // exact same coloring.
-  .board-card-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.35rem;
-    margin-bottom: 0.3rem;
-  }
-
-  .board-card-key {
-    font-size: 0.72rem;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    color: var(--bulma-text-weak);
-    white-space: nowrap;
-  }
-
-  .board-card-title {
-    font-weight: 600;
-    line-height: 1.3;
-  }
-
-  .board-card-meta {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-    margin-top: 0.5rem;
-  }
-
-  .board-card-tags {
-    margin-bottom: 0;
-
-    .tag {
-      margin-bottom: 0;
-    }
-  }
-
-  // Card tags double as filter toggles. The active pairing mirrors
-  // .board-card-points (--bulma-primary / --bulma-primary-invert), already
-  // vetted for AA in both schemes, so a filtered-in tag reads clearly.
-  .board-card-tag {
-    cursor: pointer;
-    transition: background-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
-
-    &:hover {
-      box-shadow: inset 0 0 0 1px var(--bulma-primary);
-    }
-
-    &:focus-visible {
-      outline: 2px solid var(--bulma-primary);
-      outline-offset: 1px;
-    }
-
-    &.is-active-filter {
-      background-color: var(--bulma-primary);
-      color: var(--bulma-primary-invert);
-    }
-  }
-
-  // The type chip doubles as a type filter: keep its own hue, and mark the active
-  // filter with a ring rather than recoloring (which would hide that color).
-  .board-card-type {
-    cursor: pointer;
-    transition: box-shadow 120ms ease;
-
-    &:hover {
-      box-shadow: inset 0 0 0 1px var(--bulma-primary);
-    }
-
-    &:focus-visible {
-      outline: 2px solid var(--bulma-primary);
-      outline-offset: 1px;
-    }
-
-    &.is-active-filter {
-      box-shadow: 0 0 0 2px var(--bulma-primary);
-    }
-  }
-
-  // Strength (quieter) and points sit together, pushed to the card's corner.
-  .board-card-badges {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    margin-left: auto;
-  }
-
-  .board-card-strength {
-    font-variant-numeric: tabular-nums;
-  }
-
-  // Distinct rounded estimate badge, glanceable in the corner like Jira points.
-  .board-card-points {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 1.5rem;
-    height: 1.4rem;
-    padding: 0 0.45rem;
-    border-radius: 0.7rem;
-    background: var(--bulma-primary);
-    color: var(--bulma-primary-invert);
-    font-size: 0.72rem;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-  }
-
   .sortable-ghost .board-card-link {
     opacity: 0.4;
   }
@@ -448,6 +337,118 @@ rhino-editor {
   .sortable-drag .board-card-link {
     border-color: var(--bulma-primary);
   }
+}
+
+// Shared item-card body, rendered by ItemCardBody.svelte inside both the board
+// card (.board-card-link) and the prioritize comparison card (.comparison-card).
+// Top-level (not nested under .item-board) so the layout applies in both places.
+// The type/tag chips double as board filters when ItemCardBody is given filter
+// callbacks; without them (the comparison view) they render as plain chips.
+.board-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem;
+  margin-bottom: 0.3rem;
+}
+
+.board-card-key {
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--bulma-text-weak);
+  white-space: nowrap;
+}
+
+.board-card-title {
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.board-card-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+
+.board-card-tags {
+  margin-bottom: 0;
+
+  .tag {
+    margin-bottom: 0;
+  }
+}
+
+// Card tags double as filter toggles on the board. The active pairing mirrors
+// .board-card-points (--bulma-primary / --bulma-primary-invert), already vetted
+// for AA in both schemes, so a filtered-in tag reads clearly.
+.board-card-tag {
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+
+  &:hover {
+    box-shadow: inset 0 0 0 1px var(--bulma-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--bulma-primary);
+    outline-offset: 1px;
+  }
+
+  &.is-active-filter {
+    background-color: var(--bulma-primary);
+    color: var(--bulma-primary-invert);
+  }
+}
+
+// The type chip doubles as a type filter on the board: keep its own hue, and mark
+// the active filter with a ring rather than recoloring (which would hide it).
+.board-card-type {
+  cursor: pointer;
+  transition: box-shadow 120ms ease;
+
+  &:hover {
+    box-shadow: inset 0 0 0 1px var(--bulma-primary);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--bulma-primary);
+    outline-offset: 1px;
+  }
+
+  &.is-active-filter {
+    box-shadow: 0 0 0 2px var(--bulma-primary);
+  }
+}
+
+// Strength (quieter) and points sit together, pushed to the card's corner.
+.board-card-badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: auto;
+}
+
+.board-card-strength {
+  font-variant-numeric: tabular-nums;
+}
+
+// Distinct rounded estimate badge, glanceable in the corner like Jira points.
+.board-card-points {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  height: 1.4rem;
+  padding: 0 0.45rem;
+  border-radius: 0.7rem;
+  background: var(--bulma-primary);
+  color: var(--bulma-primary-invert);
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 // Mobile board: swipeable columns instead of a tall vertical stack.
@@ -607,8 +608,9 @@ $tag-colors: (
     text-align: left;
     cursor: pointer;
 
-    // Reserve room in the top-right corner for the Edit + Pin affordances.
-    .title {
+    // Reserve room in the top-right corner (Open + Pin) so the card's top row
+    // (type chip + key) clears them.
+    .board-card-top {
       padding-right: 6.5rem;
     }
 
@@ -616,24 +618,6 @@ $tag-colors: (
     &:focus-visible {
       border-color: var(--bulma-primary);
       background: var(--bulma-scheme-main-ter);
-    }
-  }
-
-  // The item's human key as a quiet link to its page (new tab, so the pin +
-  // filter session survives). Sits in the tag row; the card's link guard keeps
-  // clicking it from casting a vote.
-  .comparison-key {
-    align-self: center;
-    font-size: 0.72rem;
-    font-weight: 600;
-    font-variant-numeric: tabular-nums;
-    color: var(--bulma-text-weak);
-    white-space: nowrap;
-
-    &:hover,
-    &:focus-visible {
-      color: var(--bulma-primary);
-      text-decoration: underline;
     }
   }
 
