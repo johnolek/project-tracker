@@ -77,15 +77,39 @@ RSpec.describe "API v1 projects", type: :request do
       expect(project.reload.slug).to eq("FRESH")
     end
 
-    it "refuses a slug change once the project has items" do
-      project = api_organization.projects.create!(name: "Old")
+    it "changes the slug even when the project has items, retiring the old one" do
+      project = api_organization.projects.create!(name: "Old", slug: "OLD")
       create(:item, project: project)
 
-      patch api_v1_project_path(project), params: { project: { slug: "OTHER" } }, headers: auth_headers
+      patch api_v1_project_path(project), params: { project: { slug: "NEW" } }, headers: auth_headers
 
-      expect(response).to have_http_status(:unprocessable_entity)
-      expect(json_body["errors"]).to include("Slug can't be changed once the project has items")
-      expect(project.reload.slug).to eq("OLD")
+      expect(response).to have_http_status(:ok)
+      expect(project.reload.slug).to eq("NEW")
+      expect(project.slug_aliases.pluck(:slug)).to include("OLD")
+    end
+  end
+
+  describe "retired slugs" do
+    it "resolves a retired slug and 301s to the current one" do
+      project = api_organization.projects.create!(name: "Old", slug: "OLD")
+      project.update!(slug: "NEW")
+
+      get api_v1_project_path("OLD"), headers: auth_headers
+
+      expect(response).to have_http_status(:moved_permanently)
+      expect(response).to redirect_to(api_v1_project_path("NEW"))
+    end
+
+    it "still resolves an item by its old key after a slug change" do
+      project = api_organization.projects.create!(name: "Old", slug: "OLD")
+      item = create(:item, project: project)
+      old_key = item.key
+      project.update!(slug: "NEW")
+
+      get api_v1_item_path(old_key), headers: auth_headers
+
+      expect(response).to have_http_status(:moved_permanently)
+      expect(response).to redirect_to(api_v1_item_path(item.reload.key))
     end
   end
 

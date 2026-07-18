@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_18_060001) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_18_070000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -167,6 +167,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_18_060001) do
     t.datetime "created_at", null: false
     t.string "name", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "project_slug_aliases", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "organization_id", null: false
+    t.bigint "project_id", null: false
+    t.string "slug", null: false
+    t.datetime "updated_at", null: false
+    t.index "organization_id, lower((slug)::text)", name: "index_project_slug_aliases_on_org_and_lower_slug", unique: true
+    t.index ["organization_id"], name: "index_project_slug_aliases_on_organization_id"
+    t.index ["project_id"], name: "index_project_slug_aliases_on_project_id"
   end
 
   create_table "projects", force: :cascade do |t|
@@ -361,6 +372,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_18_060001) do
   add_foreign_key "items", "statuses"
   add_foreign_key "memberships", "organizations"
   add_foreign_key "memberships", "users"
+  add_foreign_key "project_slug_aliases", "organizations"
+  add_foreign_key "project_slug_aliases", "projects"
   add_foreign_key "projects", "organizations"
   add_foreign_key "solid_queue_blocked_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade
   add_foreign_key "solid_queue_claimed_executions", "solid_queue_jobs", column: "job_id", on_delete: :cascade

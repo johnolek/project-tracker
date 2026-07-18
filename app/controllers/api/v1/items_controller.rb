@@ -26,6 +26,8 @@ module Api
       end
 
       def show
+        return redirect_to api_v1_item_path(@item), status: :moved_permanently if stale_item_key?(params[:id], @item)
+
         render json: ItemSerializer.render(@item)
       end
 

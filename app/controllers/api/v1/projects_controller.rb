@@ -9,6 +9,8 @@ module Api
       end
 
       def show
+        return redirect_to api_v1_project_path(@project), status: :moved_permanently if stale_project_slug?(params[:id], @project)
+
         render json: ProjectSerializer.render(@project)
       end
 

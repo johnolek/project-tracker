@@ -18,6 +18,7 @@ class Organization < ApplicationRecord
   has_many :memberships, dependent: :destroy
   has_many :users, through: :memberships
   has_many :projects, dependent: :destroy
+  has_many :project_slug_aliases, dependent: :destroy
   has_many :statuses, dependent: :destroy
   has_many :item_types, dependent: :destroy
   has_many :tags, dependent: :destroy

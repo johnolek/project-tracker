@@ -4,6 +4,8 @@ class ItemsController < ApplicationController
   before_action :set_item, only: %i[show update destroy move]
 
   def show
+    return redirect_to project_item_path(@project, @item), status: :moved_permanently if stale_project_slug?(params[:project_id])
+
     @children = @item.children.includes(:status, :project)
     @links = @item.grouped_links
     @link_targets = @project.items.where.not(id: @item.id).includes(:project).order(number: :desc)

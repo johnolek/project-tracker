@@ -16,18 +16,16 @@
     </div>
   </div>
 
-  <% slug_frozen = project.persisted? && project.items.exists? %>
   <div class="field">
     <%= form.label :slug, class: "label" %>
     <div class="control">
-      <%= form.text_field :slug, class: "input", disabled: slug_frozen,
+      <%= form.text_field :slug, class: "input",
             placeholder: "Derived from the name when left blank" %>
     </div>
     <p class="help">
-      <% if slug_frozen %>
-        Locked — the project has items, so keys like <%= project.slug %>-1 must stay stable.
-      <% else %>
-        Prefixes item keys (e.g. <%= project.slug.presence || "PROJ" %>-1). Uppercase letters and digits, changeable until the project has items.
+      Prefixes item keys (e.g. <%= project.slug.presence || "PROJ" %>-1). Uppercase letters and digits.
+      <% if project.persisted? && project.items.exists? %>
+        Changing it renames every key (<%= project.slug %>-1 → NEW-1); the old slug is reserved and old links redirect.
       <% end %>
     </p>
   </div>

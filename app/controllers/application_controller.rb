@@ -32,11 +32,24 @@ class ApplicationController < ActionController::Base
   # @return [Project]
   # @raise [ActiveRecord::RecordNotFound]
   def find_project!(param, scope: current_organization.projects)
-    if param.to_s.match?(/\A\d+\z/)
-      scope.find(param)
-    else
-      scope.find_by!(slug: param.to_s.upcase)
-    end
+    return scope.find(param) if param.to_s.match?(/\A\d+\z/)
+
+    slug = param.to_s.upcase
+    scope.find_by(slug: slug) ||
+      current_organization.project_slug_aliases.find_by(slug: slug)&.project ||
+      raise(ActiveRecord::RecordNotFound, "Couldn't find Project with slug=#{slug}")
+  end
+
+  # True when a project was reached through a non-canonical reference — a retired
+  # slug — so a show action can 301 to the current slug. Numeric-id references
+  # resolve without redirecting.
+  #
+  # @param param [String] the project_id/id from the URL
+  # @return [Boolean]
+  def stale_project_slug?(param)
+    return false if param.to_s.match?(/\A\d+\z/)
+
+    param.to_s.upcase != @project.slug
   end
 
   # Resolves an item within +scope+ by key ("PROJ-3") or, for legacy URLs,

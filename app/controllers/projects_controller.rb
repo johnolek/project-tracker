@@ -7,6 +7,7 @@ class ProjectsController < ApplicationController
   end
 
   def show
+    redirect_to project_path(@project), status: :moved_permanently if stale_project_slug?(params[:id])
   end
 
   def new

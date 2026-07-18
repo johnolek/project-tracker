@@ -55,19 +55,37 @@ RSpec.describe Project, type: :model do
     end
   end
 
-  describe "slug immutability" do
+  describe "changing the slug" do
     it "allows changing the slug while the project has no items" do
       project = create(:project)
 
       expect(project.update(slug: "FRESH")).to be(true)
     end
 
-    it "refuses to change the slug once items exist" do
-      project = create(:project)
+    it "allows changing the slug once items exist, retiring the old slug" do
+      project = create(:project, slug: "OLD")
       project.items.create!(title: "An item")
 
-      expect(project.update(slug: "OTHER")).to be(false)
-      expect(project.errors[:slug]).to include("can't be changed once the project has items")
+      expect(project.update(slug: "NEW")).to be(true)
+      expect(project.reload.slug).to eq("NEW")
+      expect(project.slug_aliases.pluck(:slug)).to include("OLD")
+    end
+
+    it "reserves a retired slug against reuse by another project" do
+      org = create(:organization)
+      create(:project, organization: org, slug: "OLD").update!(slug: "NEW")
+
+      reused = build(:project, organization: org, slug: "OLD")
+      expect(reused).not_to be_valid
+      expect(reused.errors[:slug]).to include("is reserved by another project")
+    end
+
+    it "lets a project reclaim its own retired slug" do
+      project = create(:project, slug: "OLD")
+      project.update!(slug: "NEW")
+
+      expect(project.update(slug: "OLD")).to be(true)
+      expect(project.slug_aliases.where("lower(slug) = ?", "old")).to be_empty
     end
 
     it "still allows renaming a project with items" do
