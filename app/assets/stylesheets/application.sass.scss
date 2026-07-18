@@ -459,6 +459,31 @@ rhino-editor {
   }
 }
 
+// Bulma's .level.is-mobile keeps the left side (title/breadcrumb) and the right
+// side (action buttons) on one row at every width, so on a narrow screen the
+// button group overflows the viewport and forces horizontal scrolling. On mobile,
+// let these page headers wrap: the right side drops onto its own line and its
+// button group wraps within itself instead of pushing off-screen.
+@media (max-width: 768px) {
+  .level.is-mobile {
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
+
+    .level-left {
+      min-width: 0;
+    }
+
+    // Give the right side its own full-width line so its .buttons group has a
+    // bounded (viewport-wide) container to wrap within. Left to shrink-wrap, the
+    // button row just grows past the viewport and scrolls sideways.
+    .level-right {
+      width: 100%;
+      margin-left: 0;
+      justify-content: flex-start;
+    }
+  }
+}
+
 // Item-type chip, shared by the Svelte board card and the ERB renderings
 // (item detail, priorities table, search results) via item_type_tag. Each type
 // carries a fixed hue drawn from the Southwest palette: bug reads danger (red),
