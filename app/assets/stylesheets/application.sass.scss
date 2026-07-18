@@ -123,10 +123,14 @@ rhino-editor {
   }
 }
 
-// One coherent toolbar: title search, type/point/tag filters, and sort share a
-// wrapping flex row. Active-filter chips and the clear affordance drop onto
-// their own line (flex-basis: 100%) so a narrowed board explains itself.
-.board-toolbar {
+// One shared filter toolbar for the board and the prioritize view (the
+// ItemFilters island): title search, type/point/tag/status filters, and — on
+// the board — sort share a wrapping flex row. Active-filter chips and the clear
+// affordance drop onto their own line (flex-basis: 100%) so a narrowed surface
+// explains itself. The board filters an in-memory list live; prioritize
+// re-fetches a fresh pair from the server on each change. Only the board renders
+// the search input and the sort buttons.
+.filter-toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -137,12 +141,12 @@ rhino-editor {
     margin-bottom: 0;
   }
 
-  .board-toolbar-search {
+  .filter-toolbar-search {
     flex: 1 1 12rem;
     min-width: 10rem;
   }
 
-  .board-points-input {
+  .filter-points-input {
     width: 5rem;
   }
 
@@ -154,13 +158,13 @@ rhino-editor {
     }
   }
 
-  .board-caret {
+  .filter-caret {
     margin-left: 0.35rem;
     font-size: 0.7rem;
   }
 }
 
-.board-active-filters {
+.filter-active-filters {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -168,55 +172,8 @@ rhino-editor {
   flex-basis: 100%;
 }
 
-// Quiet text button — present only while a filter narrows the board.
-.board-clear-filters {
-  border: none;
-  background: none;
-  padding: 0;
-  cursor: pointer;
-  color: var(--bulma-text-weak);
-  font-size: 0.8rem;
-  text-decoration: underline;
-  text-underline-offset: 0.15em;
-
-  &:hover {
-    color: var(--bulma-text);
-  }
-}
-
-// Prioritize filter toolbar: mirrors .board-toolbar so the two filtering
-// surfaces read the same. Each control re-fetches a fresh pair from the server
-// (pair selection is server-side) rather than filtering an in-memory list.
-.prioritize-toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-
-  .field {
-    margin-bottom: 0;
-  }
-
-  .prioritize-points-input {
-    width: 5rem;
-  }
-
-  .prioritize-caret {
-    margin-left: 0.35rem;
-    font-size: 0.7rem;
-  }
-}
-
-.prioritize-active-filters {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.4rem;
-  flex-basis: 100%;
-}
-
-.prioritize-clear-filters {
+// Quiet text button — present only while a filter narrows the surface.
+.filter-clear {
   border: none;
   background: none;
   padding: 0;

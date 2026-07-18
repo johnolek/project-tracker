@@ -1,5 +1,6 @@
 <script>
   import { fade } from "svelte/transition"
+  import ItemFilters from "./ItemFilters.svelte"
 
   let {
     createUrl,
@@ -31,8 +32,6 @@
   let maxPoints = $state(null)
   let selectedTags = $state([])
   let selectedStatusIds = $state([])
-  let tagMenuOpen = $state(false)
-  let statusMenuOpen = $state(false)
 
   const minBound = $derived(toBound(minPoints))
   const maxBound = $derived(toBound(maxPoints))
@@ -105,24 +104,6 @@
     return url.toString()
   }
 
-  function statusName(id) {
-    return statuses.find((status) => status.id === id)?.name ?? ""
-  }
-
-  function toggleTag(tag) {
-    selectedTags = selectedTags.includes(tag)
-      ? selectedTags.filter((candidate) => candidate !== tag)
-      : [...selectedTags, tag]
-    refreshPair()
-  }
-
-  function toggleStatus(id) {
-    selectedStatusIds = selectedStatusIds.includes(id)
-      ? selectedStatusIds.filter((candidate) => candidate !== id)
-      : [...selectedStatusIds, id]
-    refreshPair()
-  }
-
   function clearFilters() {
     itemType = ""
     minPoints = null
@@ -130,14 +111,6 @@
     selectedTags = []
     selectedStatusIds = []
     refreshPair()
-  }
-
-  function clickOutside(node, onOutside) {
-    const handler = (event) => {
-      if (!node.contains(event.target)) onOutside()
-    }
-    document.addEventListener("click", handler)
-    return { destroy: () => document.removeEventListener("click", handler) }
   }
 
   function applyPair(data) {
@@ -341,136 +314,19 @@
   </div>
 {/snippet}
 
-<div class="prioritize-toolbar">
-  <div class="control">
-    <div class="select is-small">
-      <select bind:value={itemType} onchange={refreshPair} aria-label="Filter by item type">
-        <option value="">All types</option>
-        {#each itemTypes as type (type)}
-          <option value={type}>{type}</option>
-        {/each}
-      </select>
-    </div>
-  </div>
-
-  <div class="field has-addons prioritize-points-range" role="group" aria-label="Filter by point range">
-    <div class="control">
-      <input
-        class="input is-small prioritize-points-input"
-        type="number"
-        min="0"
-        placeholder="min"
-        aria-label="Minimum points"
-        bind:value={minPoints}
-        onchange={refreshPair}
-      >
-    </div>
-    <div class="control">
-      <input
-        class="input is-small prioritize-points-input"
-        type="number"
-        min="0"
-        placeholder="max"
-        aria-label="Maximum points"
-        bind:value={maxPoints}
-        onchange={refreshPair}
-      >
-    </div>
-  </div>
-
-  {#if allTags.length}
-    <div class="dropdown" class:is-active={tagMenuOpen} use:clickOutside={() => (tagMenuOpen = false)}>
-      <div class="dropdown-trigger">
-        <button
-          type="button"
-          class="button is-small"
-          aria-haspopup="true"
-          aria-expanded={tagMenuOpen}
-          onclick={() => (tagMenuOpen = !tagMenuOpen)}
-        >
-          <span>Tags{selectedTags.length ? ` (${selectedTags.length})` : ""}</span>
-          <span class="prioritize-caret" aria-hidden="true">▾</span>
-        </button>
-      </div>
-      <div class="dropdown-menu" role="menu">
-        <div class="dropdown-content">
-          {#each allTags as tag (tag)}
-            <button
-              type="button"
-              class="dropdown-item"
-              class:is-active={selectedTags.includes(tag)}
-              role="menuitemcheckbox"
-              aria-checked={selectedTags.includes(tag)}
-              onclick={() => toggleTag(tag)}
-            >
-              {selectedTags.includes(tag) ? "✓ " : ""}{tag}
-            </button>
-          {/each}
-        </div>
-      </div>
-    </div>
-  {/if}
-
-  {#if statuses.length > 1}
-    <div class="dropdown" class:is-active={statusMenuOpen} use:clickOutside={() => (statusMenuOpen = false)}>
-      <div class="dropdown-trigger">
-        <button
-          type="button"
-          class="button is-small"
-          aria-haspopup="true"
-          aria-expanded={statusMenuOpen}
-          onclick={() => (statusMenuOpen = !statusMenuOpen)}
-        >
-          <span>Status{selectedStatusIds.length ? ` (${selectedStatusIds.length})` : ""}</span>
-          <span class="prioritize-caret" aria-hidden="true">▾</span>
-        </button>
-      </div>
-      <div class="dropdown-menu" role="menu">
-        <div class="dropdown-content">
-          {#each statuses as status (status.id)}
-            <button
-              type="button"
-              class="dropdown-item"
-              class:is-active={selectedStatusIds.includes(status.id)}
-              role="menuitemcheckbox"
-              aria-checked={selectedStatusIds.includes(status.id)}
-              onclick={() => toggleStatus(status.id)}
-            >
-              {selectedStatusIds.includes(status.id) ? "✓ " : ""}{status.name}
-            </button>
-          {/each}
-        </div>
-      </div>
-    </div>
-  {/if}
-
-  {#if anyFilterActive}
-    <div class="prioritize-active-filters">
-      {#each selectedTags as tag (tag)}
-        <span class="tag is-small is-primary prioritize-filter-chip">
-          {tag}
-          <button
-            type="button"
-            class="delete is-small"
-            aria-label={`Remove ${tag} tag filter`}
-            onclick={() => toggleTag(tag)}
-          ></button>
-        </span>
-      {/each}
-      {#each selectedStatusIds as id (id)}
-        <span class="tag is-small is-primary prioritize-filter-chip">
-          {statusName(id)}
-          <button
-            type="button"
-            class="delete is-small"
-            aria-label={`Remove ${statusName(id)} status filter`}
-            onclick={() => toggleStatus(id)}
-          ></button>
-        </span>
-      {/each}
-      <button type="button" class="prioritize-clear-filters" onclick={clearFilters}>Clear filters</button>
-    </div>
-  {/if}
+<div class="filter-toolbar">
+  <ItemFilters
+    bind:itemType
+    bind:minPoints
+    bind:maxPoints
+    bind:selectedTags
+    bind:selectedStatusIds
+    {itemTypes}
+    {allTags}
+    {statuses}
+    onchange={refreshPair}
+    onclear={clearFilters}
+  />
 </div>
 
 {#if pinnedItem}
@@ -506,7 +362,7 @@
   <div class="notification is-info is-light">
     <p>
       No pair matches your filters.
-      <button type="button" class="prioritize-clear-filters" onclick={clearFilters}>Clear filters</button>
+      <button type="button" class="filter-clear" onclick={clearFilters}>Clear filters</button>
     </p>
   </div>
 {:else if pinnedItem}

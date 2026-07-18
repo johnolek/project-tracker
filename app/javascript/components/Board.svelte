@@ -4,6 +4,7 @@
   import Sortable from "sortablejs"
   import consumer from "../cable"
   import tagColorClass from "../tag_color"
+  import ItemFilters from "./ItemFilters.svelte"
 
   let { projectId, storageKey, statuses, items: initialItems } = $props()
 
@@ -16,7 +17,6 @@
   let minPoints = $state(null)
   let maxPoints = $state(null)
   let selectedTags = $state([])
-  let tagMenuOpen = $state(false)
   let sort = $state(readSort())
   // Where dragged cards were dropped, in drop order: [{ id, statusId, index }].
   // A dropped card holds that spot instead of snapping to its sorted position.
@@ -56,13 +56,6 @@
 
   const visibleCount = $derived(columns.reduce((sum, column) => sum + column.items.length, 0))
   const hiddenCount = $derived(items.length - visibleCount)
-  const anyFilterActive = $derived(
-    normalizedQuery !== "" ||
-      itemType !== "" ||
-      minBound != null ||
-      maxBound != null ||
-      selectedTags.length > 0
-  )
 
   function toBound(value) {
     return value == null || value === "" || Number.isNaN(value) ? null : Number(value)
@@ -102,14 +95,6 @@
     minPoints = null
     maxPoints = null
     selectedTags = []
-  }
-
-  function clickOutside(node) {
-    const handler = (event) => {
-      if (!node.contains(event.target)) tagMenuOpen = false
-    }
-    document.addEventListener("click", handler)
-    return { destroy: () => document.removeEventListener("click", handler) }
   }
 
   function readSort() {
@@ -266,118 +251,33 @@
   }
 </script>
 
-<div class="board-toolbar">
-  <div class="control board-toolbar-search">
-    <input
-      class="input is-small"
-      type="search"
-      placeholder="Filter cards by title…"
-      aria-label="Filter cards by title"
-      bind:value={query}
-    >
-  </div>
-
-  <div class="control">
-    <div class="select is-small">
-      <select bind:value={itemType} aria-label="Filter by item type">
-        <option value="">All types</option>
-        {#each ITEM_TYPES as type (type)}
-          <option value={type}>{type}</option>
-        {/each}
-      </select>
-    </div>
-  </div>
-
-  <div class="field has-addons board-points-range" role="group" aria-label="Filter by point range">
-    <div class="control">
-      <input
-        class="input is-small board-points-input"
-        type="number"
-        min="0"
-        placeholder="min"
-        aria-label="Minimum points"
-        bind:value={minPoints}
-      >
-    </div>
-    <div class="control">
-      <input
-        class="input is-small board-points-input"
-        type="number"
-        min="0"
-        placeholder="max"
-        aria-label="Maximum points"
-        bind:value={maxPoints}
-      >
-    </div>
-  </div>
-
-  {#if allTags.length}
-    <div class="dropdown board-tags-dropdown" class:is-active={tagMenuOpen} use:clickOutside>
-      <div class="dropdown-trigger">
+<div class="filter-toolbar">
+  <ItemFilters
+    bind:query
+    bind:itemType
+    bind:minPoints
+    bind:maxPoints
+    bind:selectedTags
+    itemTypes={ITEM_TYPES}
+    {allTags}
+    showQuery
+    {hiddenCount}
+    onclear={clearFilters}
+  >
+    <div class="buttons has-addons board-toolbar-sort" role="group" aria-label="Sort cards">
+      {#each SORT_OPTIONS as option (option.key)}
         <button
           type="button"
           class="button is-small"
-          aria-haspopup="true"
-          aria-expanded={tagMenuOpen}
-          onclick={() => (tagMenuOpen = !tagMenuOpen)}
+          class:is-primary={sort?.key === option.key}
+          aria-pressed={sort?.key === option.key}
+          onclick={() => chooseSort(option)}
         >
-          <span>Tags{selectedTags.length ? ` (${selectedTags.length})` : ""}</span>
-          <span class="board-caret" aria-hidden="true">▾</span>
+          {option.label}{sort?.key === option.key ? (sort.direction === "asc" ? " ↑" : " ↓") : ""}
         </button>
-      </div>
-      <div class="dropdown-menu" role="menu">
-        <div class="dropdown-content">
-          {#each allTags as tag (tag)}
-            <button
-              type="button"
-              class="dropdown-item"
-              class:is-active={selectedTags.includes(tag)}
-              role="menuitemcheckbox"
-              aria-checked={selectedTags.includes(tag)}
-              onclick={() => toggleTag(tag)}
-            >
-              {selectedTags.includes(tag) ? "✓ " : ""}{tag}
-            </button>
-          {/each}
-        </div>
-      </div>
-    </div>
-  {/if}
-
-  <div class="buttons has-addons board-toolbar-sort" role="group" aria-label="Sort cards">
-    {#each SORT_OPTIONS as option (option.key)}
-      <button
-        type="button"
-        class="button is-small"
-        class:is-primary={sort?.key === option.key}
-        aria-pressed={sort?.key === option.key}
-        onclick={() => chooseSort(option)}
-      >
-        {option.label}{sort?.key === option.key ? (sort.direction === "asc" ? " ↑" : " ↓") : ""}
-      </button>
-    {/each}
-  </div>
-
-  {#if selectedTags.length || anyFilterActive}
-    <div class="board-active-filters">
-      {#each selectedTags as tag (tag)}
-        <span class="tag is-small is-primary board-filter-chip">
-          {tag}
-          <button
-            type="button"
-            class="delete is-small"
-            aria-label={`Remove ${tag} tag filter`}
-            onclick={() => toggleTag(tag)}
-          ></button>
-        </span>
       {/each}
-      {#if anyFilterActive}
-        <button type="button" class="board-clear-filters" onclick={clearFilters}>
-          {#if hiddenCount > 0}{hiddenCount} hidden — {/if}Clear filters
-        </button>
-      {/if}
     </div>
-  {/if}
+  </ItemFilters>
 </div>
 
 <div class="columns is-multiline item-board">
