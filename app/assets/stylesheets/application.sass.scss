@@ -123,6 +123,42 @@ rhino-editor {
   }
 }
 
+// ActionText wraps *rendered* rich text in the same .trix-content class the
+// editor edits in, so trix.css frames read-only notes and comments like an
+// input: border, bottom-corner radius, and an editor-sized min-height. Strip
+// that chrome everywhere outside the editor.
+.trix-content:not(rhino-editor *) {
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  min-height: 0;
+}
+
+// trix.css hardcodes light grays for code, pre, blockquote accents, and file
+// attachments; point them at Bulma's theme-aware equivalents so dark mode gets
+// no light boxes. Selectors mirror trix.css's so equal specificity + later
+// source order wins.
+.trix-content {
+  blockquote {
+    border-color: var(--bulma-border);
+  }
+
+  :not(pre) code {
+    background-color: var(--bulma-code-background);
+    color: var(--bulma-code);
+    border-color: var(--bulma-border);
+  }
+
+  pre {
+    background-color: var(--bulma-pre-background);
+    color: var(--bulma-pre);
+  }
+
+  .attachment.attachment--file {
+    color: var(--bulma-text);
+  }
+}
+
 // One shared filter toolbar for the board and the prioritize view (the
 // ItemFilters island): title search, type/point/tag/status filters, and — on
 // the board — sort share a wrapping flex row. Active-filter chips and the clear
