@@ -2,6 +2,7 @@
   import saveItem from "../save_item"
   import tagColorClass from "../tag_color"
   import itemTypeStyle from "../item_type_style"
+  import Typeahead from "./Typeahead.svelte"
 
   let { item: initialItem, updateUrl, statuses, itemTypes, pointOptions, allTags, parentOptions } = $props()
 
@@ -14,10 +15,6 @@
   // svelte-ignore state_referenced_locally -- islands remount per visit; props seed state once
   let item = $state(initialItem)
   let saving = $state(false)
-  let tagInput = $state("")
-  let highlighted = $state(-1)
-  let parentInput = $state("")
-  let parentHighlighted = $state(-1)
 
   // Non-fibonacci estimates (API-written or legacy) keep rendering: the current
   // value joins the offered options rather than showing as blank.
@@ -27,25 +24,21 @@
       : pointOptions
   )
 
-  const suggestions = $derived.by(() => {
-    const query = tagInput.trim().toLowerCase()
-    if (!query) return []
-    return allTags
-      .filter((tag) => tag.toLowerCase().includes(query))
-      .filter((tag) => !item.tags.some((existing) => existing.toLowerCase() === tag.toLowerCase()))
-      .slice(0, 8)
-  })
-
   const currentParent = $derived(parentOptions.find((option) => option.id === item.parent_id) ?? null)
 
-  const parentSuggestions = $derived.by(() => {
-    const query = parentInput.trim().toLowerCase()
-    if (!query) return []
-    return parentOptions
+  // Options for the shared Typeahead (it filters on input and reveals the list
+  // on focus). Parent excludes the current parent; tags exclude ones already set.
+  const parentTypeaheadOptions = $derived(
+    parentOptions
       .filter((option) => option.id !== item.parent_id)
-      .filter((option) => option.label.toLowerCase().includes(query))
-      .slice(0, 8)
-  })
+      .map((option) => ({ value: option.id, label: option.label }))
+  )
+
+  const tagTypeaheadOptions = $derived(
+    allTags
+      .filter((tag) => !item.tags.some((existing) => existing.toLowerCase() === tag.toLowerCase()))
+      .map((tag) => ({ value: tag, label: tag }))
+  )
 
   async function save(attrs) {
     saving = true
@@ -55,68 +48,23 @@
     return fresh != null
   }
 
-  async function addTag(name) {
+  function addTag(name) {
     const trimmed = name.trim()
     if (!trimmed) return
-    if (item.tags.some((tag) => tag.toLowerCase() === trimmed.toLowerCase())) {
-      tagInput = ""
-      highlighted = -1
-      return
-    }
-    if (await save({ tag_names: [...item.tags, trimmed] })) {
-      tagInput = ""
-      highlighted = -1
-    }
+    if (item.tags.some((tag) => tag.toLowerCase() === trimmed.toLowerCase())) return
+    save({ tag_names: [...item.tags, trimmed] })
   }
 
   function removeTag(name) {
     save({ tag_names: item.tags.filter((tag) => tag !== name) })
   }
 
-  async function setParent(option) {
-    if (await save({ parent_id: option.id })) {
-      parentInput = ""
-      parentHighlighted = -1
-    }
+  function setParent(option) {
+    save({ parent_id: option.value })
   }
 
   function clearParent() {
     save({ parent_id: null })
-  }
-
-  // Enter with nothing highlighted picks the top match: unlike tags, a parent
-  // can't be created from free text, so the query only ever narrows the list.
-  function parentKeydown(event) {
-    if (event.key === "ArrowDown") {
-      event.preventDefault()
-      parentHighlighted = Math.min(parentHighlighted + 1, parentSuggestions.length - 1)
-    } else if (event.key === "ArrowUp") {
-      event.preventDefault()
-      parentHighlighted = Math.max(parentHighlighted - 1, -1)
-    } else if (event.key === "Enter") {
-      event.preventDefault()
-      const choice = parentHighlighted >= 0 ? parentSuggestions[parentHighlighted] : parentSuggestions[0]
-      if (choice) setParent(choice)
-    } else if (event.key === "Escape") {
-      parentInput = ""
-      parentHighlighted = -1
-    }
-  }
-
-  function tagKeydown(event) {
-    if (event.key === "ArrowDown") {
-      event.preventDefault()
-      highlighted = Math.min(highlighted + 1, suggestions.length - 1)
-    } else if (event.key === "ArrowUp") {
-      event.preventDefault()
-      highlighted = Math.max(highlighted - 1, -1)
-    } else if (event.key === "Enter") {
-      event.preventDefault()
-      addTag(highlighted >= 0 ? suggestions[highlighted] : tagInput)
-    } else if (event.key === "Escape") {
-      tagInput = ""
-      highlighted = -1
-    }
   }
 
   function formatDate(epoch) {
@@ -203,35 +151,14 @@
             </span>
           </div>
         {/if}
-        <div class="tag-typeahead">
-          <input
-            class="input is-small"
-            type="text"
-            placeholder={currentParent ? "Change parent…" : "Set parent…"}
-            aria-label={currentParent ? "Change parent" : "Set parent"}
-            autocomplete="off"
-            disabled={saving}
-            bind:value={parentInput}
-            onkeydown={parentKeydown}
-          >
-          {#if parentSuggestions.length}
-            <ul class="tag-typeahead-suggestions" role="listbox" aria-label="Parent suggestions">
-              {#each parentSuggestions as suggestion, index (suggestion.id)}
-                <li>
-                  <button
-                    type="button"
-                    class="tag-typeahead-option"
-                    class:is-highlighted={index === parentHighlighted}
-                    role="option"
-                    aria-selected={index === parentHighlighted}
-                    onclick={() => setParent(suggestion)}
-                  >{suggestion.label}</button>
-                </li>
-              {/each}
-            </ul>
-          {/if}
-        </div>
-        <p class="help">Type to search this project's items.</p>
+        <Typeahead
+          options={parentTypeaheadOptions}
+          placeholder={currentParent ? "Change parent…" : "Set parent…"}
+          ariaLabel={currentParent ? "Change parent" : "Set parent"}
+          disabled={saving}
+          onselect={setParent}
+        />
+        <p class="help">Click to see this project's items, or type to search.</p>
       </dd>
     </div>
 
@@ -254,34 +181,15 @@
             {/each}
           </div>
         {/if}
-        <div class="tag-typeahead">
-          <input
-            class="input is-small"
-            type="text"
-            placeholder="Add tag…"
-            aria-label="Add tag"
-            autocomplete="off"
-            disabled={saving}
-            bind:value={tagInput}
-            onkeydown={tagKeydown}
-          >
-          {#if suggestions.length}
-            <ul class="tag-typeahead-suggestions" role="listbox" aria-label="Tag suggestions">
-              {#each suggestions as suggestion, index (suggestion)}
-                <li>
-                  <button
-                    type="button"
-                    class="tag-typeahead-option"
-                    class:is-highlighted={index === highlighted}
-                    role="option"
-                    aria-selected={index === highlighted}
-                    onclick={() => addTag(suggestion)}
-                  >{suggestion}</button>
-                </li>
-              {/each}
-            </ul>
-          {/if}
-        </div>
+        <Typeahead
+          options={tagTypeaheadOptions}
+          placeholder="Add tag…"
+          ariaLabel="Add tag"
+          allowCreate
+          disabled={saving}
+          onselect={(option) => addTag(option.value)}
+          oncreate={addTag}
+        />
         <p class="help">Enter adds; new names create a tag.</p>
       </dd>
     </div>
