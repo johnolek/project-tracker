@@ -184,6 +184,53 @@ rhino-editor {
   }
 }
 
+// Prioritize filter toolbar: mirrors .board-toolbar so the two filtering
+// surfaces read the same. Each control re-fetches a fresh pair from the server
+// (pair selection is server-side) rather than filtering an in-memory list.
+.prioritize-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+
+  .field {
+    margin-bottom: 0;
+  }
+
+  .prioritize-points-input {
+    width: 5rem;
+  }
+
+  .prioritize-caret {
+    margin-left: 0.35rem;
+    font-size: 0.7rem;
+  }
+}
+
+.prioritize-active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  flex-basis: 100%;
+}
+
+.prioritize-clear-filters {
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--bulma-text-weak);
+  font-size: 0.8rem;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+
+  &:hover {
+    color: var(--bulma-text);
+  }
+}
+
 // Uppercase type pill shared by the board card and the item detail sidebar.
 // Neutral today; per-type hooks (.item-type-bug / -task / -enhancement / -idea)
 // are reserved for a later coloring pass — override background/color there.

@@ -44,13 +44,17 @@ module ApplicationHelper
   # @param count [Integer]
   # @return [Hash]
   def prioritize_props(project:, pair:, count:, pinned: nil)
+    organization = project.organization
     {
       createUrl: project_comparisons_path(project),
       refreshUrl: prioritize_project_path(project, format: :json),
       pair: pair&.map(&:comparison_payload),
       count: count,
       pinned: pinned&.comparison_payload,
-      pinnedCount: pinned ? Comparison.counts_by_item(project: project).fetch(pinned.id, 0) : 0
+      pinnedCount: pinned ? Comparison.counts_by_item(project: project).fetch(pinned.id, 0) : 0,
+      itemTypes: Item::ITEM_TYPES,
+      allTags: project.items.not_done.joins(:tags).distinct.order("tags.name").pluck("tags.name"),
+      statuses: organization.statuses.where.not(category: "done").ordered.map { |status| { id: status.id, name: status.name } }
     }
   end
 

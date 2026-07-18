@@ -247,6 +247,128 @@ RSpec.describe "Comparisons", type: :request do
         expect(payload["pair"].last["id"]).not_to eq(pinned.id)
       end
     end
+
+    describe "filtering the candidate pool" do
+      it "returns only items of the requested type (JSON)" do
+        bug_one = create(:item, project: project, title: "Bug one", item_type: "bug")
+        bug_two = create(:item, project: project, title: "Bug two", item_type: "bug")
+        create(:item, project: project, title: "A task", item_type: "task")
+
+        get prioritize_project_path(project, format: :json), params: { item_type: "bug" }
+
+        ids = response.parsed_body["pair"].map { |item| item["id"] }
+        expect(ids).to match_array([ bug_one.id, bug_two.id ])
+      end
+
+      it "excludes unpointed items once a minimum is set" do
+        big = create(:item, project: project, title: "Big", points: 8)
+        medium = create(:item, project: project, title: "Medium", points: 5)
+        create(:item, project: project, title: "Unestimated")
+
+        get prioritize_project_path(project, format: :json), params: { min_points: 3 }
+
+        ids = response.parsed_body["pair"].map { |item| item["id"] }
+        expect(ids).to match_array([ big.id, medium.id ])
+      end
+
+      it "passes unpointed items under a maximum" do
+        small = create(:item, project: project, title: "Small", points: 2)
+        create(:item, project: project, title: "Huge", points: 13)
+        unpointed = create(:item, project: project, title: "Unestimated")
+
+        get prioritize_project_path(project, format: :json), params: { max_points: 3 }
+
+        ids = response.parsed_body["pair"].map { |item| item["id"] }
+        expect(ids).to match_array([ small.id, unpointed.id ])
+      end
+
+      it "requires every selected tag (AND semantics)" do
+        both = create(:item, project: project, title: "Both tags", tag_names: [ "urgent", "backend" ])
+        create(:item, project: project, title: "One tag", tag_names: [ "urgent" ])
+        also_both = create(:item, project: project, title: "Also both", tag_names: [ "backend", "urgent" ])
+
+        get prioritize_project_path(project, format: :json), params: { tags: [ "urgent", "backend" ] }
+
+        ids = response.parsed_body["pair"].map { |item| item["id"] }
+        expect(ids).to match_array([ both.id, also_both.id ])
+      end
+
+      it "restricts the pool to the requested statuses" do
+        in_progress = organization.statuses.find_by(name: "In Progress")
+        first = create(:item, project: project, title: "In progress A", status: in_progress)
+        second = create(:item, project: project, title: "In progress B", status: in_progress)
+        create(:item, project: project, title: "Still new")
+
+        get prioritize_project_path(project, format: :json), params: { status_ids: [ in_progress.id ] }
+
+        ids = response.parsed_body["pair"].map { |item| item["id"] }
+        expect(ids).to match_array([ first.id, second.id ])
+      end
+
+      it "keeps the next pair within the filtered set after recording" do
+        bug_a = create(:item, project: project, title: "Bug A", item_type: "bug")
+        bug_b = create(:item, project: project, title: "Bug B", item_type: "bug")
+        bug_c = create(:item, project: project, title: "Bug C", item_type: "bug")
+        create(:item, project: project, title: "A task", item_type: "task")
+
+        post project_comparisons_path(project),
+             params: { item_a_id: bug_a.id, item_b_id: bug_b.id, outcome: "a_wins", item_type: "bug" },
+             as: :json
+
+        expect(response).to have_http_status(:ok)
+        ids = response.parsed_body["pair"].map { |item| item["id"] }
+        expect(ids).to all(be_in([ bug_a.id, bug_b.id, bug_c.id ]))
+      end
+
+      it "honors a pin outside the filters while its opponent respects them" do
+        task_anchor = create(:item, project: project, title: "Task anchor", item_type: "task")
+        bug_one = create(:item, project: project, title: "Bug one", item_type: "bug")
+        bug_two = create(:item, project: project, title: "Bug two", item_type: "bug")
+        create(:item, project: project, title: "Other task", item_type: "task")
+
+        get prioritize_project_path(project, format: :json),
+            params: { pinned_item_id: task_anchor.id, item_type: "bug" }
+
+        payload = response.parsed_body
+        expect(payload["pinned_id"]).to eq(task_anchor.id)
+        expect(payload["pair"].first["id"]).to eq(task_anchor.id)
+        expect([ bug_one.id, bug_two.id ]).to include(payload["pair"].last["id"])
+      end
+
+      it "returns a null pair when fewer than two items match" do
+        create(:item, project: project, title: "Lonely bug", item_type: "bug")
+        create(:item, project: project, title: "A task", item_type: "task")
+        create(:item, project: project, title: "Another task", item_type: "task")
+
+        get prioritize_project_path(project, format: :json), params: { item_type: "bug" }
+
+        expect(response.parsed_body["pair"]).to be_nil
+      end
+
+      it "ignores unparseable filters rather than emptying the pool" do
+        first = create(:item, project: project, title: "First")
+        second = create(:item, project: project, title: "Second")
+
+        get prioritize_project_path(project, format: :json),
+            params: { min_points: "abc", status_ids: [ 999_999 ], item_type: "nonsense" }
+
+        ids = response.parsed_body["pair"].map { |item| item["id"] }
+        expect(ids).to match_array([ first.id, second.id ])
+      end
+
+      it "exposes the filter vocabulary in the island props" do
+        create(:item, project: project, title: "Tagged", tag_names: [ "zeta", "alpha" ])
+        create(:item, project: project, title: "Second")
+
+        get prioritize_project_path(project)
+
+        island = Nokogiri::HTML(response.body).at_css('[data-svelte-component="Prioritize"]')
+        props = JSON.parse(island["data-props"])
+        expect(props["itemTypes"]).to eq(Item::ITEM_TYPES)
+        expect(props["allTags"]).to eq([ "alpha", "zeta" ])
+        expect(props["statuses"].map { |status| status["name"] }).to eq([ "New", "In Progress", "Needs Verification" ])
+      end
+    end
   end
 
   context "when signed out" do
