@@ -58,6 +58,21 @@ module Api
           scope.find(param)
         end
       end
+
+      # Finds a project in the organization by numeric id or slug ("PROJ").
+      # Slugs start with a letter, so an all-digits param is unambiguously an id.
+      #
+      # @param param [String] "7" or "PROJ"
+      # @return [Project]
+      # @raise [ActiveRecord::RecordNotFound]
+      def find_organization_project(param)
+        scope = current_organization.projects
+        if param.to_s.match?(/\A\d+\z/)
+          scope.find(param)
+        else
+          scope.find_by!(slug: param.to_s.upcase)
+        end
+      end
     end
   end
 end

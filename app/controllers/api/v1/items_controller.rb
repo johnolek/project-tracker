@@ -32,7 +32,7 @@ module Api
       # Items created here are stamped source: "api" — the provenance that
       # renders as "AI created" (Claude drives the API; people use the web UI).
       def create
-        project = current_organization.projects.find(params[:project_id])
+        project = find_organization_project(params[:project_id])
         item = project.items.new(item_attributes.merge(source: "api"))
         return unless assign_status(item: item)
         return unless assign_parent(item: item)
@@ -162,7 +162,7 @@ module Api
       # behave identically: both 404 when the project isn't in the organization.
       def base_scope
         if params[:project_id].present?
-          current_organization.projects.find(params[:project_id]).items
+          find_organization_project(params[:project_id]).items
         else
           organization_items
         end

@@ -30,7 +30,7 @@ module Api
       private
 
       def set_project
-        @project = current_organization.projects.find(params[:id])
+        @project = find_organization_project(params[:id])
       end
 
       def project_params
