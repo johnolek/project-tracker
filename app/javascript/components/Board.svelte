@@ -62,7 +62,11 @@
 
   // Every criterion composes with AND, including the title query.
   function matchesFilters(item) {
-    if (normalizedQuery && !item.title.toLowerCase().includes(normalizedQuery)) return false
+    if (
+      normalizedQuery &&
+      !item.title.toLowerCase().includes(normalizedQuery) &&
+      !item.key.toLowerCase().includes(normalizedQuery)
+    ) return false
     if (itemType && item.item_type !== itemType) return false
     // Unpointed items are excluded once a minimum is set (an item with no
     // estimate can't be shown to clear a floor) but pass under any maximum (a

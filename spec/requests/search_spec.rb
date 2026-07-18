@@ -26,6 +26,24 @@ RSpec.describe "Search", type: :request do
       expect(response.body).to include(project_item_path(project, match))
     end
 
+    it "finds an item by its key, case-insensitively (e.g. proj-47)" do
+      match = create(:item, project: project, title: "Unrelated title")
+      other = create(:item, project: project, title: "Also unrelated")
+
+      get search_path, params: { q: match.key.downcase }
+
+      expect(response.body).to include(project_item_path(project, match))
+      expect(response.body).not_to include(project_item_path(project, other))
+    end
+
+    it "matches a partial key such as the project slug" do
+      match = create(:item, project: project, title: "Nothing matching in the title")
+
+      get search_path, params: { q: project.slug.downcase }
+
+      expect(response.body).to include(project_item_path(project, match))
+    end
+
     it "never returns items belonging to another organization" do
       mine = create(:item, project: project, title: "Login here")
 

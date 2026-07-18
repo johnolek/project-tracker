@@ -21,11 +21,16 @@ class SearchController < ApplicationController
   end
 
   # @return [ActiveRecord::Relation<Item>] items in the current organization
-  #   whose title contains the query as a literal substring, newest first
+  #   whose title OR composed key ("PROJ-47") contains the query as a literal
+  #   substring, newest first. The key match lets a pasted or typed reference
+  #   (full or partial, e.g. "PROJ-4") find its item directly.
   def matching_items
     Item.joins(:project)
         .where(projects: { organization_id: current_organization.id })
-        .where("items.title ILIKE ?", like_pattern)
+        .where(
+          "items.title ILIKE :pattern OR (projects.slug || '-' || items.number::text) ILIKE :pattern",
+          pattern: like_pattern
+        )
         .includes(:project, :status, :tags)
         .order(updated_at: :desc)
         .limit(MAX_RESULTS)
