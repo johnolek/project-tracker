@@ -599,7 +599,8 @@ $tag-colors: (
   }
 
   .comparison-card {
-    display: block;
+    display: flex;
+    flex-direction: column;
     flex: 1 1 auto;
     padding: 1rem 1.25rem;
     border: 1px solid var(--bulma-border-weak);
@@ -618,6 +619,57 @@ $tag-colors: (
     &:focus-visible {
       border-color: var(--bulma-primary);
       background: var(--bulma-scheme-main-ter);
+    }
+  }
+
+  // The item's human key as a quiet link to its page (new tab, so the pin +
+  // filter session survives). Sits in the tag row; the card's link guard keeps
+  // clicking it from casting a vote.
+  .comparison-key {
+    align-self: center;
+    font-size: 0.72rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--bulma-text-weak);
+    white-space: nowrap;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--bulma-primary);
+      text-decoration: underline;
+    }
+  }
+
+  // Footer row for card actions, pinned to the bottom so the button lines up
+  // across a pair of unequal-height cards.
+  .comparison-card-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: auto;
+    padding-top: 0.75rem;
+  }
+
+  // Quiet retire-to-done button, matching the Pin affordance's treatment.
+  .comparison-complete {
+    padding: 0.15rem 0.6rem;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    border: 1px solid var(--bulma-border);
+    border-radius: var(--bulma-radius-small);
+    background: var(--bulma-scheme-main);
+    color: var(--bulma-text-weak);
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--bulma-primary);
+      background: var(--bulma-scheme-main-ter);
+      color: var(--bulma-text);
+    }
+
+    &:disabled {
+      cursor: default;
+      opacity: 0.6;
     }
   }
 

@@ -54,7 +54,8 @@ module ApplicationHelper
       pinnedCount: pinned ? Comparison.counts_by_item(project: project).fetch(pinned.id, 0) : 0,
       itemTypes: Item::ITEM_TYPES,
       allTags: project.items.not_done.joins(:tags).distinct.order("tags.name").pluck("tags.name"),
-      statuses: organization.statuses.where.not(category: "done").ordered.map { |status| { id: status.id, name: status.name } }
+      statuses: organization.statuses.where.not(category: "done").ordered.map { |status| { id: status.id, name: status.name } },
+      doneStatusId: organization.statuses.where(category: "done").ordered.first&.id
     }
   end
 

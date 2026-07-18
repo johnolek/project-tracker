@@ -90,6 +90,45 @@ RSpec.describe "Comparisons", type: :request do
         expect(props["pinnedCount"]).to eq(0)
         expect(props["pair"].first["id"]).to eq(anchor.id)
       end
+
+      it "exposes each candidate's key and its item-page and move urls (JSON)" do
+        first = create(:item, project: project, title: "First")
+        create(:item, project: project, title: "Second")
+
+        get prioritize_project_path(project, format: :json)
+
+        item = response.parsed_body["pair"].find { |candidate| candidate["id"] == first.id }
+        expect(item["key"]).to eq(first.key)
+        expect(item["url"]).to eq(project_item_path(project, first))
+        expect(item["move_url"]).to eq(move_project_item_path(project, first))
+      end
+
+      it "exposes the org's done status id in the island props" do
+        create(:item, project: project, title: "First")
+        create(:item, project: project, title: "Second")
+
+        get prioritize_project_path(project)
+
+        island = Nokogiri::HTML(response.body).at_css('[data-svelte-component="Prioritize"]')
+        props = JSON.parse(island["data-props"])
+        expect(props["doneStatusId"]).to eq(organization.statuses.find_by(category: "done").id)
+      end
+
+      it "excludes an item from the next pair once it is moved to done via its move url" do
+        keep_one = create(:item, project: project, title: "Keep one")
+        keep_two = create(:item, project: project, title: "Keep two")
+        retire = create(:item, project: project, title: "Retire me")
+        done_status = organization.statuses.find_by(category: "done")
+
+        patch move_project_item_path(project, retire), params: { status_id: done_status.id }, as: :json
+        expect(response).to have_http_status(:no_content)
+
+        get prioritize_project_path(project, format: :json)
+
+        ids = response.parsed_body["pair"].map { |item| item["id"] }
+        expect(ids).not_to include(retire.id)
+        expect(ids).to all(be_in([ keep_one.id, keep_two.id ]))
+      end
     end
 
     describe "POST /projects/:project_id/comparisons" do

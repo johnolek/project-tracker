@@ -11,6 +11,7 @@
     itemTypes,
     allTags,
     statuses,
+    doneStatusId,
   } = $props()
 
   // svelte-ignore state_referenced_locally -- islands remount per visit; props seed state once
@@ -219,6 +220,42 @@
     pinnedCount = 0
     await skip()
   }
+
+  function toast(type, message) {
+    document.dispatchEvent(new CustomEvent("toast", { detail: { type, message } }))
+  }
+
+  // Retires a stale item straight to the org's done status (a direct move, not
+  // the advance-one-step pipeline) and draws a fresh pair. On failure nothing
+  // changes: the item stays in the pool and the shown pair is untouched.
+  async function markComplete(item) {
+    if (busy || doneStatusId == null) return
+    busy = true
+
+    const response = await fetch(item.move_url, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]')?.content,
+      },
+      body: JSON.stringify({ status_id: doneStatusId }),
+    }).catch(() => null)
+
+    busy = false
+
+    if (!response?.ok) {
+      toast("alert", `Couldn't mark "${item.title}" complete.`)
+      return
+    }
+
+    if (pinnedItem?.id === item.id) {
+      pinnedItem = null
+      pinnedCount = 0
+    }
+
+    toast("notice", `Marked "${item.title}" complete.`)
+    await refreshPair()
+  }
 </script>
 
 {#snippet choice(item, outcome)}
@@ -231,6 +268,10 @@
       aria-disabled={busy}
       onclick={(event) => chooseCard(event, outcome)}
       onkeydown={(event) => {
+        // Only the card itself votes on Enter/space; keydowns bubbling up from a
+        // focused child (the key link, the complete button, the notes toggle)
+        // must not fall through to a comparison outcome.
+        if (event.target !== event.currentTarget) return
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault()
           record(outcome)
@@ -239,6 +280,7 @@
     >
       <span class="title is-5 is-block mb-2">{item.title}</span>
       <span class="tags mb-2">
+        <a class="comparison-key" href={item.url} target="_blank" rel="noopener">{item.key}</a>
         <span class="tag">{item.item_type}</span>
         {#if item.points}<span class="tag">Points: {item.points}</span>{/if}
       </span>
@@ -262,6 +304,23 @@
             {expanded[item.id] ? "Show less" : "Show more"}
           </button>
         {/if}
+      {/if}
+      {#if doneStatusId != null}
+        <div class="comparison-card-actions">
+          <button
+            type="button"
+            class="comparison-complete"
+            disabled={busy}
+            title="Move this item straight to done"
+            aria-label={`Mark ${item.title} complete`}
+            onclick={(event) => {
+              event.stopPropagation()
+              markComplete(item)
+            }}
+          >
+            Mark complete
+          </button>
+        </div>
       {/if}
     </div>
     <button

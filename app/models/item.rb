@@ -105,10 +105,13 @@ class Item < ApplicationRecord
   def comparison_payload
     {
       id: id,
+      key: key,
       title: title,
       item_type: item_type,
       points: points,
-      notes_html: notes.present? ? notes.to_s : ""
+      notes_html: notes.present? ? notes.to_s : "",
+      url: Rails.application.routes.url_helpers.project_item_path(project_id, id),
+      move_url: Rails.application.routes.url_helpers.move_project_item_path(project_id, id)
     }
   end
 
