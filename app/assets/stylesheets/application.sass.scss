@@ -428,6 +428,44 @@ rhino-editor {
   }
 }
 
+// Mobile board: swipeable columns instead of a tall vertical stack.
+// Below Bulma's tablet breakpoint, .columns is a plain block so status columns
+// stack full-width — a long "New" column then buries "In Progress" far down the
+// page. Here the board becomes a non-wrapping horizontal flex row that scrolls
+// sideways one column at a time, with the next column peeking so the swipe is
+// discoverable. Desktop/tablet (>=769px, where Bulma turns .columns into flex)
+// is untouched.
+@media (max-width: 768px) {
+  .item-board.columns {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    overflow-x: auto;
+    overflow-y: visible;
+    // proximity, not mandatory: mandatory snap yanks the row back to a column
+    // mid-drag, fighting SortableJS's edge autoscroll when dragging a card
+    // toward the next column. proximity still settles on a column at rest but
+    // yields during a drag.
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    // Keep a horizontal swipe from triggering the browser's back-gesture.
+    overscroll-behavior-x: contain;
+    // Bulma gives .columns negative side margins to cancel column padding
+    // against a grid gutter; in a scroll container that just bleeds the first
+    // column under the page edge. Zero them so the column's own 0.75rem padding
+    // becomes a clean edge inset and start-snapping lines up predictably.
+    margin-left: 0;
+    margin-right: 0;
+    padding-bottom: 0.5rem;
+
+    > .column {
+      // ~85% of the viewport leaves a clear sliver of the next column showing.
+      flex: 0 0 85%;
+      scroll-snap-align: start;
+    }
+  }
+}
+
 // Item-type chip, shared by the Svelte board card and the ERB renderings
 // (item detail, priorities table, search results) via item_type_tag. Each type
 // carries a fixed hue drawn from the Southwest palette: bug reads danger (red),
