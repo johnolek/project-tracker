@@ -19,9 +19,7 @@ module Api
       private
 
       def set_item
-        @item = Item.joins(:project)
-                    .where(projects: { organization_id: current_organization.id })
-                    .find(params[:item_id])
+        @item = find_organization_item(params[:item_id])
       end
 
       def comment_params

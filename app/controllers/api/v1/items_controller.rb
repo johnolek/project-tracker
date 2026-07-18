@@ -65,7 +65,7 @@ module Api
       private
 
       def set_item
-        @item = organization_items.find(params[:id])
+        @item = find_organization_item(params[:id])
       end
 
       def organization_items

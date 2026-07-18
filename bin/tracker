@@ -14,9 +14,12 @@ require "uri"
 USAGE = <<~TEXT
   Usage: bin/tracker COMMAND [ID] [--flag value ...]
 
-  Commands (flags become API params; kebab-case maps to snake_case):
+  Commands (flags become API params; kebab-case maps to snake_case).
+  Item ID may be the numeric id or the human key, e.g. "PROJ-12":
     projects                          List projects
-    create-project --name NAME        Create a project
+    create-project --name NAME [--slug S]
+                                      Create a project (slug derives from
+                                      the name when omitted)
     items [--status NAME] [--type T] [--tags a,b] [--tags-match all]
           [--points N | --points-lt/-lte/-gt/-gte N] [--q TEXT]
           [--project-id ID] [--sort created_at|points|strength|title]

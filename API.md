@@ -57,7 +57,7 @@ envelope keyed by the collection name; only item indexes are paginated.
 }
 ```
 
-- `key` / `number` — human-readable reference (`<project slug>-<number>`) and the item's project-scoped sequence number. Numbers are assigned on creation and never reused, even after deletion. Endpoints still address items by `id`.
+- `key` / `number` — human-readable reference (`<project slug>-<number>`) and the item's project-scoped sequence number. Numbers are assigned on creation and never reused, even after deletion. Every item endpoint accepts the key in place of the numeric `id` (case-insensitively), so a known key never requires listing items first.
 - `tags` — names sorted alphabetically.
 - `notes_html` — the rendered rich-text HTML (wrapped in a `trix-content` div); `""` when notes are blank.
 - `notes_text` — plain-text rendering of the notes; `""` when blank.
@@ -177,10 +177,14 @@ curl -X POST http://localhost:3000/api/v1/projects/7/items \
 
 ### Show / update / delete
 
-Shallow routes, scoped to the key's organization:
+Shallow routes, scoped to the key's organization. `:id` is the numeric id or
+the item's human key — `items/42` and `items/TRAC-12` hit the same record:
 
 ```bash
 curl http://localhost:3000/api/v1/items/42 \
+  -H "Authorization: Bearer pt_YOUR_TOKEN"
+
+curl http://localhost:3000/api/v1/items/TRAC-12 \
   -H "Authorization: Bearer pt_YOUR_TOKEN"
 
 # PATCH accepts the same fields as create. `tags` REPLACES the full tag set

@@ -195,6 +195,41 @@ RSpec.describe "API v1 items", type: :request do
     end
   end
 
+  describe "addressing items by key" do
+    let!(:item) { create(:item, project: project, title: "Keyed") }
+
+    it "shows an item by its human key, case-insensitively" do
+      get api_v1_item_path("trac-#{item.number}"), headers: auth_headers
+
+      expect(response).to have_http_status(:ok)
+      expect(json_body).to include("id" => item.id, "key" => "TRAC-#{item.number}")
+    end
+
+    it "updates and advances by key" do
+      patch api_v1_item_path(item.key), headers: auth_headers, params: { item: { points: 5 } }
+      expect(json_body["points"]).to eq(5)
+
+      post advance_api_v1_item_path(item.key), headers: auth_headers
+      expect(json_body["status"]).to include("name" => "In Progress")
+    end
+
+    it "404s for a number that was never assigned" do
+      get api_v1_item_path("TRAC-999"), headers: auth_headers
+
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it "404s for another organization's key" do
+      foreign_org = create(:api_key).organization
+      foreign_project = foreign_org.projects.create!(name: "Secret Base")
+      foreign_item = create(:item, project: foreign_project)
+
+      get api_v1_item_path(foreign_item.key), headers: auth_headers
+
+      expect(response).to have_http_status(:not_found)
+    end
+  end
+
   describe "POST /api/v1/projects/:project_id/items" do
     it "creates an item with tags and a status resolved by name" do
       post api_v1_project_items_path(project), headers: auth_headers, params: {

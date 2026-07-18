@@ -26,6 +26,15 @@ RSpec.describe "API v1 comments", type: :request do
       expect(json_body["comments"].second["source"]).to eq("web")
     end
 
+    it "accepts the item's human key in place of the id" do
+      comment = create(:comment, item: item, user: api_user, body: "Keyed")
+
+      get api_v1_item_comments_path(item.key), headers: auth_headers
+
+      expect(response).to have_http_status(:ok)
+      expect(json_body["comments"].map { |entry| entry["id"] }).to eq([ comment.id ])
+    end
+
     it "404s for another organization's item" do
       get api_v1_item_comments_path(item), headers: auth_headers(create(:api_key))
 

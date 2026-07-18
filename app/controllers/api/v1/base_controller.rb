@@ -42,6 +42,22 @@ module Api
       def current_organization
         current_api_key.organization
       end
+
+      # Finds an item in the organization by numeric id or human key. Keys
+      # always contain a dash and ids never do, so the two are unambiguous;
+      # key lookups are case-insensitive ("proj-12" works).
+      #
+      # @param param [String] "42" or "PROJ-12"
+      # @return [Item]
+      # @raise [ActiveRecord::RecordNotFound]
+      def find_organization_item(param)
+        scope = Item.joins(:project).where(projects: { organization_id: current_organization.id })
+        if (key = param.to_s.match(/\A([A-Za-z][A-Za-z0-9]{0,9})-(\d+)\z/))
+          scope.find_by!(projects: { slug: key[1].upcase }, number: key[2].to_i)
+        else
+          scope.find(param)
+        end
+      end
     end
   end
 end
