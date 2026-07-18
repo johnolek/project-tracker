@@ -103,7 +103,7 @@ RSpec.describe "Settings::Statuses", type: :request do
       it "blocks deletion with the restrict message when items use the status" do
         status = status_named("New")
         project = organization.projects.create!(name: "Tracker")
-        project.items.create!(title: "Uses status", item_type: "task", status: status)
+        project.items.create!(title: "Uses status", item_type: "feature", status: status)
 
         expect do
           delete settings_status_path(status)

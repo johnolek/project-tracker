@@ -6,7 +6,7 @@
   import tagColorClass from "../tag_color"
   import ItemFilters from "./ItemFilters.svelte"
 
-  let { projectId, storageKey, statuses, items: initialItems } = $props()
+  let { projectId, storageKey, statuses, itemTypes, items: initialItems } = $props()
 
   // svelte-ignore state_referenced_locally -- islands remount per visit; props seed state once
   let items = $state(initialItems)
@@ -30,8 +30,6 @@
     { key: "created", label: "Date", defaultDirection: "desc" },
     { key: "points", label: "Points", defaultDirection: "asc" },
   ]
-
-  const ITEM_TYPES = ["bug", "task", "enhancement", "idea"]
 
   const normalizedQuery = $derived(query.trim().toLowerCase())
   const minBound = $derived(toBound(minPoints))
@@ -258,7 +256,7 @@
     bind:minPoints
     bind:maxPoints
     bind:selectedTags
-    itemTypes={ITEM_TYPES}
+    {itemTypes}
     {allTags}
     showQuery
     {hiddenCount}

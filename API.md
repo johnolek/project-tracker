@@ -121,7 +121,7 @@ All filters combine (AND) and are available on both routes:
 |---|---|
 | `project_id` | Limit to one project (org-wide route; as a path segment on the nested route). Unknown/foreign project → 404. |
 | `status` | Status **name**, case-insensitive (`status=in progress`) |
-| `item_type` | One of `bug`, `task`, `enhancement`, `idea` |
+| `item_type` | One of `bug`, `feature`, `idea` (legacy `task`/`enhancement` map to `feature`) |
 | `tags` | Comma-separated tag names, case-insensitive. Default: match ANY listed tag (no duplicate rows). |
 | `tags_match` | `all` — item must have every listed tag |
 | `points` | Exact points value |
@@ -154,7 +154,7 @@ Fields (all optional except `title`):
 
 - `title` — required string
 - `notes` — HTML string, stored as rich text
-- `item_type` — defaults to `task`
+- `item_type` — defaults to `feature` (legacy `task`/`enhancement` are accepted and stored as `feature`)
 - `points` — positive integer or null
 - `status` — status **name**, case-insensitive, resolved within the organization. Omitted → the organization's default (first open) status. Unknown name → 422 `{ "error": "Unknown status: <name>" }`.
 - `tags` — array of names **or** one comma-separated string; unknown tags are created automatically
@@ -167,7 +167,7 @@ curl -X POST http://localhost:3000/api/v1/projects/7/items \
     "item": {
       "title": "Rate-limit the login endpoint",
       "notes": "<p>Five attempts per minute, then <strong>backoff</strong>.</p>",
-      "item_type": "enhancement",
+      "item_type": "feature",
       "points": 3,
       "status": "in progress",
       "tags": ["backend", "security"]
@@ -278,7 +278,7 @@ BASE="http://localhost:3000/api/v1"
 AUTH="Authorization: Bearer $TOKEN"
 
 # 1. Find the smallest open task
-ITEM_ID=$(curl -s "$BASE/items?status=new&item_type=task&sort=points&direction=asc&per_page=1" \
+ITEM_ID=$(curl -s "$BASE/items?status=new&item_type=feature&sort=points&direction=asc&per_page=1" \
   -H "$AUTH" | jq '.items[0].id')
 
 # 2. Start it (New -> In Progress)

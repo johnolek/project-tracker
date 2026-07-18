@@ -129,7 +129,8 @@ module Api
       def filter_item_type(items)
         return items if params[:item_type].blank?
 
-        items.where(item_type: params[:item_type])
+        requested = params[:item_type].to_s
+        items.where(item_type: Item::LEGACY_ITEM_TYPES.fetch(requested, requested))
       end
 
       def filter_tags(items)

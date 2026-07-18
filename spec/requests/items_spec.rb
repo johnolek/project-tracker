@@ -204,7 +204,7 @@ RSpec.describe "Item creation", type: :request do
   it "creates the item in the status passed through item params" do
     expect {
       post project_items_path(project),
-           params: { item: { title: "Ship it", item_type: "task", status_id: in_progress.id } }
+           params: { item: { title: "Ship it", item_type: "feature", status_id: in_progress.id } }
     }.to change(Item, :count).by(1)
 
     item = Item.order(:created_at).last
@@ -213,7 +213,7 @@ RSpec.describe "Item creation", type: :request do
   end
 
   it "uses the org default status when item params omit status_id" do
-    post project_items_path(project), params: { item: { title: "Later", item_type: "task" } }
+    post project_items_path(project), params: { item: { title: "Later", item_type: "feature" } }
 
     expect(Item.order(:created_at).last.status).to eq(organization.default_status)
   end

@@ -1,5 +1,10 @@
 class Item < ApplicationRecord
-  ITEM_TYPES = %w[bug task enhancement idea].freeze
+  ITEM_TYPES = %w[bug feature idea].freeze
+
+  # The consolidation of task + enhancement into feature (PROJ-43) kept older
+  # writers working: API clients and CLI docs in other repos may still send the
+  # retired names, which are folded into their replacement on assignment.
+  LEGACY_ITEM_TYPES = { "task" => "feature", "enhancement" => "feature" }.freeze
 
   # Estimates offered by the UI (fibonacci up to 13). Not a validation: the API
   # may still write other positive integers, and such values keep rendering.
@@ -114,6 +119,12 @@ class Item < ApplicationRecord
       edit_url: Rails.application.routes.url_helpers.edit_project_item_path(project_id, id),
       move_url: Rails.application.routes.url_helpers.move_project_item_path(project_id, id)
     }
+  end
+
+  # @param value [String, Symbol, nil] a current type or a retired alias
+  #   (task/enhancement), which is stored as its consolidated replacement
+  def item_type=(value)
+    super(LEGACY_ITEM_TYPES.fetch(value.to_s, value))
   end
 
   # @return [Array<String>] tag names ordered alphabetically, or the pending

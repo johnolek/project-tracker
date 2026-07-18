@@ -291,7 +291,7 @@ RSpec.describe "Comparisons", type: :request do
       it "returns only items of the requested type (JSON)" do
         bug_one = create(:item, project: project, title: "Bug one", item_type: "bug")
         bug_two = create(:item, project: project, title: "Bug two", item_type: "bug")
-        create(:item, project: project, title: "A task", item_type: "task")
+        create(:item, project: project, title: "A task", item_type: "feature")
 
         get prioritize_project_path(project, format: :json), params: { item_type: "bug" }
 
@@ -348,7 +348,7 @@ RSpec.describe "Comparisons", type: :request do
         bug_a = create(:item, project: project, title: "Bug A", item_type: "bug")
         bug_b = create(:item, project: project, title: "Bug B", item_type: "bug")
         bug_c = create(:item, project: project, title: "Bug C", item_type: "bug")
-        create(:item, project: project, title: "A task", item_type: "task")
+        create(:item, project: project, title: "A task", item_type: "feature")
 
         post project_comparisons_path(project),
              params: { item_a_id: bug_a.id, item_b_id: bug_b.id, outcome: "a_wins", item_type: "bug" },
@@ -360,10 +360,10 @@ RSpec.describe "Comparisons", type: :request do
       end
 
       it "honors a pin outside the filters while its opponent respects them" do
-        task_anchor = create(:item, project: project, title: "Task anchor", item_type: "task")
+        task_anchor = create(:item, project: project, title: "Task anchor", item_type: "feature")
         bug_one = create(:item, project: project, title: "Bug one", item_type: "bug")
         bug_two = create(:item, project: project, title: "Bug two", item_type: "bug")
-        create(:item, project: project, title: "Other task", item_type: "task")
+        create(:item, project: project, title: "Other task", item_type: "feature")
 
         get prioritize_project_path(project, format: :json),
             params: { pinned_item_id: task_anchor.id, item_type: "bug" }
@@ -376,8 +376,8 @@ RSpec.describe "Comparisons", type: :request do
 
       it "returns a null pair when fewer than two items match" do
         create(:item, project: project, title: "Lonely bug", item_type: "bug")
-        create(:item, project: project, title: "A task", item_type: "task")
-        create(:item, project: project, title: "Another task", item_type: "task")
+        create(:item, project: project, title: "A task", item_type: "feature")
+        create(:item, project: project, title: "Another task", item_type: "feature")
 
         get prioritize_project_path(project, format: :json), params: { item_type: "bug" }
 

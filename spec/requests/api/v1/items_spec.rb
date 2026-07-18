@@ -16,11 +16,11 @@ RSpec.describe "API v1 items", type: :request do
       create(:item, project: project, title: "Fix login crash", item_type: "bug", points: 1, tag_names: %w[urgent backend])
     end
     let!(:docs) do
-      create(:item, project: project, title: "Write docs", item_type: "task", points: 3, tag_names: %w[backend],
+      create(:item, project: project, title: "Write docs", item_type: "feature", points: 3, tag_names: %w[backend],
                     status: status_named("In Progress"))
     end
     let!(:dark_mode) do
-      create(:item, project: project, title: "Add dark mode", item_type: "enhancement", points: 5, tag_names: %w[frontend urgent])
+      create(:item, project: project, title: "Add dark mode", item_type: "feature", points: 5, tag_names: %w[frontend urgent])
     end
     let!(:polish) do
       create(:item, project: project, title: "Login page polish", item_type: "idea", status: status_named("Completed"))
@@ -44,6 +44,12 @@ RSpec.describe "API v1 items", type: :request do
       get api_v1_items_path, params: { item_type: "bug" }, headers: auth_headers
 
       expect(item_ids).to eq([ crash.id ])
+    end
+
+    it "maps legacy item_type filters onto their consolidated replacement" do
+      get api_v1_items_path, params: { item_type: "enhancement" }, headers: auth_headers
+
+      expect(item_ids).to match_array([ docs.id, dark_mode.id ])
     end
 
     it "filters by tags with ANY match by default, case-insensitively and without duplicates" do
@@ -183,7 +189,7 @@ RSpec.describe "API v1 items", type: :request do
         "key" => "#{project.slug}-#{item.number}",
         "number" => item.number,
         "title" => "Shaped",
-        "item_type" => "task",
+        "item_type" => "feature",
         "points" => 2,
         "strength" => 0.0,
         "tags" => %w[alpha beta],
@@ -236,7 +242,7 @@ RSpec.describe "API v1 items", type: :request do
         item: {
           title: "Ship the API",
           notes: "<p>Do it <em>soon</em></p>",
-          item_type: "task",
+          item_type: "feature",
           points: 3,
           status: "in progress",
           tags: %w[api Urgent]

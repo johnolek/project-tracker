@@ -117,10 +117,22 @@ RSpec.describe Item, type: :model do
   end
 
   describe "column defaults" do
-    it "starts at neutral Bradley-Terry strength and task type" do
+    it "starts at neutral Bradley-Terry strength and feature type" do
       item = Item.new
       expect(item.strength).to eq(0.0)
-      expect(item.item_type).to eq("task")
+      expect(item.item_type).to eq("feature")
+    end
+  end
+
+  describe "legacy item types" do
+    it "stores task and enhancement as feature" do
+      expect(Item.new(item_type: "task").item_type).to eq("feature")
+      expect(Item.new(item_type: "enhancement").item_type).to eq("feature")
+    end
+
+    it "leaves current types and unknown values untouched" do
+      expect(Item.new(item_type: "bug").item_type).to eq("bug")
+      expect(Item.new(item_type: "bogus")).not_to be_valid
     end
   end
 end
