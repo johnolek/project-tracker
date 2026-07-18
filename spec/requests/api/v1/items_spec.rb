@@ -52,6 +52,24 @@ RSpec.describe "API v1 items", type: :request do
       expect(item_ids).to match_array([ docs.id, dark_mode.id ])
     end
 
+    it "filters by source" do
+      machine = create(:item, project: project, title: "Machine made", source: "api")
+
+      get api_v1_items_path, params: { source: "api" }, headers: auth_headers
+
+      expect(item_ids).to eq([ machine.id ])
+    end
+
+    it "filters by ai_reviewed in both directions" do
+      signed_off = create(:item, project: project, title: "Signed off", ai_reviewed_at: 1.hour.ago)
+
+      get api_v1_items_path, params: { ai_reviewed: "true" }, headers: auth_headers
+      expect(item_ids).to eq([ signed_off.id ])
+
+      get api_v1_items_path, params: { ai_reviewed: "false" }, headers: auth_headers
+      expect(item_ids).to match_array([ crash.id, docs.id, dark_mode.id, polish.id ])
+    end
+
     it "filters by tags with ANY match by default, case-insensitively and without duplicates" do
       get api_v1_items_path, params: { tags: "URGENT,backend" }, headers: auth_headers
 
@@ -182,7 +200,8 @@ RSpec.describe "API v1 items", type: :request do
 
       expect(response).to have_http_status(:ok)
       expect(json_body.keys).to match_array(
-        %w[id key number title item_type points strength status project tags notes_html notes_text created_at updated_at]
+        %w[id key number title item_type points strength source ai_reviewed_at provenance
+           status project tags notes_html notes_text created_at updated_at]
       )
       expect(json_body).to include(
         "id" => item.id,
@@ -192,6 +211,9 @@ RSpec.describe "API v1 items", type: :request do
         "item_type" => "feature",
         "points" => 2,
         "strength" => 0.0,
+        "source" => "web",
+        "ai_reviewed_at" => nil,
+        "provenance" => "user_created",
         "tags" => %w[alpha beta],
         "notes_text" => "Hello world"
       )
@@ -257,6 +279,15 @@ RSpec.describe "API v1 items", type: :request do
       item = project.items.find(json_body["id"])
       expect(item.points).to eq(3)
       expect(item.tag_names).to match_array(%w[api Urgent])
+    end
+
+    it "stamps API-created items as ai_created" do
+      post api_v1_project_items_path(project), headers: auth_headers,
+           params: { item: { title: "Machine made" } }
+
+      expect(response).to have_http_status(:created)
+      expect(json_body["source"]).to eq("api")
+      expect(json_body["provenance"]).to eq("ai_created")
     end
 
     it "accepts tags as a comma-separated string" do
@@ -328,6 +359,30 @@ RSpec.describe "API v1 items", type: :request do
       patch api_v1_item_path(item), headers: auth_headers, params: { item: { title: "Renamed" } }
 
       expect(item.reload.tag_names).to eq(%w[keeper])
+    end
+
+    it "stamps ai_reviewed_at once, keeps the first sign-off time, and clears on false" do
+      item = create(:item, project: project, title: "Barebones")
+
+      patch api_v1_item_path(item), headers: auth_headers, params: { item: { ai_reviewed: true } }
+      expect(json_body["provenance"]).to eq("ai_reviewed")
+      first_signoff = item.reload.ai_reviewed_at
+      expect(first_signoff).to be_present
+
+      patch api_v1_item_path(item), headers: auth_headers, params: { item: { points: 2, ai_reviewed: true } }
+      expect(item.reload.ai_reviewed_at).to eq(first_signoff)
+
+      patch api_v1_item_path(item), headers: auth_headers, params: { item: { ai_reviewed: false } }
+      expect(item.reload.ai_reviewed_at).to be_nil
+      expect(json_body["provenance"]).to eq("user_created")
+    end
+
+    it "leaves ai_reviewed_at untouched when the key is absent" do
+      item = create(:item, project: project, ai_reviewed_at: Time.current)
+
+      patch api_v1_item_path(item), headers: auth_headers, params: { item: { title: "Renamed" } }
+
+      expect(item.reload.ai_reviewed_at).to be_present
     end
 
     it "422s on an unknown status name without changing the item" do

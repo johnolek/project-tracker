@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_18_051021) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_18_051558) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -112,11 +112,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_18_051021) do
   end
 
   create_table "items", force: :cascade do |t|
+    t.datetime "ai_reviewed_at"
     t.datetime "created_at", null: false
     t.string "item_type", default: "feature", null: false
     t.integer "number", null: false
     t.integer "points"
     t.bigint "project_id", null: false
+    t.string "source", default: "web", null: false
     t.bigint "status_id", null: false
     t.float "strength", default: 0.0, null: false
     t.string "title", null: false

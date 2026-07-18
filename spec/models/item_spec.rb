@@ -124,6 +124,18 @@ RSpec.describe Item, type: :model do
     end
   end
 
+  describe "#provenance" do
+    it "derives from source and the AI sign-off timestamp" do
+      expect(Item.new(source: "api").provenance).to eq("ai_created")
+      expect(Item.new(source: "web").provenance).to eq("user_created")
+      expect(Item.new(source: "web", ai_reviewed_at: Time.current).provenance).to eq("ai_reviewed")
+    end
+
+    it "rejects unknown sources" do
+      expect(Item.new(source: "carrier-pigeon")).not_to be_valid
+    end
+  end
+
   describe "legacy item types" do
     it "stores task and enhancement as feature" do
       expect(Item.new(item_type: "task").item_type).to eq("feature")

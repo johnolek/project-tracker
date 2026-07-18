@@ -6,6 +6,10 @@ class Item < ApplicationRecord
   # retired names, which are folded into their replacement on assignment.
   LEGACY_ITEM_TYPES = { "task" => "feature", "enhancement" => "feature" }.freeze
 
+  # Where the item was created, mirroring Comment::SOURCES: "web" is a person
+  # in a browser session, "api" is Claude/an LLM driving the JSON API.
+  SOURCES = %w[web api].freeze
+
   # Estimates offered by the UI (fibonacci up to 13). Not a validation: the API
   # may still write other positive integers, and such values keep rendering.
   POINT_OPTIONS = [ 1, 2, 3, 5, 8, 13 ].freeze
@@ -23,6 +27,7 @@ class Item < ApplicationRecord
   validates :title, presence: true
   validates :strength, presence: true, numericality: true
   validates :item_type, inclusion: { in: ITEM_TYPES }
+  validates :source, inclusion: { in: SOURCES }
   validates :points, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
 
   scope :not_done, -> { joins(:status).where.not(statuses: { category: "done" }) }
@@ -98,6 +103,8 @@ class Item < ApplicationRecord
     board_payload.merge(
       notes_html: notes.present? ? notes.to_s : "",
       notes_trix: notes.body&.to_trix_html.to_s,
+      provenance: provenance,
+      ai_reviewed_at: ai_reviewed_at&.to_i,
       updated_at: updated_at.to_i
     )
   end
@@ -125,6 +132,21 @@ class Item < ApplicationRecord
   #   (task/enhancement), which is stored as its consolidated replacement
   def item_type=(value)
     super(LEGACY_ITEM_TYPES.fetch(value.to_s, value))
+  end
+
+  # @return [Boolean] true when the item was created through the JSON API
+  #   (machine-created) rather than the web UI
+  def from_api?
+    source == "api"
+  end
+
+  # @return [String] the provenance state shown in the UI and API:
+  #   "ai_created" (born through the API), "ai_reviewed" (person-created, then
+  #   revised and signed off by an LLM), or "user_created" (untouched by AI)
+  def provenance
+    return "ai_created" if from_api?
+
+    ai_reviewed_at? ? "ai_reviewed" : "user_created"
   end
 
   # @return [Array<String>] tag names ordered alphabetically, or the pending

@@ -27,9 +27,11 @@ module Api
         render json: ItemSerializer.render(@item)
       end
 
+      # Items created here are stamped source: "api" — the provenance that
+      # renders as "AI created" (Claude drives the API; people use the web UI).
       def create
         project = current_organization.projects.find(params[:project_id])
-        item = project.items.new(item_attributes)
+        item = project.items.new(item_attributes.merge(source: "api"))
         return unless assign_status(item: item)
 
         item.save!
@@ -38,6 +40,7 @@ module Api
 
       def update
         @item.assign_attributes(item_attributes)
+        apply_ai_reviewed(item: @item)
         return unless assign_status(item: @item)
 
         @item.save!
@@ -73,13 +76,29 @@ module Api
       end
 
       def item_params
-        params.require(:item).permit(:title, :notes, :item_type, :points, :status, :tags, tags: [])
+        params.require(:item).permit(:title, :notes, :item_type, :points, :status, :tags, :ai_reviewed, tags: [])
       end
 
       def item_attributes
         attributes = item_params.slice(:title, :notes, :item_type, :points).to_h
         attributes[:tag_names] = item_params[:tags] if item_params.key?(:tags)
         attributes
+      end
+
+      # Applies the optional ai_reviewed boolean: true stamps ai_reviewed_at
+      # (keeping the original time on re-sends), false clears it. This is how
+      # an LLM signs off after revising a person-created item (PROJ-35).
+      #
+      # @param item [Item]
+      # @return [void]
+      def apply_ai_reviewed(item:)
+        return unless item_params.key?(:ai_reviewed)
+
+        if ActiveModel::Type::Boolean.new.cast(item_params[:ai_reviewed])
+          item.ai_reviewed_at ||= Time.current
+        else
+          item.ai_reviewed_at = nil
+        end
       end
 
       # Resolves the optional status-by-name param, case-insensitively, within
@@ -107,6 +126,8 @@ module Api
         items = filter_item_type(items)
         items = filter_tags(items)
         items = filter_points(items)
+        items = filter_source(items)
+        items = filter_ai_reviewed(items)
         filter_title(items)
       end
 
@@ -156,6 +177,25 @@ module Api
         items = items.where("items.points > ?", params[:points_gt]) if params[:points_gt].present?
         items = items.where("items.points >= ?", params[:points_gte]) if params[:points_gte].present?
         items
+      end
+
+      def filter_source(items)
+        return items if params[:source].blank?
+
+        items.where(source: params[:source])
+      end
+
+      # ai_reviewed=true keeps only signed-off items; anything else keeps the
+      # unreviewed. The typical revision-workflow query is
+      # source=web&ai_reviewed=false: person-created items awaiting an AI pass.
+      def filter_ai_reviewed(items)
+        return items if params[:ai_reviewed].blank?
+
+        if ActiveModel::Type::Boolean.new.cast(params[:ai_reviewed])
+          items.where.not(ai_reviewed_at: nil)
+        else
+          items.where(ai_reviewed_at: nil)
+        end
       end
 
       def filter_title(items)

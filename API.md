@@ -47,6 +47,9 @@ envelope keyed by the collection name; only item indexes are paginated.
   "item_type": "bug",
   "points": 3,
   "strength": 0.0,
+  "source": "web",
+  "ai_reviewed_at": null,
+  "provenance": "user_created",
   "status": { "id": 1, "name": "New", "category": "open", "position": 1 },
   "project": { "id": 7, "name": "Tracker", "slug": "TRAC" },
   "tags": ["backend", "urgent"],
@@ -62,6 +65,9 @@ envelope keyed by the collection name; only item indexes are paginated.
 - `notes_html` — the rendered rich-text HTML (wrapped in a `trix-content` div); `""` when notes are blank.
 - `notes_text` — plain-text rendering of the notes; `""` when blank.
 - `strength` / `points` — Bradley-Terry priority log-strength (float; comparisons are project-scoped, so strengths order items within a project; higher means higher priority) and estimation points (integer or null).
+- `source` — `"web"` (created from the web UI) or `"api"` (created through this API; every item created via `POST` is stamped `"api"`).
+- `ai_reviewed_at` — timestamp of the LLM's sign-off after revising a person-created item, or null. Set/cleared with the `ai_reviewed` boolean on update.
+- `provenance` — derived display state: `"ai_created"` (source is api), `"ai_reviewed"` (web-created with `ai_reviewed_at` set), else `"user_created"`.
 
 **Project** `{ id, name, slug, created_at, updated_at }` — `slug` is 1-10 uppercase letters/digits starting with a letter (e.g. `TRAC`), unique per organization
 **Status** `{ id, name, category, position }` — `category` is one of `open`, `in_progress`, `done`
@@ -126,6 +132,8 @@ All filters combine (AND) and are available on both routes:
 | `tags_match` | `all` — item must have every listed tag |
 | `points` | Exact points value |
 | `points_lt` / `points_lte` / `points_gt` / `points_gte` | Points comparisons (items with null points never match) |
+| `source` | `web` or `api` — where the item was created |
+| `ai_reviewed` | `true` — only items an LLM has signed off; anything else — only items without a sign-off |
 | `q` | Case-insensitive substring match on title |
 | `sort` | `created_at` (default), `points`, `strength`, `title` |
 | `direction` | `asc` or `desc`. Defaults: `desc` for `created_at`, `asc` for the others. Ties break by `id` in the same direction. |
@@ -187,7 +195,9 @@ curl http://localhost:3000/api/v1/items/42 \
 curl http://localhost:3000/api/v1/items/TRAC-12 \
   -H "Authorization: Bearer pt_YOUR_TOKEN"
 
-# PATCH accepts the same fields as create. `tags` REPLACES the full tag set
+# PATCH accepts the same fields as create, plus `ai_reviewed` (boolean):
+# true stamps ai_reviewed_at (idempotent — the first sign-off time is kept),
+# false clears it. `tags` REPLACES the full tag set
 # (send [] to clear); omit the key to leave tags untouched.
 curl -X PATCH http://localhost:3000/api/v1/items/42 \
   -H "Authorization: Bearer pt_YOUR_TOKEN" \
@@ -292,4 +302,18 @@ curl -s -X POST "$BASE/items/$ITEM_ID/comments" \
 # 4. Advance toward done (In Progress -> Needs Verification -> Completed)
 curl -s -X POST "$BASE/items/$ITEM_ID/advance" -H "$AUTH" | jq '.status.name'
 curl -s -X POST "$BASE/items/$ITEM_ID/advance" -H "$AUTH" | jq '.status.name'
+```
+
+Revise barebones person-created items, then sign each one off:
+
+```bash
+# 1. Fetch web-created items no LLM has reviewed yet
+curl -s "$BASE/items?source=web&ai_reviewed=false" -H "$AUTH" | jq '.items[].key'
+
+# 2. Flesh one out (notes, points, tags) and mark it reviewed
+curl -s -X PATCH "$BASE/items/TRAC-12" \
+  -H "$AUTH" -H "Content-Type: application/json" \
+  -d '{ "item": { "notes": "<p>Sharpened repro steps…</p>", "points": 3, "ai_reviewed": true } }' \
+  | jq '.provenance'
+# => "ai_reviewed"
 ```

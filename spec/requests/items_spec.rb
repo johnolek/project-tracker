@@ -210,6 +210,7 @@ RSpec.describe "Item creation", type: :request do
     item = Item.order(:created_at).last
     expect(response).to redirect_to(project_item_path(project, item))
     expect(item.status).to eq(in_progress)
+    expect(item.provenance).to eq("user_created")
   end
 
   it "uses the org default status when item params omit status_id" do

@@ -4,6 +4,12 @@
 
   let { item: initialItem, updateUrl, statuses, itemTypes, pointOptions, allTags } = $props()
 
+  const PROVENANCE_LABELS = {
+    user_created: "User created",
+    ai_created: "AI created",
+    ai_reviewed: "AI reviewed",
+  }
+
   // svelte-ignore state_referenced_locally -- islands remount per visit; props seed state once
   let item = $state(initialItem)
   let saving = $state(false)
@@ -190,6 +196,16 @@
     <div class="item-meta-row">
       <dt>Strength</dt>
       <dd>{formatStrength(item.strength)}</dd>
+    </div>
+
+    <div class="item-meta-row">
+      <dt>Provenance</dt>
+      <dd>
+        {PROVENANCE_LABELS[item.provenance] ?? item.provenance}
+        {#if item.ai_reviewed_at}
+          <span class="is-block has-text-weak">{formatDate(item.ai_reviewed_at)}</span>
+        {/if}
+      </dd>
     </div>
 
     <div class="item-meta-row">

@@ -5,7 +5,8 @@ module Api
       # @return [Hash] key is the human reference ("PROJ-12"), number its
       #   project-scoped sequence; notes_html is the rendered rich-text HTML
       #   ("" when blank), notes_text its plain-text form; tags are names
-      #   sorted alphabetically
+      #   sorted alphabetically; provenance derives from source +
+      #   ai_reviewed_at (user_created / ai_created / ai_reviewed)
       def self.render(item)
         {
           id: item.id,
@@ -15,6 +16,9 @@ module Api
           item_type: item.item_type,
           points: item.points,
           strength: item.strength,
+          source: item.source,
+          ai_reviewed_at: item.ai_reviewed_at,
+          provenance: item.provenance,
           status: StatusSerializer.render(item.status),
           project: {
             id: item.project.id,
