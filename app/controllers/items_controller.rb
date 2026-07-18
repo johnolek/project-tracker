@@ -56,7 +56,7 @@ class ItemsController < ApplicationController
   private
 
   def set_project
-    @project = current_organization.projects.find(params[:project_id])
+    @project = find_project!(params[:project_id])
   end
 
   # Status shown selected on the new-item form. The board's add-card button
@@ -80,7 +80,7 @@ class ItemsController < ApplicationController
   end
 
   def set_item
-    @item = @project.items.find(params[:id])
+    @item = find_item!(params[:id], scope: @project.items)
   end
 
   # tag_names is permitted in both shapes: the classic form posts one

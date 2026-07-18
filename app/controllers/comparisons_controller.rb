@@ -39,7 +39,7 @@ class ComparisonsController < ApplicationController
   private
 
   def set_project
-    @project = current_organization.projects.find(params[:project_id] || params[:id])
+    @project = find_project!(params[:project_id] || params[:id])
   end
 
   # Resolves the optional pin from +params[:pinned_item_id]+. A pin is honored

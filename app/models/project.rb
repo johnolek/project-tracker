@@ -15,6 +15,14 @@ class Project < ApplicationRecord
 
   before_validation :derive_slug, on: :create
 
+  # Projects appear in URLs by slug ("PROJ"); legacy numeric-id URLs still
+  # resolve via find_project! in ApplicationController.
+  #
+  # @return [String]
+  def to_param
+    slug
+  end
+
   # First run of alphanumerics in the name, upcased and cut to four characters
   # (e.g. "Project Tracker" -> "PROJ"), prefixed with "P" when it would not
   # start with a letter.

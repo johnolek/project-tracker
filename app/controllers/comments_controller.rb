@@ -16,11 +16,11 @@ class CommentsController < ApplicationController
   private
 
   def set_project
-    @project = current_organization.projects.find(params[:project_id])
+    @project = find_project!(params[:project_id])
   end
 
   def set_item
-    @item = @project.items.find(params[:item_id])
+    @item = find_item!(params[:item_id], scope: @project.items)
   end
 
   def comment_params

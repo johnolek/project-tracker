@@ -83,6 +83,15 @@ class Item < ApplicationRecord
     "#{project.slug}-#{number}"
   end
 
+  # URLs address items by their human key ("PROJ-3"). Legacy numeric-id URLs
+  # still resolve via find_item! in ApplicationController, since keys contain a
+  # dash and ids never do.
+  #
+  # @return [String]
+  def to_param
+    key
+  end
+
   # JSON shape the Board Svelte island renders, both as initial props and as
   # live "upsert" messages over BoardChannel.
   #
@@ -98,8 +107,8 @@ class Item < ApplicationRecord
       status_id: status_id,
       created_at: created_at.to_i,
       tags: tags.sort_by(&:name).map(&:name),
-      url: Rails.application.routes.url_helpers.project_item_path(project_id, id),
-      move_url: Rails.application.routes.url_helpers.move_project_item_path(project_id, id)
+      url: Rails.application.routes.url_helpers.project_item_path(project, self),
+      move_url: Rails.application.routes.url_helpers.move_project_item_path(project, self)
     }
   end
 
@@ -189,8 +198,8 @@ class Item < ApplicationRecord
       item_type: item_type,
       points: points,
       notes_html: notes.present? ? notes.to_s : "",
-      url: Rails.application.routes.url_helpers.project_item_path(project_id, id),
-      move_url: Rails.application.routes.url_helpers.move_project_item_path(project_id, id)
+      url: Rails.application.routes.url_helpers.project_item_path(project, self),
+      move_url: Rails.application.routes.url_helpers.move_project_item_path(project, self)
     }
   end
 

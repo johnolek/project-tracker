@@ -29,8 +29,8 @@ class LinksController < ApplicationController
   private
 
   def set_project_and_item
-    @project = current_organization.projects.find(params[:project_id])
-    @item = @project.items.find(params[:item_id])
+    @project = find_project!(params[:project_id])
+    @item = find_item!(params[:item_id], scope: @project.items)
   end
 
   def organization_items
