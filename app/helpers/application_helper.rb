@@ -94,6 +94,16 @@ module ApplicationHelper
     }
   end
 
+  # Options for the ItemLinkField typeahead (the relationship "Add link" form).
+  # Callers pass targets already ordered most-recent-first so the typeahead can
+  # surface recently created items on focus without any typing.
+  #
+  # @param targets [Enumerable<Item>]
+  # @return [Array<Hash>] value/label pairs for the shared Typeahead
+  def link_target_options(targets)
+    targets.map { |target| { value: target.id, label: "#{target.key} — #{target.title}" } }
+  end
+
   # Server flash mapped to props for the Toasts island. The api_key_token key is
   # skipped: the API keys settings view renders that token inline itself, and it
   # must never surface as a toast.

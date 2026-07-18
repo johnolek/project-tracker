@@ -73,11 +73,9 @@
         <div class="select is-small">
           <%= form.select :kind, [ [ "Blocks", "blocks" ], [ "Blocked by", "blocked_by" ], [ "Related to", "relates_to" ] ] %>
         </div>
-        <div class="select is-small">
-          <%= form.select :target_id,
-                @link_targets.map { |target| [ "#{target.key} — #{target.title}", target.id ] },
-                { include_blank: "Choose an item…" } %>
-        </div>
+        <div class="item-link-target"
+             data-svelte-component="ItemLinkField"
+             data-props="<%= { name: "link[target_id]", placeholder: "Search items…", options: link_target_options(@link_targets) }.to_json %>"></div>
         <%= form.submit "Add link", class: "button is-small" %>
       <% end %>
     </section>

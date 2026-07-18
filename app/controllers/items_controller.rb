@@ -6,7 +6,7 @@ class ItemsController < ApplicationController
   def show
     @children = @item.children.includes(:status, :project)
     @links = @item.grouped_links
-    @link_targets = @project.items.where.not(id: @item.id).includes(:project).order(:number)
+    @link_targets = @project.items.where.not(id: @item.id).includes(:project).order(number: :desc)
     @comments = @item.comments.includes(:user).with_rich_text_body.order(:created_at)
     @new_comment = @item.comments.new
   end
