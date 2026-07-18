@@ -296,21 +296,33 @@
         </div>
       {/if}
     </div>
-    <button
-      type="button"
-      class="comparison-pin"
-      class:is-pinned={isPinned}
-      disabled={busy}
-      aria-pressed={isPinned}
-      title={isPinned ? "Unpin this item" : "Pin this item to compare it against the rest"}
-      aria-label={isPinned ? `Unpin ${item.title}` : `Pin ${item.title}`}
-      onclick={(event) => {
-        event.stopPropagation()
-        isPinned ? unpin() : pin(item)
-      }}
-    >
-      {isPinned ? "Pinned" : "Pin"}
-    </button>
+    <div class="comparison-corner-actions">
+      <a
+        class="comparison-edit"
+        href={item.edit_url}
+        target="_blank"
+        rel="noopener"
+        title="Edit this item (opens in a new tab)"
+        aria-label={`Edit ${item.title}`}
+      >
+        Edit
+      </a>
+      <button
+        type="button"
+        class="comparison-pin"
+        class:is-pinned={isPinned}
+        disabled={busy}
+        aria-pressed={isPinned}
+        title={isPinned ? "Unpin this item" : "Pin this item to compare it against the rest"}
+        aria-label={isPinned ? `Unpin ${item.title}` : `Pin ${item.title}`}
+        onclick={(event) => {
+          event.stopPropagation()
+          isPinned ? unpin() : pin(item)
+        }}
+      >
+        {isPinned ? "Pinned" : "Pin"}
+      </button>
+    </div>
   </div>
 {/snippet}
 

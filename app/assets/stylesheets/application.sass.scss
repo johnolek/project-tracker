@@ -567,9 +567,9 @@ $tag-colors: (
     text-align: left;
     cursor: pointer;
 
-    // Reserve room in the top-right corner for the Pin affordance.
+    // Reserve room in the top-right corner for the Edit + Pin affordances.
     .title {
-      padding-right: 3.25rem;
+      padding-right: 6.5rem;
     }
 
     &:hover,
@@ -606,8 +606,11 @@ $tag-colors: (
     padding-top: 0.75rem;
   }
 
-  // Quiet retire-to-done button, matching the Pin affordance's treatment.
-  .comparison-complete {
+  // One quiet treatment for the card's small actions: retire-to-done in the
+  // footer, Edit + Pin hovering over the top-right corner.
+  .comparison-complete,
+  .comparison-edit,
+  .comparison-pin {
     padding: 0.15rem 0.6rem;
     font-size: 0.75rem;
     line-height: 1.4;
@@ -628,6 +631,15 @@ $tag-colors: (
       cursor: default;
       opacity: 0.6;
     }
+  }
+
+  .comparison-corner-actions {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    z-index: 1;
+    display: flex;
+    gap: 0.375rem;
   }
 
   // Rendered rich-text notes: clamped with a fade-out mask until expanded.
@@ -658,32 +670,10 @@ $tag-colors: (
     }
   }
 
-  .comparison-pin {
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    z-index: 1;
-    padding: 0.15rem 0.6rem;
-    font-size: 0.75rem;
-    line-height: 1.4;
-    border: 1px solid var(--bulma-border);
-    border-radius: var(--bulma-radius-small);
-    background: var(--bulma-scheme-main);
-    color: var(--bulma-text-weak);
-    cursor: pointer;
-
-    &:hover,
-    &:focus-visible {
-      border-color: var(--bulma-primary);
-      background: var(--bulma-scheme-main-ter);
-      color: var(--bulma-text);
-    }
-
-    &.is-pinned {
-      border-color: var(--bulma-primary);
-      background: var(--bulma-primary);
-      color: var(--bulma-primary-invert);
-    }
+  .comparison-pin.is-pinned {
+    border-color: var(--bulma-primary);
+    background: var(--bulma-primary);
+    color: var(--bulma-primary-invert);
   }
 }
 
