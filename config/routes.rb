@@ -17,7 +17,7 @@ Rails.application.routes.draw do
       get :prioritize, to: "comparisons#new"
       get :priorities, to: "priorities#index"
     end
-    resources :items do
+    resources :items, except: :edit do
       patch :move, on: :member
       resources :comments, only: :create
       resources :links, only: %i[create destroy]

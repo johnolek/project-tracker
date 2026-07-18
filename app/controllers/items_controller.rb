@@ -1,7 +1,7 @@
 class ItemsController < ApplicationController
   before_action :require_login
   before_action :set_project
-  before_action :set_item, only: %i[show edit update destroy move]
+  before_action :set_item, only: %i[show update destroy move]
 
   def show
     @children = @item.children.includes(:status, :project)
@@ -13,9 +13,6 @@ class ItemsController < ApplicationController
 
   def new
     @item = @project.items.new(status: preselected_status, parent: preselected_parent)
-  end
-
-  def edit
   end
 
   def create
@@ -36,7 +33,7 @@ class ItemsController < ApplicationController
       end
     else
       respond_to do |format|
-        format.html { render :edit, status: :unprocessable_entity }
+        format.html { redirect_to project_item_path(@project, @item), alert: @item.errors.full_messages.to_sentence }
         format.json { render json: { errors: @item.errors.full_messages }, status: :unprocessable_entity }
       end
     end

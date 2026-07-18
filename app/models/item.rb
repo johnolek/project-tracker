@@ -190,7 +190,6 @@ class Item < ApplicationRecord
       points: points,
       notes_html: notes.present? ? notes.to_s : "",
       url: Rails.application.routes.url_helpers.project_item_path(project_id, id),
-      edit_url: Rails.application.routes.url_helpers.edit_project_item_path(project_id, id),
       move_url: Rails.application.routes.url_helpers.move_project_item_path(project_id, id)
     }
   end

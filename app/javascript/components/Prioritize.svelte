@@ -299,13 +299,13 @@
     <div class="comparison-corner-actions">
       <a
         class="comparison-edit"
-        href={item.edit_url}
+        href={item.url}
         target="_blank"
         rel="noopener"
-        title="Edit this item (opens in a new tab)"
-        aria-label={`Edit ${item.title}`}
+        title="Open this item (opens in a new tab)"
+        aria-label={`Open ${item.title}`}
       >
-        Edit
+        Open
       </a>
       <button
         type="button"
