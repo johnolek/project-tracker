@@ -15,6 +15,8 @@
   let saving = $state(false)
   let tagInput = $state("")
   let highlighted = $state(-1)
+  let parentInput = $state("")
+  let parentHighlighted = $state(-1)
 
   // Non-fibonacci estimates (API-written or legacy) keep rendering: the current
   // value joins the offered options rather than showing as blank.
@@ -30,6 +32,17 @@
     return allTags
       .filter((tag) => tag.toLowerCase().includes(query))
       .filter((tag) => !item.tags.some((existing) => existing.toLowerCase() === tag.toLowerCase()))
+      .slice(0, 8)
+  })
+
+  const currentParent = $derived(parentOptions.find((option) => option.id === item.parent_id) ?? null)
+
+  const parentSuggestions = $derived.by(() => {
+    const query = parentInput.trim().toLowerCase()
+    if (!query) return []
+    return parentOptions
+      .filter((option) => option.id !== item.parent_id)
+      .filter((option) => option.label.toLowerCase().includes(query))
       .slice(0, 8)
   })
 
@@ -57,6 +70,36 @@
 
   function removeTag(name) {
     save({ tag_names: item.tags.filter((tag) => tag !== name) })
+  }
+
+  async function setParent(option) {
+    if (await save({ parent_id: option.id })) {
+      parentInput = ""
+      parentHighlighted = -1
+    }
+  }
+
+  function clearParent() {
+    save({ parent_id: null })
+  }
+
+  // Enter with nothing highlighted picks the top match: unlike tags, a parent
+  // can't be created from free text, so the query only ever narrows the list.
+  function parentKeydown(event) {
+    if (event.key === "ArrowDown") {
+      event.preventDefault()
+      parentHighlighted = Math.min(parentHighlighted + 1, parentSuggestions.length - 1)
+    } else if (event.key === "ArrowUp") {
+      event.preventDefault()
+      parentHighlighted = Math.max(parentHighlighted - 1, -1)
+    } else if (event.key === "Enter") {
+      event.preventDefault()
+      const choice = parentHighlighted >= 0 ? parentSuggestions[parentHighlighted] : parentSuggestions[0]
+      if (choice) setParent(choice)
+    } else if (event.key === "Escape") {
+      parentInput = ""
+      parentHighlighted = -1
+    }
   }
 
   function tagKeydown(event) {
@@ -145,19 +188,49 @@
     <div class="item-meta-row">
       <dt>Parent</dt>
       <dd>
-        <div class="select is-small is-fullwidth">
-          <select
-            aria-label="Change parent"
+        {#if currentParent}
+          <div class="tags mb-1">
+            <span class="tag parent-tag">
+              <a href={currentParent.url}>{currentParent.label}</a>
+              <button
+                type="button"
+                class="delete is-small"
+                aria-label="Clear parent"
+                disabled={saving}
+                onclick={clearParent}
+              ></button>
+            </span>
+          </div>
+        {/if}
+        <div class="tag-typeahead">
+          <input
+            class="input is-small"
+            type="text"
+            placeholder={currentParent ? "Change parent…" : "Set parent…"}
+            aria-label={currentParent ? "Change parent" : "Set parent"}
+            autocomplete="off"
             disabled={saving}
-            value={item.parent_id == null ? "" : String(item.parent_id)}
-            onchange={(event) => save({ parent_id: event.target.value === "" ? null : Number(event.target.value) })}
+            bind:value={parentInput}
+            onkeydown={parentKeydown}
           >
-            <option value="">No parent</option>
-            {#each parentOptions as option (option.id)}
-              <option value={String(option.id)}>{option.label}</option>
-            {/each}
-          </select>
+          {#if parentSuggestions.length}
+            <ul class="tag-typeahead-suggestions" role="listbox" aria-label="Parent suggestions">
+              {#each parentSuggestions as suggestion, index (suggestion.id)}
+                <li>
+                  <button
+                    type="button"
+                    class="tag-typeahead-option"
+                    class:is-highlighted={index === parentHighlighted}
+                    role="option"
+                    aria-selected={index === parentHighlighted}
+                    onclick={() => setParent(suggestion)}
+                  >{suggestion.label}</button>
+                </li>
+              {/each}
+            </ul>
+          {/if}
         </div>
+        <p class="help">Type to search this project's items.</p>
       </dd>
     </div>
 

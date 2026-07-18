@@ -88,7 +88,9 @@ module ApplicationHelper
       itemTypes: Item::ITEM_TYPES,
       pointOptions: Item::POINT_OPTIONS,
       allTags: organization.tags.order(:name).pluck(:name),
-      parentOptions: item.parent_candidates.map { |candidate| { id: candidate.id, label: "#{candidate.key} — #{candidate.title}" } }
+      parentOptions: item.parent_candidates.map do |candidate|
+        { id: candidate.id, label: "#{candidate.key} — #{candidate.title}", url: project_item_path(project, candidate) }
+      end
     }
   end
 

@@ -907,6 +907,15 @@ $tag-colors: (
   dd {
     margin: 0;
   }
+
+  // The current-parent chip carries "KEY — title", which outgrows Bulma's
+  // one-line tag; let it wrap instead of clipping.
+  .parent-tag {
+    height: auto;
+    min-height: 2em;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
 }
 
 // Inline editing affordances: editable blocks hint on hover/focus with the
