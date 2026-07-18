@@ -61,7 +61,7 @@ class ComparisonsController < ApplicationController
   # @return [Hash]
   def filters
     @filters ||= {
-      item_type: Item::ITEM_TYPES.include?(params[:item_type]) ? params[:item_type] : nil,
+      item_type: item_type_names.include?(params[:item_type]) ? params[:item_type] : nil,
       min_points: points_bound(params[:min_points]),
       max_points: points_bound(params[:max_points]),
       tags: Array(params[:tags]).filter_map { |name| name.to_s.strip.presence },
@@ -103,6 +103,11 @@ class ComparisonsController < ApplicationController
   # @return [Array<Integer>]
   def non_done_status_ids
     @non_done_status_ids ||= current_organization.statuses.where.not(category: "done").pluck(:id)
+  end
+
+  # @return [Array<String>] the organization's configured item-type names
+  def item_type_names
+    @item_type_names ||= current_organization.item_types.pluck(:name)
   end
 
   # @param pair [Array<Item>, nil]

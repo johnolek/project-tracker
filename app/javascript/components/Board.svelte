@@ -5,6 +5,7 @@
   import consumer from "../cable"
   import tagColorClass from "../tag_color"
   import ItemFilters from "./ItemFilters.svelte"
+  import itemTypeStyle from "../item_type_style"
 
   let { projectId, storageKey, statuses, itemTypes, items: initialItems } = $props()
 
@@ -303,7 +304,7 @@
             >
               <a class="board-card-link" href={item.url}>
                 <span class="board-card-top">
-                  <span class="item-type-tag item-type-{item.item_type}">{item.item_type}</span>
+                  <span class="item-type-tag" style={itemTypeStyle(itemTypes, item.item_type)}>{item.item_type}</span>
                   <span class="board-card-key">{item.key}</span>
                 </span>
                 <span class="board-card-title">{item.title}</span>

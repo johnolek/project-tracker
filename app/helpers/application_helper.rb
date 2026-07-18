@@ -1,12 +1,33 @@
 module ApplicationHelper
-  # Renders an item's type as a colored chip. The class hooks match the Svelte
-  # board card (item-type-tag + item-type-<type>) so the board and the ERB
-  # renderings share one coloring pass; the color itself lives in the stylesheet.
+  # Renders an item's type as a colored chip. The color is per-organization data
+  # (PROJ-47), applied inline from the item's configured ItemType rather than a
+  # generated .item-type-<name> class; the readable foreground is computed from
+  # the background so text stays legible on any hue.
   #
   # @param item [Item]
   # @return [ActiveSupport::SafeBuffer]
   def item_type_tag(item)
-    tag.span(item.item_type, class: "item-type-tag item-type-#{item.item_type}")
+    color = item.item_type_color
+    style = color && "background-color: #{color}; color: #{readable_text_color(color)}"
+    tag.span(item.item_type, class: "item-type-tag", style: style)
+  end
+
+  # Readable foreground for a hex background (delegates to ItemType so ERB and
+  # the JSON props share one luminance rule).
+  #
+  # @param hex [String] a "#rgb" or "#rrggbb" color
+  # @return [String, nil] "#1a1a1a" on light backgrounds, "#ffffff" on dark ones
+  def readable_text_color(hex)
+    ItemType.readable_text_color(hex)
+  end
+
+  # @param organization [Organization]
+  # @return [Array<Hash>] the org's item types as {name, color, textColor} for
+  #   the Svelte islands (which color their type chips inline), ordered by position
+  def item_type_options(organization)
+    organization.item_types.ordered.map do |type|
+      { name: type.name, color: type.color, textColor: type.text_color }
+    end
   end
 
   # Deterministic color class for a tag name. djb2 hash (seed 5381, times 33)
@@ -33,7 +54,7 @@ module ApplicationHelper
       statuses: project.organization.statuses.ordered.map do |status|
         { id: status.id, name: status.name, new_item_url: new_project_item_path(project, status_id: status.id) }
       end,
-      itemTypes: Item::ITEM_TYPES,
+      itemTypes: item_type_options(project.organization),
       items: project.items.includes(:tags).map(&:board_payload)
     }
   end
@@ -53,7 +74,7 @@ module ApplicationHelper
       count: count,
       pinned: pinned&.comparison_payload,
       pinnedCount: pinned ? Comparison.counts_by_item(project: project).fetch(pinned.id, 0) : 0,
-      itemTypes: Item::ITEM_TYPES,
+      itemTypes: item_type_options(project.organization),
       allTags: project.items.not_done.joins(:tags).distinct.order("tags.name").pluck("tags.name"),
       statuses: organization.statuses.where.not(category: "done").ordered.map { |status| { id: status.id, name: status.name } },
       doneStatusId: organization.statuses.where(category: "done").ordered.first&.id
@@ -85,7 +106,7 @@ module ApplicationHelper
       item: item.detail_payload,
       updateUrl: project_item_path(project, item),
       statuses: organization.statuses.ordered.map { |status| { id: status.id, name: status.name } },
-      itemTypes: Item::ITEM_TYPES,
+      itemTypes: item_type_options(project.organization),
       pointOptions: Item::POINT_OPTIONS,
       allTags: organization.tags.order(:name).pluck(:name),
       parentOptions: item.parent_candidates.map do |candidate|

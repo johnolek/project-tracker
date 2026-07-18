@@ -403,7 +403,7 @@ RSpec.describe "Comparisons", type: :request do
 
         island = Nokogiri::HTML(response.body).at_css('[data-svelte-component="Prioritize"]')
         props = JSON.parse(island["data-props"])
-        expect(props["itemTypes"]).to eq(Item::ITEM_TYPES)
+        expect(props["itemTypes"].map { |type| type["name"] }).to eq(%w[bug feature idea])
         expect(props["allTags"]).to eq([ "alpha", "zeta" ])
         expect(props["statuses"].map { |status| status["name"] }).to eq([ "New", "In Progress", "Needs Verification" ])
       end

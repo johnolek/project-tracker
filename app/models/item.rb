@@ -1,6 +1,4 @@
 class Item < ApplicationRecord
-  ITEM_TYPES = %w[bug feature idea].freeze
-
   # The consolidation of task + enhancement into feature (PROJ-43) kept older
   # writers working: API clients and CLI docs in other repos may still send the
   # retired names, which are folded into their replacement on assignment.
@@ -33,9 +31,9 @@ class Item < ApplicationRecord
 
   validates :title, presence: true
   validates :strength, presence: true, numericality: true
-  validates :item_type, inclusion: { in: ITEM_TYPES }
   validates :source, inclusion: { in: SOURCES }
   validates :points, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
+  validate :item_type_configured_for_organization
   validate :parent_in_same_project
   validate :parent_not_circular
 
@@ -209,6 +207,20 @@ class Item < ApplicationRecord
     super(LEGACY_ITEM_TYPES.fetch(value.to_s, value))
   end
 
+  # @return [Organization, nil] the organization this item belongs to, reached
+  #   through its project (nil only for an item without a project)
+  def organization
+    project&.organization
+  end
+
+  # @return [String, nil] the hex color of this item's configured type, or nil
+  #   when the type isn't found (e.g. no organization yet)
+  def item_type_color
+    return nil if item_type.blank? || organization.nil?
+
+    organization.item_types.detect { |type| type.name.casecmp?(item_type) }&.color
+  end
+
   # @return [Boolean] true when the item was created through the JSON API
   #   (machine-created) rather than the web UI
   def from_api?
@@ -246,6 +258,22 @@ class Item < ApplicationRecord
   end
 
   private
+
+  # Item types are now per-organization data (PROJ-47), so validity is inclusion
+  # in the item's organization's configured type names rather than a constant.
+  # Matching is case-insensitive to mirror the org's case-insensitive names.
+  # Skipped when the organization can't be determined (no project yet): other
+  # validations surface that, and there's no vocabulary to check against.
+  def item_type_configured_for_organization
+    return if item_type.blank?
+
+    names = organization&.item_types&.map(&:name)
+    return if names.nil?
+
+    return if names.any? { |name| name.casecmp?(item_type) }
+
+    errors.add(:item_type, "is not a configured type for this organization")
+  end
 
   def parent_in_same_project
     return if parent.nil? || parent.project_id == project_id

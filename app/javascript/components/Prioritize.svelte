@@ -1,6 +1,7 @@
 <script>
   import { fade } from "svelte/transition"
   import ItemFilters from "./ItemFilters.svelte"
+  import itemTypeStyle from "../item_type_style"
 
   let {
     createUrl,
@@ -254,7 +255,7 @@
       <span class="title is-5 is-block mb-2">{item.title}</span>
       <span class="tags mb-2">
         <a class="comparison-key" href={item.url} target="_blank" rel="noopener">{item.key}</a>
-        <span class="tag">{item.item_type}</span>
+        <span class="item-type-tag" style={itemTypeStyle(itemTypes, item.item_type)}>{item.item_type}</span>
         {#if item.points}<span class="tag">Points: {item.points}</span>{/if}
       </span>
       {#if item.notes_html}

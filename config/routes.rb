@@ -30,6 +30,9 @@ Rails.application.routes.draw do
     resources :statuses, only: %i[index create update destroy] do
       patch :move, on: :member
     end
+    resources :item_types, only: %i[index create update destroy] do
+      patch :move, on: :member
+    end
   end
 
   namespace :api do

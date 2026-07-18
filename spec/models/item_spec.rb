@@ -17,7 +17,19 @@ RSpec.describe Item, type: :model do
   it { is_expected.to validate_presence_of(:title) }
   it { is_expected.to validate_presence_of(:strength) }
   it { is_expected.to validate_numericality_of(:strength) }
-  it { is_expected.to validate_inclusion_of(:item_type).in_array(Item::ITEM_TYPES) }
+  describe "item_type must be one of the organization's configured types" do
+    let(:project) { create(:project) }
+
+    it "accepts a configured type name (case-insensitively)" do
+      expect(build(:item, project: project, item_type: "BUG")).to be_valid
+    end
+
+    it "rejects a type the organization hasn't configured" do
+      item = build(:item, project: project, item_type: "nonsense")
+      expect(item).not_to be_valid
+      expect(item.errors[:item_type]).to be_present
+    end
+  end
   it { is_expected.to validate_numericality_of(:points).only_integer.is_greater_than(0).allow_nil }
 
   describe "default status assignment" do

@@ -224,9 +224,10 @@ rhino-editor {
   }
 }
 
-// Uppercase type pill shared by the board card and the item detail sidebar.
-// Neutral today; per-type hooks (.item-type-bug / -feature / -idea) are
-// reserved for a later coloring pass — override background/color there.
+// Uppercase type pill shared by the board card and the item detail sidebar. The
+// per-type color is applied inline from per-organization ItemType data; this
+// rule carries only the shape and the neutral fallback for a type without a
+// resolved color.
 .item-type-tag {
   display: inline-block;
   padding: 0.05rem 0.4rem;
@@ -238,6 +239,14 @@ rhino-editor {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   line-height: 1.5;
+}
+
+// Native color picker in the item-types settings rows: give the swatch enough
+// width to read as a clickable color rather than a thin sliver.
+.item-type-color-input {
+  width: 3rem;
+  padding: 0.15rem 0.2rem;
+  cursor: pointer;
 }
 
 // Board columns: each card is one clickable link that drags between status
@@ -484,60 +493,11 @@ rhino-editor {
   }
 }
 
-// Item-type chip, shared by the Svelte board card and the ERB renderings
-// (item detail, priorities table, search results) via item_type_tag. Each type
-// carries a fixed hue drawn from the Southwest palette: bug reads danger (red),
-// feature success (green), idea warning (gold). Colors use
-// Bulma's contrast-checked light/dark pairings — the pale -light background with
-// -light-invert text in light contexts, flipped to the deep -dark background
-// with -dark-invert text in dark contexts, following the light/dark scoping the
-// rest of this file uses so overrides never leak across schemes.
-$item-type-colors: (
-  "bug": "danger",
-  "feature": "success",
-  "idea": "warning"
-);
-
-.item-type-tag {
-  display: inline-block;
-  padding: 0.05rem 0.4rem;
-  border-radius: var(--bulma-radius-small);
-  background: var(--bulma-background);
-  color: var(--bulma-text);
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  line-height: 1.5;
-}
-
-@each $type, $color in $item-type-colors {
-  .item-type-#{$type} {
-    background-color: var(--bulma-#{$color}-light);
-    color: var(--bulma-#{$color}-light-invert);
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]):not(.theme-light) {
-    @each $type, $color in $item-type-colors {
-      .item-type-#{$type} {
-        background-color: var(--bulma-#{$color}-dark);
-        color: var(--bulma-#{$color}-dark-invert);
-      }
-    }
-  }
-}
-
-[data-theme="dark"],
-.theme-dark {
-  @each $type, $color in $item-type-colors {
-    .item-type-#{$type} {
-      background-color: var(--bulma-#{$color}-dark);
-      color: var(--bulma-#{$color}-dark-invert);
-    }
-  }
-}
+// Item-type chip coloring is per-organization data (PROJ-47): the base
+// .item-type-tag pill above carries only the shape and a neutral fallback; each
+// type's background and a readable foreground are applied inline — via
+// ApplicationHelper#item_type_tag for the ERB renderings and itemTypeStyle for
+// the Svelte islands (both sourced from ItemType).
 
 // Deterministic per-name tag colors, shared by the Svelte board (tag_color.js)
 // and ERB (tag_color_class). A curated palette of eight warm hues that harmonize

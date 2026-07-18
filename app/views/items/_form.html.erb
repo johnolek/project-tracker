@@ -40,7 +40,7 @@
     <%= form.label :item_type, "Type", class: "label" %>
     <div class="control">
       <div class="select">
-        <%= form.select :item_type, Item::ITEM_TYPES.map { |type| [ type.humanize, type ] } %>
+        <%= form.select :item_type, @project.organization.item_types.ordered.map { |type| [ type.name.humanize, type.name ] } %>
       </div>
     </div>
   </div>

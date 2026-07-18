@@ -33,11 +33,17 @@ RSpec.describe ApplicationHelper, type: :helper do
   end
 
   describe "#item_type_tag" do
-    Item::ITEM_TYPES.each do |type|
-      it "renders a #{type} chip with the matching class hooks" do
-        html = helper.item_type_tag(double(item_type: type))
-        expect(html).to eq(%(<span class="item-type-tag item-type-#{type}">#{type}</span>))
-      end
+    it "colors the chip inline from the item's resolved type color" do
+      html = helper.item_type_tag(double(item_type: "bug", item_type_color: "#9D2925"))
+      expect(html).to include('class="item-type-tag"')
+      expect(html).to include("background-color: #9D2925")
+      expect(html).to include("color: #ffffff")
+      expect(html).to include(">bug</span>")
+    end
+
+    it "renders a plain chip when the type has no resolved color" do
+      html = helper.item_type_tag(double(item_type: "bug", item_type_color: nil))
+      expect(html).to eq('<span class="item-type-tag">bug</span>')
     end
   end
 end

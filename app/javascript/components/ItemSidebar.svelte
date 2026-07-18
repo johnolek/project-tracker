@@ -1,6 +1,7 @@
 <script>
   import saveItem from "../save_item"
   import tagColorClass from "../tag_color"
+  import itemTypeStyle from "../item_type_style"
 
   let { item: initialItem, updateUrl, statuses, itemTypes, pointOptions, allTags, parentOptions } = $props()
 
@@ -157,12 +158,12 @@
             value={item.item_type}
             onchange={(event) => save({ item_type: event.target.value })}
           >
-            {#each itemTypes as type (type)}
-              <option value={type}>{type}</option>
+            {#each itemTypes as type (type.name)}
+              <option value={type.name}>{type.name}</option>
             {/each}
           </select>
         </div>
-        <span class="item-type-tag item-type-{item.item_type} mt-1">{item.item_type}</span>
+        <span class="item-type-tag mt-1" style={itemTypeStyle(itemTypes, item.item_type)}>{item.item_type}</span>
       </dd>
     </div>
 

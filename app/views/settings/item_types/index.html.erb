@@ -1,0 +1,77 @@
+<% content_for :title, "Item types" %>
+<h1 class="title">Item types</h1>
+<p class="subtitle is-6 has-text-weak">The types you can assign to items in this organization. A new type gets a random color you can change.</p>
+
+<%= form_with model: [ :settings, @item_type ] do |form| %>
+  <% if form.object.errors.any? %>
+    <div class="notification is-danger is-light">
+      <ul>
+        <% form.object.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field is-grouped is-align-items-flex-end">
+    <div class="control">
+      <%= form.label :name, class: "label" %>
+      <%= form.text_field :name, class: "input" %>
+    </div>
+    <div class="control">
+      <%= form.submit "Add type", class: "button is-primary" %>
+    </div>
+  </div>
+<% end %>
+
+<% if @item_types.any? %>
+  <table class="table is-fullwidth">
+    <thead>
+      <tr>
+        <th>Order</th>
+        <th>Name &amp; color</th>
+        <th>Preview</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @item_types.each_with_index do |item_type, index| %>
+        <tr>
+          <td>
+            <div class="buttons has-addons mb-0">
+              <%= button_to "↑", move_settings_item_type_path(item_type, direction: "up"), method: :patch,
+                    class: "button is-small", disabled: index.zero?, "aria-label": "Move #{item_type.name} up" %>
+              <%= button_to "↓", move_settings_item_type_path(item_type, direction: "down"), method: :patch,
+                    class: "button is-small", disabled: index == @item_types.size - 1, "aria-label": "Move #{item_type.name} down" %>
+            </div>
+          </td>
+          <td>
+            <%= form_with model: [ :settings, item_type ], class: "field has-addons mb-0" do |form| %>
+              <div class="control">
+                <%= form.text_field :name, class: "input is-small", "aria-label": "Name" %>
+              </div>
+              <div class="control">
+                <%= form.color_field :color, class: "input is-small item-type-color-input", "aria-label": "Color" %>
+              </div>
+              <div class="control">
+                <%= form.submit "Save", class: "button is-small" %>
+              </div>
+            <% end %>
+          </td>
+          <td>
+            <span class="item-type-tag" style="background-color: <%= item_type.color %>; color: <%= item_type.text_color %>">
+              <%= item_type.name %>
+            </span>
+          </td>
+          <td class="has-text-right">
+            <%= button_to "Delete", settings_item_type_path(item_type), method: :delete,
+                  class: "button is-danger is-light is-small",
+                  form: { data: { turbo_confirm: "Delete the \"#{item_type.name}\" type?" } } %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p class="has-text-weak">No item types yet.</p>
+<% end %>

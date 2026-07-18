@@ -62,6 +62,7 @@
                    aria-haspopup="true" aria-expanded="false"><%= current_user.username %></a>
                 <div class="navbar-dropdown is-right">
                   <%= link_to "Statuses", settings_statuses_path, class: "navbar-item" %>
+                  <%= link_to "Item types", settings_item_types_path, class: "navbar-item" %>
                   <%= link_to "API keys", settings_api_keys_path, class: "navbar-item" %>
                   <hr class="navbar-divider">
                   <%= button_to "Sign out", logout_path, method: :delete, class: "navbar-item",

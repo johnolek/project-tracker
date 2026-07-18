@@ -86,8 +86,8 @@
   <div class="select is-small">
     <select bind:value={itemType} {onchange} aria-label="Filter by item type">
       <option value="">All types</option>
-      {#each itemTypes as type (type)}
-        <option value={type}>{type}</option>
+      {#each itemTypes as type (type.name)}
+        <option value={type.name}>{type.name}</option>
       {/each}
     </select>
   </div>

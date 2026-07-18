@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_18_055410) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_18_060001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -120,6 +120,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_18_055410) do
     t.index ["item_id", "tag_id"], name: "index_item_tags_on_item_id_and_tag_id", unique: true
     t.index ["item_id"], name: "index_item_tags_on_item_id"
     t.index ["tag_id"], name: "index_item_tags_on_tag_id"
+  end
+
+  create_table "item_types", force: :cascade do |t|
+    t.string "color", null: false
+    t.datetime "created_at", null: false
+    t.string "name", null: false
+    t.bigint "organization_id", null: false
+    t.integer "position", null: false
+    t.datetime "updated_at", null: false
+    t.index "organization_id, lower((name)::text)", name: "index_item_types_on_organization_id_and_lower_name", unique: true
+    t.index ["organization_id"], name: "index_item_types_on_organization_id"
   end
 
   create_table "items", force: :cascade do |t|
@@ -344,6 +355,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_18_055410) do
   add_foreign_key "item_links", "items", column: "target_id"
   add_foreign_key "item_tags", "items"
   add_foreign_key "item_tags", "tags"
+  add_foreign_key "item_types", "organizations"
   add_foreign_key "items", "items", column: "parent_id"
   add_foreign_key "items", "projects"
   add_foreign_key "items", "statuses"
