@@ -424,6 +424,51 @@ RSpec.describe "Comparisons", type: :request do
       end
     end
 
+    describe "preloading the next pair (PROJ-64)" do
+      it "returns a lookahead pair distinct from the current one" do
+        a = create(:item, project: project, title: "A")
+        b = create(:item, project: project, title: "B")
+        c = create(:item, project: project, title: "C")
+
+        get prioritize_project_path(project, format: :json)
+
+        payload = response.parsed_body
+        current = payload["pair"].map { |item| item["id"] }.sort
+        lookahead = payload["next_pair"].map { |item| item["id"] }.sort
+        expect(payload["next_pair"]).to be_present
+        expect(lookahead).not_to eq(current)
+        expect(current + lookahead).to all(be_in([ a.id, b.id, c.id ]))
+      end
+
+      it "omits the lookahead when only one pair remains" do
+        create(:item, project: project, title: "A")
+        create(:item, project: project, title: "B")
+
+        get prioritize_project_path(project, format: :json)
+
+        expect(response.parsed_body["pair"]).to be_present
+        expect(response.parsed_body["next_pair"]).to be_nil
+      end
+
+      it "skips the pair the island still shows (exclude_pair) when refilling after a vote" do
+        a = create(:item, project: project, title: "A")
+        b = create(:item, project: project, title: "B")
+        c = create(:item, project: project, title: "C")
+        d = create(:item, project: project, title: "D")
+
+        # A–B is recorded while the island already shows C–D as its preload, so
+        # neither the returned pair nor its lookahead may hand C–D back.
+        post project_comparisons_path(project),
+             params: { item_a_id: a.id, item_b_id: b.id, outcome: "a_wins", exclude_pair: [ c.id, d.id ] },
+             as: :json
+
+        payload = response.parsed_body
+        returned = [ payload["pair"], payload["next_pair"] ].compact.map { |pair| pair.map { |item| item["id"] }.sort }
+        expect(returned).not_to include([ c.id, d.id ].sort)
+        expect(returned).not_to include([ a.id, b.id ].sort)
+      end
+    end
+
     describe "covering every pair (no repeats)" do
       it "hands out each unordered pair once, then reports completion" do
         a = create(:item, project: project, title: "A")

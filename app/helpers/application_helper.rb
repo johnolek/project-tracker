@@ -72,6 +72,7 @@ module ApplicationHelper
       refreshUrl: prioritize_project_path(project, format: :json),
       prioritiesUrl: priorities_project_path(project),
       pair: selection[:pair]&.map(&:comparison_payload),
+      nextPair: selection[:next_pair]&.map(&:comparison_payload),
       total: selection[:total],
       remaining: selection[:remaining],
       count: count,

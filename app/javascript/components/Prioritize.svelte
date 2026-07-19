@@ -8,6 +8,7 @@
     refreshUrl,
     prioritiesUrl,
     pair: initialPair,
+    nextPair: initialNextPair,
     count: initialCount,
     total: initialTotal,
     remaining: initialRemaining,
@@ -21,6 +22,12 @@
 
   // svelte-ignore state_referenced_locally -- islands remount per visit; props seed state once
   let pair = $state(initialPair)
+  // The pair after the shown one, fetched ahead (PROJ-64) so a vote can advance
+  // the display instantly while the comparison records in the background. Null
+  // when none is ready yet (first vote, the tail of the run) or after a context
+  // change until the next server response refills it.
+  // svelte-ignore state_referenced_locally -- same
+  let preloaded = $state(initialNextPair ?? null)
   // svelte-ignore state_referenced_locally -- same
   let count = $state(initialCount)
   // Pairs the current context could yield, and how many are still uncompared —
@@ -30,8 +37,17 @@
   // svelte-ignore state_referenced_locally -- same
   let remaining = $state(initialRemaining ?? 0)
   let busy = $state(false)
+  // A record POST is in flight. Kept apart from `busy`: an optimistic vote leaves
+  // the freshly shown pair fully interactive (busy stays false) while it records,
+  // but secondary controls — skip, pin, filters — must still wait on it.
+  let recording = $state(false)
+  // One vote queued because it landed mid-record; replayed once the record
+  // settles. Extra clicks beyond the first are dropped rather than stacked.
+  let pendingVote = null
   let pairKey = $state(0)
   let refreshQueued = false
+
+  const locked = $derived(busy || recording)
 
   // Candidate-pool filters, mirroring Board.svelte's set. Selection re-fetches a
   // fresh pair server-side (pair selection lives on the server) rather than
@@ -127,13 +143,22 @@
     refreshPair()
   }
 
+  // Swap the shown pair and reset its per-pair view state (notes clamp, fade key).
+  function showPair(newPair) {
+    pair = newPair
+    expanded = {}
+    overflowing = {}
+    pairKey += 1
+  }
+
+  // A full context refresh (initial load, skip, filter, pin): the server's pair
+  // becomes current and its lookahead seeds the preload slot.
   function applyPair(data) {
-    pair = data.pair
+    showPair(data.pair)
+    preloaded = data.next_pair ?? null
     count = data.count
     total = data.total ?? 0
     remaining = data.remaining ?? 0
-    expanded = {}
-    overflowing = {}
 
     if (data.pinned_id == null) {
       pinnedItem = null
@@ -142,14 +167,69 @@
       pinnedCount = data.pinned_count ?? 0
       if (pinnedItem?.id !== data.pinned_id && data.pair) pinnedItem = data.pair[0]
     }
-
-    pairKey += 1
   }
 
   async function record(outcome) {
-    if (busy || !pair) return
-    busy = true
+    if (!pair) return
+    if (recording) {
+      if (pendingVote == null) pendingVote = outcome
+      return
+    }
 
+    const voted = pair
+
+    if (preloaded) {
+      // The next pair is already in hand: show it now, record in the background,
+      // and refill the preload from the response. On failure, undo the advance so
+      // the unrecorded vote can be retried.
+      const snapshot = { count, total, remaining, pinnedCount }
+      const advanced = preloaded
+
+      showPair(advanced)
+      preloaded = null
+      count += 1
+      if (remaining > 0) remaining -= 1
+      if (pinnedItem) pinnedCount += 1
+
+      recording = true
+      const data = await postRecord(voted, outcome, advanced)
+      recording = false
+
+      if (data) {
+        count = data.count
+        total = data.total ?? 0
+        remaining = data.remaining ?? 0
+        preloaded = data.pair ?? null
+        if (pinnedItem && data.pinned_count != null) pinnedCount = data.pinned_count
+      } else {
+        count = snapshot.count
+        total = snapshot.total
+        remaining = snapshot.remaining
+        pinnedCount = snapshot.pinnedCount
+        preloaded = pair
+        showPair(voted)
+        toast("alert", "That vote didn't save — try again.")
+      }
+    } else {
+      // No lookahead yet (first vote, or the tail of the run): block until the
+      // server hands back the next pair the classic way.
+      busy = true
+      recording = true
+      const data = await postRecord(voted, outcome, null)
+      recording = false
+      busy = false
+
+      if (data) applyPair(data)
+      else toast("alert", "That vote didn't save — try again.")
+    }
+
+    drainAfterRecord()
+  }
+
+  // POSTs one recorded comparison. +excludePair+ is the pair the island is now
+  // showing, so the returned lookahead skips it (see ComparisonsController).
+  // Returns the parsed response, or null on any network/HTTP failure.
+  async function postRecord(votedPair, outcome, excludePair) {
     const response = await fetch(createUrl, {
       method: "POST",
       headers: {
@@ -158,17 +238,32 @@
         "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]')?.content,
       },
       body: JSON.stringify({
-        item_a_id: pair[0].id,
-        item_b_id: pair[1].id,
+        item_a_id: votedPair[0].id,
+        item_b_id: votedPair[1].id,
         outcome,
         pinned_item_id: pinnedItem?.id ?? null,
+        exclude_pair: excludePair ? [ excludePair[0].id, excludePair[1].id ] : null,
         ...filterParams(),
       }),
     }).catch(() => null)
 
-    if (response?.ok) applyPair(await response.json())
-    busy = false
-    drainQueuedRefresh()
+    if (response?.ok) return await response.json()
+    return null
+  }
+
+  // After a record settles, service whatever queued while it ran: a context
+  // change (skip/filter/pin) wins and drops the now-stale queued vote; otherwise
+  // replay the one queued vote.
+  function drainAfterRecord() {
+    if (refreshQueued) {
+      refreshQueued = false
+      pendingVote = null
+      refreshPair()
+    } else if (pendingVote != null) {
+      const outcome = pendingVote
+      pendingVote = null
+      record(outcome)
+    }
   }
 
   // Fetches a fresh pair under the current filters and pin — used by Skip and by
@@ -176,11 +271,13 @@
   // A change made while a request is in flight queues one follow-up refresh so
   // the displayed pair can't go stale relative to the selected filters.
   async function refreshPair() {
-    if (busy) {
+    if (busy || recording) {
       refreshQueued = true
       return
     }
     busy = true
+    // The new context supersedes any vote queued against the old pair.
+    pendingVote = null
 
     const response = await fetch(refreshRequestUrl(), { headers: { Accept: "application/json" } }).catch(() => null)
     if (response?.ok) applyPair(await response.json())
@@ -197,14 +294,14 @@
   const skip = refreshPair
 
   async function pin(item) {
-    if (busy) return
+    if (locked) return
     pinnedItem = item
     pinnedCount = 0
     await skip()
   }
 
   async function unpin() {
-    if (busy) return
+    if (locked) return
     pinnedItem = null
     pinnedCount = 0
     await skip()
@@ -218,7 +315,7 @@
   // the advance-one-step pipeline) and draws a fresh pair. On failure nothing
   // changes: the item stays in the pool and the shown pair is untouched.
   async function markComplete(item) {
-    if (busy || doneStatusId == null) return
+    if (locked || doneStatusId == null) return
     busy = true
 
     const response = await fetch(item.move_url, {
@@ -294,7 +391,7 @@
           <button
             type="button"
             class="comparison-complete"
-            disabled={busy}
+            disabled={locked}
             title="Move this item straight to done"
             aria-label={`Mark ${item.title} complete`}
             onclick={(event) => {
@@ -322,7 +419,7 @@
         type="button"
         class="comparison-pin"
         class:is-pinned={isPinned}
-        disabled={busy}
+        disabled={locked}
         aria-pressed={isPinned}
         title={isPinned ? "Unpin this item" : "Pin this item to compare it against the rest"}
         aria-label={isPinned ? `Unpin ${item.title}` : `Pin ${item.title}`}
@@ -359,7 +456,7 @@
       <span class="comparison-pin-bar-title">{pinnedItem.title}</span>
       <span class="has-text-weak">· {pinnedCount} {pinnedCount === 1 ? "comparison" : "comparisons"}</span>
     </span>
-    <button type="button" class="button is-small" disabled={busy} onclick={unpin}>Unpin</button>
+    <button type="button" class="button is-small" disabled={locked} onclick={unpin}>Unpin</button>
   </div>
 {/if}
 
@@ -375,7 +472,7 @@
   {/key}
 
   <div class="buttons is-centered mt-4">
-    <button type="button" class="button is-light" disabled={busy} onclick={skip}>Skip</button>
+    <button type="button" class="button is-light" disabled={locked} onclick={skip}>Skip</button>
   </div>
 
   <p class="has-text-centered has-text-weak">
@@ -389,7 +486,7 @@
   <div class="notification is-success is-light has-text-centered">
     <p>You've compared <strong>{pinnedItem.title}</strong> against everything else here. Unpin to keep prioritizing.</p>
     <div class="buttons is-centered mt-4">
-      <button type="button" class="button" disabled={busy} onclick={unpin}>Unpin</button>
+      <button type="button" class="button" disabled={locked} onclick={unpin}>Unpin</button>
     </div>
   </div>
 {:else if pinnedItem}

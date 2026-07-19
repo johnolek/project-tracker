@@ -25,7 +25,8 @@ class ComparisonsController < ApplicationController
         format.html { redirect_to prioritize_project_path(@project), notice: "Recorded. Here's another pair." }
         format.json do
           pinned = pinned_item
-          render json: pair_payload(selection: selection(pinned: pinned), count: Comparison.for_project(@project).count, pinned: pinned)
+          selection = selection(pinned: pinned, exclude: excluded_pairs)
+          render json: pair_payload(selection: selection, count: Comparison.for_project(@project).count, pinned: pinned)
         end
       end
     else
@@ -110,7 +111,7 @@ class ComparisonsController < ApplicationController
     @item_type_names ||= current_organization.item_types.pluck(:name)
   end
 
-  # @param selection [Hash] the result of +selection+ (pair + progress)
+  # @param selection [Hash] the result of +selection+ (pair + lookahead + progress)
   # @param count [Integer]
   # @param pinned [Item, nil] the anchored item, echoed back so the client stays
   #   in sync (nil when no valid pin is active)
@@ -118,12 +119,24 @@ class ComparisonsController < ApplicationController
   def pair_payload(selection:, count:, pinned: nil)
     {
       pair: selection[:pair]&.map(&:comparison_payload),
+      next_pair: selection[:next_pair]&.map(&:comparison_payload),
       count: count,
       total: selection[:total],
       remaining: selection[:remaining],
       pinned_id: pinned&.id,
       pinned_count: pinned && Comparison.counts_by_item(project: @project).fetch(pinned.id, 0)
     }
+  end
+
+  # The pair the client already has on screen, echoed back on a POST so the
+  # lookahead we return skips it — otherwise the freshly recorded vote could
+  # surface the very pair the island is currently showing as its next preload.
+  #
+  # @return [Array<Array(Integer, Integer)>] a one-element list of the id pair,
+  #   or empty when no valid pair was supplied
+  def excluded_pairs
+    ids = Array(params[:exclude_pair]).filter_map { |id| Integer(id.to_s, exception: false) }
+    ids.size == 2 && ids.first != ids.last ? [ ids ] : []
   end
 
   # Picks the next uncompared pair and reports progress toward covering them all.
@@ -143,25 +156,62 @@ class ComparisonsController < ApplicationController
   # +remaining+ how many are still uncompared, so the client can show progress
   # and know when it's done (remaining zero with total positive).
   #
+  # Alongside the chosen +pair+ we return +next_pair+, the pick that would come
+  # after it, so the island can preload it and advance a vote without waiting for
+  # the round-trip (PROJ-64). +exclude+ drops already-shown pairs from the pick so
+  # a post-vote refresh doesn't hand back the pair the island is still displaying.
+  #
   # @param pinned [Item, nil]
-  # @return [Hash{Symbol => Object}] { pair: Array<Item> | nil, total:, remaining: }
-  def selection(pinned: nil)
+  # @param exclude [Array<Array(Integer, Integer)>] id pairs to skip when picking
+  # @return [Hash{Symbol => Object}] { pair:, next_pair:, total:, remaining: }
+  def selection(pinned: nil, exclude: [])
     items = @project.items.not_done.includes(:status, :tags).select { |item| matches_filters?(item) }
     compared = Comparison.compared_pairs(project: @project)
     counts = Comparison.counts_by_item(project: @project)
+    skip = exclude.map { |first, second| pair_key(first, second) }.to_set
 
     if pinned
       opponents = items.reject { |item| item.id == pinned.id }
       available = opponents.reject { |item| compared.include?(pair_key(pinned.id, item.id)) }
-      opponent = available.min_by { |item| [ counts.fetch(item.id, 0), rand ] }
+      ranked = available.sort_by { |item| [ counts.fetch(item.id, 0), rand ] }
 
-      { pair: opponent && [ pinned, opponent ], total: opponents.size, remaining: available.size }
+      first, second = pick_two(ranked, skip) { |item| pair_key(pinned.id, item.id) }
+
+      {
+        pair: first && [ pinned, first ],
+        next_pair: second && [ pinned, second ],
+        total: opponents.size,
+        remaining: available.size
+      }
     else
       uncompared = items.size < 2 ? [] : items.combination(2).reject { |a, b| compared.include?(pair_key(a.id, b.id)) }
-      pair = uncompared.min_by { |a, b| [ counts.fetch(a.id, 0) + counts.fetch(b.id, 0), rand ] }
+      ranked = uncompared.sort_by { |a, b| [ counts.fetch(a.id, 0) + counts.fetch(b.id, 0), rand ] }
 
-      { pair: pair, total: items.size * (items.size - 1) / 2, remaining: uncompared.size }
+      first, second = pick_two(ranked, skip) { |a, b| pair_key(a.id, b.id) }
+
+      {
+        pair: first,
+        next_pair: second,
+        total: items.size * (items.size - 1) / 2,
+        remaining: uncompared.size
+      }
     end
+  end
+
+  # The first two entries of an already-ranked list whose pair keys aren't in
+  # +skip+ (and where the second differs from the first). The block maps an entry
+  # to its unordered pair key.
+  #
+  # @param ranked [Array]
+  # @param skip [Set<Array(Integer, Integer)>]
+  # @return [Array(Object, Object)] first and second picks, either may be nil
+  def pick_two(ranked, skip)
+    first = ranked.find { |entry| !skip.include?(yield(entry)) }
+    return [ nil, nil ] unless first
+
+    skip_first = skip + [ yield(first) ]
+    second = ranked.find { |entry| !skip_first.include?(yield(entry)) }
+    [ first, second ]
   end
 
   # @return [Array(Integer, Integer)] the two ids as a sorted tuple
