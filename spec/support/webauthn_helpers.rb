@@ -16,7 +16,7 @@ module WebauthnHelpers
     post signup_options_path, params: { username: username, email: email }, as: :json
     challenge = response.parsed_body["challenge"]
     credential = client.create(challenge: challenge, user_verified: true)
-    post signup_path, params: { credential: credential }, as: :json
+    post signup_passkey_path, params: { credential: credential }, as: :json
   end
 
   # Runs the full usernameless authentication handshake for a registered passkey.

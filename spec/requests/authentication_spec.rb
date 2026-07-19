@@ -36,6 +36,36 @@ RSpec.describe "Passkey authentication", type: :request do
       post signup_options_path, params: { username: "eve" }, as: :json
       expect(response).to have_http_status(:unprocessable_entity)
     end
+
+    describe "email-only (passkey optional)" do
+      it "creates an account and emails a link without signing in or a passkey" do
+        expect { post signup_path, params: { username: "emailer", email: "emailer@example.com" } }
+          .to change(User, :count).by(1)
+          .and change { ActionMailer::Base.deliveries.count }.by(1)
+
+        user = User.find_by(username: "emailer")
+        expect(user.credentials).to be_empty
+        expect(user.email_verified?).to be(false)
+        expect(response).to redirect_to(login_path)
+
+        # Not signed in yet — the emailed link verifies and signs in.
+        get projects_path
+        expect(response).to redirect_to(login_path)
+      end
+
+      it "re-renders with errors on a duplicate username" do
+        create(:user, username: "taken", email: "taken@example.com")
+
+        expect { post signup_path, params: { username: "taken", email: "fresh@example.com" } }
+          .not_to change(User, :count)
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+
+      it "requires an email" do
+        expect { post signup_path, params: { username: "noemail" } }.not_to change(User, :count)
+        expect(response).to have_http_status(:unprocessable_entity)
+      end
+    end
   end
 
   describe "sign in" do

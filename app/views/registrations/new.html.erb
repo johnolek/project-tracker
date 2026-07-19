@@ -1,31 +1,56 @@
-<% content_for :title, "Register" %>
+<% content_for :title, "Create account" %>
 <div class="columns is-centered">
   <div class="column is-half-tablet is-one-third-widescreen">
     <h1 class="title">Create your account</h1>
-    <p class="subtitle is-6">Registration uses a passkey stored on your device. There is no password.</p>
+    <p class="subtitle is-6">No password. We'll email you a sign-in link — adding a passkey is optional.</p>
 
     <div class="box">
-      <%= form_with url: signup_path, method: :post,
-            data: { passkey: "register", options_url: signup_options_path, callback_url: signup_path, turbo: false } do |form| %>
+      <%= form_with url: signup_path,
+            data: { options_url: signup_options_path, callback_url: signup_passkey_path } do |form| %>
+        <% if @user&.errors&.any? %>
+          <div class="notification is-danger is-light">
+            <ul>
+              <% @user.errors.full_messages.each do |message| %>
+                <li><%= message %></li>
+              <% end %>
+            </ul>
+          </div>
+        <% end %>
+
         <div class="field">
           <%= form.label :username, class: "label" %>
           <div class="control">
-            <%= form.text_field :username, class: "input", autocomplete: "username webauthn", required: true %>
+            <%= form.text_field :username, value: @user&.username, class: "input", autocomplete: "username webauthn", required: true %>
           </div>
         </div>
 
         <div class="field">
           <%= form.label :email, class: "label" %>
           <div class="control">
-            <%= form.email_field :email, class: "input", autocomplete: "email", required: true %>
+            <%= form.email_field :email, value: @user&.email, class: "input", autocomplete: "email", required: true %>
           </div>
-          <p class="help">Used for email sign-in and account recovery if a passkey isn't available.</p>
+          <p class="help">We'll send a sign-in link here to finish signing up.</p>
         </div>
 
         <p data-passkey-error class="help is-danger"></p>
 
         <div class="field">
-          <%= form.submit "Register with a passkey", class: "button is-primary is-fullwidth" %>
+          <%= form.submit "Create account", class: "button is-primary is-fullwidth" %>
+        </div>
+
+        <div class="is-flex is-align-items-center my-3">
+          <hr class="is-flex-grow-1 my-0">
+          <span class="mx-3 has-text-weak is-size-7">optional</span>
+          <hr class="is-flex-grow-1 my-0">
+        </div>
+
+        <div class="field">
+          <button type="button" data-passkey="register" class="button is-fullwidth">
+            Set up a passkey now
+          </button>
+          <p class="help">
+            Faster sign-in with Touch ID or a security key. You can add one anytime later — and email links always keep working.
+          </p>
         </div>
       <% end %>
     </div>

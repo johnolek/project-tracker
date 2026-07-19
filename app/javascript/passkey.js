@@ -144,14 +144,20 @@ async function addCredential(form) {
 
 document.addEventListener("submit", (event) => {
   const form = event.target;
-  if (form.matches("[data-passkey='register']")) {
-    event.preventDefault();
-    register(form);
-  } else if (form.matches("[data-passkey='authenticate']")) {
+  if (form.matches("[data-passkey='authenticate']")) {
     event.preventDefault();
     authenticate(form);
   } else if (form.matches("[data-passkey='add-credential']")) {
     event.preventDefault();
     addCredential(form);
   }
+});
+
+// Passkey enrollment at signup is an OPTIONAL button inside the email-signup
+// form (not the form's submit), so trigger it on click using its form's fields.
+document.addEventListener("click", (event) => {
+  const trigger = event.target.closest("[data-passkey='register']");
+  if (!trigger) return;
+  event.preventDefault();
+  register(trigger.closest("form"));
 });

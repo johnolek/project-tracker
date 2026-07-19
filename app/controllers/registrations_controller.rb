@@ -1,8 +1,27 @@
 class RegistrationsController < ApplicationController
   def new
+    @user = User.new
   end
 
-  # Issues WebAuthn credential-creation options and stashes the challenge for #create.
+  # Email-only signup: no passkey. Creates the account and emails a link to
+  # verify + sign in. A passkey is optional and can be added later. A webauthn_id
+  # is reserved now so one can be enrolled without a migration.
+  def create
+    @user = User.new(
+      username: params[:username].to_s.strip,
+      email: params[:email].to_s.strip.downcase,
+      webauthn_id: WebAuthn.generate_user_id
+    )
+
+    if @user.save
+      EmailVerificationMailer.verify_email(@user).deliver_now
+      redirect_to login_path, notice: "Account created. Check #{@user.email} for a link to sign in and finish setting up."
+    else
+      render :new, status: :unprocessable_entity
+    end
+  end
+
+  # Issues WebAuthn credential-creation options and stashes the challenge for #create_passkey.
   def options
     username = params[:username].to_s.strip
     email = params[:email].to_s.strip.downcase
@@ -39,8 +58,9 @@ class RegistrationsController < ApplicationController
     render json: create_options
   end
 
-  # Verifies the new passkey, creates the user (and their personal org), and signs in.
-  def create
+  # Verifies the new passkey, creates the user (and their personal org), and signs
+  # in. This is the optional passkey path; #create handles email-only signup.
+  def create_passkey
     registration = session[:registration]
 
     if registration.blank?
