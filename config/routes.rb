@@ -33,6 +33,9 @@ Rails.application.routes.draw do
     resources :item_types, only: %i[index create update destroy] do
       patch :move, on: :member
     end
+    resources :credentials, only: %i[index create destroy] do
+      post :options, on: :collection
+    end
   end
 
   namespace :api do

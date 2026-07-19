@@ -115,6 +115,33 @@ async function authenticate(form) {
   else showError(form, finished.data.error || "Sign in failed.");
 }
 
+// Enroll an additional passkey for the already-signed-in user. Same ceremony as
+// register(), but the options endpoint identifies the user from the session
+// (no username field) and success returns to the passkey list.
+async function addCredential(form) {
+  showError(form, "");
+  const nickname = form.querySelector('[name="nickname"]')?.value || "";
+  const started = await postJson(form.dataset.optionsUrl, {});
+  if (!started.ok) return showError(form, started.data.error || "Could not start.");
+
+  const options = started.data;
+  options.challenge = base64urlToBuffer(options.challenge);
+  options.user.id = base64urlToBuffer(options.user.id);
+  (options.excludeCredentials || []).forEach((c) => (c.id = base64urlToBuffer(c.id)));
+
+  let credential;
+  try {
+    credential = await navigator.credentials.create({ publicKey: options });
+  } catch (error) {
+    if (error.name === "NotAllowedError") return showError(form, "Passkey registration was cancelled.");
+    return showError(form, `Passkey registration failed: ${error.message}`);
+  }
+
+  const finished = await postJson(form.dataset.callbackUrl, { credential: serializeCreate(credential), nickname });
+  if (finished.ok) window.location.assign(finished.data.redirect_url);
+  else showError(form, finished.data.error || "Could not add passkey.");
+}
+
 document.addEventListener("submit", (event) => {
   const form = event.target;
   if (form.matches("[data-passkey='register']")) {
@@ -123,5 +150,8 @@ document.addEventListener("submit", (event) => {
   } else if (form.matches("[data-passkey='authenticate']")) {
     event.preventDefault();
     authenticate(form);
+  } else if (form.matches("[data-passkey='add-credential']")) {
+    event.preventDefault();
+    addCredential(form);
   }
 });
