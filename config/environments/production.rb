@@ -65,8 +65,9 @@ Rails.application.configure do
   # delivery result (see Smtp2goDelivery) over HTTPS. Otherwise fall back to
   # provider-agnostic SMTP, configured entirely from the environment.
   if ENV["SMTP2GO_API_KEY"].present?
+    # Settings (the API key) are seeded where the method is registered, in
+    # config/initializers/smtp2go.rb — see the note there on boot order.
     config.action_mailer.delivery_method = :smtp2go
-    config.action_mailer.smtp2go_settings = { api_key: ENV["SMTP2GO_API_KEY"] }
   else
     config.action_mailer.delivery_method = :smtp
     config.action_mailer.smtp_settings = {
