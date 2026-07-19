@@ -1009,13 +1009,13 @@ $tag-colors: (
 }
 
 // Southwest box: flat adobe card in place of Bulma's floaty two-layer shadow.
-// Hairline border carries the edge (also in dark mode, where shadows vanish),
-// a whisper of warm shadow adds depth, and a terracotta band tops it off.
-// Bulma's own shadow color is a hardcoded cool grey that clashes here.
+// A uniform hairline border carries the edge (also in dark mode, where shadows
+// vanish) and a whisper of warm shadow adds depth. Bulma's own shadow color is
+// a hardcoded cool grey that clashes here. (PROJ-49 dropped the terracotta top
+// band — it read as too heavy; the plain hairline is subtler.)
 .box {
   --bulma-box-shadow: 0 1px 2px hsla(var(--bulma-scheme-h), var(--bulma-scheme-s), 10%, 0.08);
   border: 1px solid var(--bulma-border-weak);
-  border-top: 3px solid var(--bulma-primary);
 }
 
 // Username dropdown: the Sign out control is a button_to (a <form> wrapping a
