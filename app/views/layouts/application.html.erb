@@ -89,6 +89,12 @@
             Add a recovery email so you can always get back in — even without your passkey.
             <%= link_to "Add email", edit_settings_account_path, class: "has-text-weight-semibold" %>
           </div>
+        <% elsif signed_in? && !current_user.email_verified? %>
+          <div class="notification is-warning">
+            Verify your email (<strong><%= current_user.email %></strong>) to use it for sign-in and recovery.
+            <%= button_to "Resend link", email_verification_request_path, method: :post,
+                  class: "button is-small is-warning is-inverted ml-2", form: { class: "is-inline" } %>
+          </div>
         <% end %>
         <%= yield %>
       </div>

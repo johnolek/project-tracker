@@ -58,6 +58,7 @@ class RegistrationsController < ApplicationController
       nickname: params[:nickname].presence
     )
     user.save!
+    EmailVerificationMailer.verify_email(user).deliver_now
 
     sign_in(user)
     render json: { redirect_url: root_path }

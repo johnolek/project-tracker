@@ -18,6 +18,11 @@ Rails.application.routes.draw do
   get "sign-in/email/:token", to: "email_sign_ins#show", as: :email_sign_in
   post "sign-in/email/:token", to: "email_sign_ins#update"
 
+  # Email verification (prove control of the address)
+  post "verify-email", to: "email_verifications#create", as: :email_verification_request
+  get "verify-email/:token", to: "email_verifications#show", as: :email_verification
+  post "verify-email/:token", to: "email_verifications#update"
+
   get "search", to: "search#show", as: :search
 
   resources :projects do

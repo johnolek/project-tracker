@@ -24,6 +24,15 @@ RSpec.describe "Email sign-in", type: :request do
       expect(response).to redirect_to(login_path)
       expect(flash[:notice]).to be_present
     end
+
+    it "does not send a link to an unverified email" do
+      create(:user, email: "pending@example.com", email_verified: false)
+
+      expect { post email_sign_in_request_path, params: { email: "pending@example.com" } }
+        .not_to change { ActionMailer::Base.deliveries.count }
+
+      expect(response).to redirect_to(login_path)
+    end
   end
 
   describe "using the link" do

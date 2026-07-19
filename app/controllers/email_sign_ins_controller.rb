@@ -7,7 +7,9 @@ class EmailSignInsController < ApplicationController
     email = params[:email].to_s.strip.downcase
     user = User.find_by("lower(email) = ?", email) if email.present?
 
-    EmailSignInMailer.sign_in_link(user).deliver_now if user
+    # Only verified addresses can sign in by email — an unverified email hasn't
+    # been proven, so it isn't a usable way in.
+    EmailSignInMailer.sign_in_link(user).deliver_now if user&.email_verified?
 
     # Neutral response either way so the form never reveals who has an account.
     redirect_to login_path, notice: "If that email has an account, a sign-in link is on its way."

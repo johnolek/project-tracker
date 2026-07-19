@@ -12,11 +12,13 @@ RSpec.describe "Settings::Account", type: :request do
     expect(response.body).to include("owner@example.com")
   end
 
-  it "updates the recovery email" do
-    patch settings_account_path, params: { user: { email: "new@example.com" } }
+  it "updates the email, marks it unverified, and sends a verification link" do
+    expect { patch settings_account_path, params: { user: { email: "new@example.com" } } }
+      .to change { ActionMailer::Base.deliveries.count }.by(1)
 
     expect(response).to redirect_to(edit_settings_account_path)
     expect(user.reload.email).to eq("new@example.com")
+    expect(user.email_verified?).to be(false)
   end
 
   it "rejects an invalid email" do

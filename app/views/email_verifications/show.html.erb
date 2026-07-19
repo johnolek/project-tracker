@@ -1,0 +1,12 @@
+<% content_for :title, "Verify email" %>
+<div class="columns is-centered">
+  <div class="column is-half-tablet is-one-third-widescreen">
+    <h1 class="title">Verify email</h1>
+    <p class="subtitle is-6">Confirm that <strong><%= @user.email %></strong> is your email address.</p>
+
+    <div class="box">
+      <%= button_to "Verify email", email_verification_path(token: params[:token]), method: :post,
+            class: "button is-primary is-fullwidth" %>
+    </div>
+  </div>
+</div>
