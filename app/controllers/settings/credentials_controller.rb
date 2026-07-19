@@ -13,7 +13,7 @@ module Settings
       create_options = WebAuthn::Credential.options_for_create(
         user: { id: current_user.webauthn_id, name: current_user.username, display_name: current_user.username },
         exclude: current_user.credentials.pluck(:external_id),
-        authenticator_selection: { user_verification: "preferred", resident_key: "preferred" }
+        authenticator_selection: { user_verification: "preferred", resident_key: "required" }
       )
 
       session[:credential_registration] = { challenge: create_options.challenge }

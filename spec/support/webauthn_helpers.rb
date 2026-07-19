@@ -19,9 +19,9 @@ module WebauthnHelpers
     post signup_path, params: { credential: credential }, as: :json
   end
 
-  # Runs the full two-step authentication handshake for an already-registered passkey.
-  def authenticate_passkey(username:, client: fake_webauthn_client)
-    post login_options_path, params: { username: username }, as: :json
+  # Runs the full usernameless authentication handshake for a registered passkey.
+  def authenticate_passkey(client: fake_webauthn_client)
+    post login_options_path, as: :json
     challenge = response.parsed_body["challenge"]
     assertion = client.get(challenge: challenge, user_verified: true)
     post login_path, params: { credential: assertion }, as: :json

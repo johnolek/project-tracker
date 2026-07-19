@@ -34,14 +34,14 @@ RSpec.describe "Passkey authentication", type: :request do
   end
 
   describe "sign in" do
-    it "authenticates a registered passkey" do
+    it "authenticates a registered passkey without a username" do
       client = WebAuthn::FakeClient.new(webauthn_origin)
       register_passkey(username: "bob", client: client)
 
       # Drop the authenticated session so we exercise a real sign-in.
       delete logout_path
 
-      authenticate_passkey(username: "bob", client: client)
+      authenticate_passkey(client: client)
 
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body["redirect_url"]).to eq(root_path)
@@ -50,20 +50,9 @@ RSpec.describe "Passkey authentication", type: :request do
       expect(response).to have_http_status(:ok)
     end
 
-    it "rejects an unknown username" do
-      post login_options_path, params: { username: "nobody" }, as: :json
+    it "rejects a sign-in with no pending challenge" do
+      post login_path, params: { credential: { type: "public-key" } }, as: :json
       expect(response).to have_http_status(:unprocessable_entity)
-    end
-
-    it "authenticates regardless of username casing" do
-      client = WebAuthn::FakeClient.new(webauthn_origin)
-      register_passkey(username: "Bob", client: client)
-      delete logout_path
-
-      authenticate_passkey(username: "bob", client: client)
-
-      expect(response).to have_http_status(:ok)
-      expect(response.parsed_body["redirect_url"]).to eq(root_path)
     end
   end
 

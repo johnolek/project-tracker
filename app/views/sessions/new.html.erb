@@ -2,18 +2,11 @@
 <div class="columns is-centered">
   <div class="column is-half-tablet is-one-third-widescreen">
     <h1 class="title">Sign in</h1>
-    <p class="subtitle is-6">Sign in with the passkey you registered on this device.</p>
+    <p class="subtitle is-6">Sign in with a passkey — your device will offer the one you registered. No username needed.</p>
 
     <div class="box">
       <%= form_with url: login_path, method: :post,
             data: { passkey: "authenticate", options_url: login_options_path, callback_url: login_path, turbo: false } do |form| %>
-        <div class="field">
-          <%= form.label :username, class: "label" %>
-          <div class="control">
-            <%= form.text_field :username, class: "input", autocomplete: "username webauthn", required: true %>
-          </div>
-        </div>
-
         <p data-passkey-error class="help is-danger"></p>
 
         <div class="field">

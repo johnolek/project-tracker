@@ -17,7 +17,7 @@ class RegistrationsController < ApplicationController
     webauthn_id = WebAuthn.generate_user_id
     create_options = WebAuthn::Credential.options_for_create(
       user: { id: webauthn_id, name: username, display_name: username },
-      authenticator_selection: { user_verification: "preferred", resident_key: "preferred" }
+      authenticator_selection: { user_verification: "preferred", resident_key: "required" }
     )
 
     session[:registration] = {

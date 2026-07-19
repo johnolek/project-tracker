@@ -94,8 +94,7 @@ async function register(form) {
 
 async function authenticate(form) {
   showError(form, "");
-  const username = form.querySelector('[name="username"]').value;
-  const started = await postJson(form.dataset.optionsUrl, { username });
+  const started = await postJson(form.dataset.optionsUrl, {});
   if (!started.ok) return showError(form, started.data.error || "Could not start sign in.");
 
   const options = started.data;
