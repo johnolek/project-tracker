@@ -22,7 +22,7 @@ Personal project/item tracker. Rails 8.1, PostgreSQL, passkey-only auth (WebAuth
 ## Deployment
 
 - Coolify builds the Dockerfile; deploy env needs `DATABASE_URL`, `RAILS_MASTER_KEY`, `WEBAUTHN_RP_ID`, `WEBAUTHN_ORIGIN`.
-- Email sign-in / verification / recovery needs SMTP env (provider-agnostic): `SMTP_ADDRESS`, `SMTP_USERNAME`, `SMTP_PASSWORD`, optional `SMTP_PORT` (587), `SMTP_AUTHENTICATION` (plain), `SMTP_DOMAIN`, plus `MAIL_FROM` and `MAIL_HOST` (falls back to the `WEBAUTHN_ORIGIN` host). Without these, magic-link/verification emails silently don't send (delivery errors are swallowed).
+- Email sign-in / verification / recovery delivery: set `SMTP2GO_API_KEY` to send via the SMTP2GO HTTP API (`Smtp2goDelivery`), which logs an explicit success (`[smtp2go] delivered … email_id=…`) or failure per message. Otherwise it falls back to provider-agnostic SMTP: `SMTP_ADDRESS`, `SMTP_USERNAME`, `SMTP_PASSWORD`, optional `SMTP_PORT` (587), `SMTP_AUTHENTICATION` (plain), `SMTP_DOMAIN`. Either way you also need `MAIL_FROM` (a sender verified at the provider — SMTP2GO rejects unverified domains) and `MAIL_HOST` (for link hosts; falls back to the `WEBAUTHN_ORIGIN` host). `raise_delivery_errors` is off in production, so with plain SMTP a failed send is silent — the API path logs it. Note: email sign-in only sends to a **verified** address ([email_sign_ins_controller.rb](app/controllers/email_sign_ins_controller.rb)), so an unverified email produces no send at all.
 - Active Storage uses local disk: a persistent volume must be mounted at `/rails/storage` (Coolify → Persistent Storage) or uploads are lost on redeploy.
 
 ## Direction
