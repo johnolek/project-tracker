@@ -9,11 +9,7 @@
   <div class="level-right"><%= link_to "View priorities", priorities_project_path(@project), class: "button" %></div>
 </div>
 
-<% if @pair %>
-  <div data-svelte-component="Prioritize"
-       data-props="<%= prioritize_props(project: @project, pair: @pair, count: @comparison_count, pinned: @pinned).to_json %>"></div>
-<% else %>
-  <div class="notification is-info is-light">
-    <p>You need at least two open items in this project to prioritize. Add or reopen some items, then come back.</p>
-  </div>
-<% end %>
+<%# The island owns every state — an active pair, the completion celebration,
+    and the empty/too-few messages — so it always mounts. %>
+<div data-svelte-component="Prioritize"
+     data-props="<%= prioritize_props(project: @project, selection: @selection, count: @comparison_count, pinned: @pinned).to_json %>"></div>

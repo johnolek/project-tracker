@@ -7,6 +7,13 @@ RSpec.describe "Comparisons", type: :request do
     let(:organization) { User.find_by(username: "owner").default_organization }
     let(:project) { organization.projects.create!(name: "Tracker") }
 
+    # The Prioritize island always mounts; its empty/completion states render
+    # client-side, so assert on the props the server hands it.
+    def mounted_props(body)
+      island = Nokogiri::HTML(body).at_css('[data-svelte-component="Prioritize"]')
+      JSON.parse(island["data-props"])
+    end
+
     describe "GET /projects/:id/prioritize" do
       it "shows two distinct open items from the project to compare" do
         first = create(:item, project: project, title: "First matters")
@@ -26,7 +33,7 @@ RSpec.describe "Comparisons", type: :request do
         get prioritize_project_path(project)
 
         expect(response.body).not_to include("Neighbor item")
-        expect(response.body).to include("at least two open items")
+        expect(mounted_props(response.body)["pair"]).to be_nil
       end
 
       it "404s for another organization's project" do
@@ -37,12 +44,14 @@ RSpec.describe "Comparisons", type: :request do
         expect(response).to have_http_status(:not_found)
       end
 
-      it "shows a friendly empty state with fewer than two open items" do
+      it "offers no pair with fewer than two open items" do
         create(:item, project: project, title: "Lonely")
 
         get prioritize_project_path(project)
 
-        expect(response.body).to include("at least two open items")
+        props = mounted_props(response.body)
+        expect(props["pair"]).to be_nil
+        expect(props["total"]).to eq(0)
       end
 
       it "excludes done items from the pair" do
@@ -52,7 +61,8 @@ RSpec.describe "Comparisons", type: :request do
 
         get prioritize_project_path(project)
 
-        expect(response.body).to include("at least two open items")
+        expect(mounted_props(response.body)["pair"]).to be_nil
+        expect(response.body).not_to include("Finished work")
       end
 
       it "serves the current pair and count as JSON for skip refreshes" do
@@ -151,7 +161,9 @@ RSpec.describe "Comparisons", type: :request do
         expect(item_a.reload.strength).to be_within(1e-9).of(item_b.reload.strength)
       end
 
-      it "returns the next pair and count as JSON so the island continues without a reload" do
+      it "returns the next uncompared pair and count as JSON so the island continues without a reload" do
+        create(:item, project: project, title: "Item C")
+
         post project_comparisons_path(project),
              params: { item_a_id: item_a.id, item_b_id: item_b.id, outcome: "a_wins" },
              as: :json
@@ -159,7 +171,10 @@ RSpec.describe "Comparisons", type: :request do
         expect(response).to have_http_status(:ok)
         payload = response.parsed_body
         expect(payload["count"]).to eq(1)
-        expect(payload["pair"].map { |item| item["title"] }).to match_array([ "Item A", "Item B" ])
+        # A fresh pair, never the one just recorded.
+        titles = payload["pair"].map { |item| item["title"] }
+        expect(titles).to include("Item C")
+        expect(titles).not_to match_array([ "Item A", "Item B" ])
       end
 
       it "returns validation errors as JSON" do
@@ -406,6 +421,32 @@ RSpec.describe "Comparisons", type: :request do
         expect(props["itemTypes"].map { |type| type["name"] }).to eq(%w[bug feature idea])
         expect(props["allTags"]).to eq([ "alpha", "zeta" ])
         expect(props["statuses"].map { |status| status["name"] }).to eq([ "New", "In Progress", "Needs Verification" ])
+      end
+    end
+
+    describe "covering every pair (no repeats)" do
+      it "hands out each unordered pair once, then reports completion" do
+        a = create(:item, project: project, title: "A")
+        b = create(:item, project: project, title: "B")
+        c = create(:item, project: project, title: "C")
+        user = User.find_by(username: "owner")
+
+        Comparison.create!(item_a: a, item_b: b, outcome: "a_wins", user: user)
+        Comparison.create!(item_a: a, item_b: c, outcome: "a_wins", user: user)
+
+        get prioritize_project_path(project, format: :json)
+        payload = response.parsed_body
+        expect(payload["pair"].map { |item| item["title"] }).to match_array([ "B", "C" ])
+        expect(payload["total"]).to eq(3)
+        expect(payload["remaining"]).to eq(1)
+
+        Comparison.create!(item_a: c, item_b: b, outcome: "a_wins", user: user)
+
+        get prioritize_project_path(project, format: :json)
+        payload = response.parsed_body
+        expect(payload["pair"]).to be_nil
+        expect(payload["total"]).to eq(3)
+        expect(payload["remaining"]).to eq(0)
       end
     end
   end

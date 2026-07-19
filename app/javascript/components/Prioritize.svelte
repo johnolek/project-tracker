@@ -6,8 +6,11 @@
   let {
     createUrl,
     refreshUrl,
+    prioritiesUrl,
     pair: initialPair,
     count: initialCount,
+    total: initialTotal,
+    remaining: initialRemaining,
     pinned: initialPinned,
     pinnedCount: initialPinnedCount,
     itemTypes,
@@ -20,6 +23,12 @@
   let pair = $state(initialPair)
   // svelte-ignore state_referenced_locally -- same
   let count = $state(initialCount)
+  // Pairs the current context could yield, and how many are still uncompared —
+  // drives the progress line and the "all compared" completion state.
+  // svelte-ignore state_referenced_locally -- same
+  let total = $state(initialTotal ?? 0)
+  // svelte-ignore state_referenced_locally -- same
+  let remaining = $state(initialRemaining ?? 0)
   let busy = $state(false)
   let pairKey = $state(0)
   let refreshQueued = false
@@ -43,6 +52,10 @@
       selectedTags.length > 0 ||
       selectedStatusIds.length > 0
   )
+
+  // Every possible pair in the current context has been compared: the flow is
+  // done rather than merely empty (which would mean too few items / no matches).
+  const complete = $derived(pair == null && total > 0 && remaining === 0)
 
   // The anchored item (full object so its title shows even when no opponent is
   // left) and its running comparison total, both synced from server responses.
@@ -117,6 +130,8 @@
   function applyPair(data) {
     pair = data.pair
     count = data.count
+    total = data.total ?? 0
+    remaining = data.remaining ?? 0
     expanded = {}
     overflowing = {}
 
@@ -364,18 +379,43 @@
   </div>
 
   <p class="has-text-centered has-text-weak">
-    {count} {count === 1 ? "comparison" : "comparisons"} recorded so far.
+    {#if total > 0}
+      {total - remaining} of {total} {total === 1 ? "pair" : "pairs"} compared{#if remaining > 0} · {remaining} to go{/if}
+    {:else}
+      {count} {count === 1 ? "comparison" : "comparisons"} recorded so far.
+    {/if}
   </p>
+{:else if complete && pinnedItem}
+  <div class="notification is-success is-light has-text-centered">
+    <p>You've compared <strong>{pinnedItem.title}</strong> against everything else here. Unpin to keep prioritizing.</p>
+    <div class="buttons is-centered mt-4">
+      <button type="button" class="button" disabled={busy} onclick={unpin}>Unpin</button>
+    </div>
+  </div>
+{:else if pinnedItem}
+  <div class="notification is-info is-light">
+    <p>No other open items are left to compare against the pinned item. Unpin to keep prioritizing.</p>
+  </div>
+{:else if complete}
+  <div class="notification is-success has-text-centered" in:fade={{ duration: 200 }}>
+    <p class="title is-4">🎉 Every pair compared</p>
+    <p>
+      You've judged all {total} {total === 1 ? "pair" : "pairs"}{anyFilterActive ? " in this filtered set" : ""} —
+      this backlog is fully ranked.
+    </p>
+    <div class="buttons is-centered mt-4">
+      <a class="button is-primary" href={prioritiesUrl}>View priorities</a>
+      {#if anyFilterActive}
+        <button type="button" class="button" onclick={clearFilters}>Clear filters</button>
+      {/if}
+    </div>
+  </div>
 {:else if anyFilterActive}
   <div class="notification is-info is-light">
     <p>
       No pair matches your filters.
       <button type="button" class="filter-clear" onclick={clearFilters}>Clear filters</button>
     </p>
-  </div>
-{:else if pinnedItem}
-  <div class="notification is-info is-light">
-    <p>No other open items are left to compare against the pinned item. Unpin to keep prioritizing.</p>
   </div>
 {:else}
   <div class="notification is-info is-light">

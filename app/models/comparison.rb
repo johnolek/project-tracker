@@ -8,6 +8,7 @@ class Comparison < ApplicationRecord
   validates :outcome, inclusion: { in: OUTCOMES }
   validate :items_differ
   validate :items_in_same_project
+  validate :pair_not_already_compared
 
   after_create :recompute_strengths
   after_destroy :recompute_strengths
@@ -23,6 +24,15 @@ class Comparison < ApplicationRecord
 
   # @param project [Project]
   scope :for_project, ->(project) { where(item_a_id: project.items.select(:id)) }
+
+  # The unordered pairs already compared in the project, each as a sorted
+  # [lower_id, higher_id] tuple, for cheap membership tests during pairing.
+  #
+  # @param project [Project]
+  # @return [Set<Array(Integer, Integer)>]
+  def self.compared_pairs(project:)
+    for_project(project).pluck(:item_a_id, :item_b_id).map { |a, b| a < b ? [ a, b ] : [ b, a ] }.to_set
+  end
 
   # @param project [Project]
   # @return [Hash{Integer => Integer}] item_id => number of comparisons it appears in
@@ -67,6 +77,22 @@ class Comparison < ApplicationRecord
     return if item_a_id.nil? || item_b_id.nil?
 
     errors.add(:item_b, "must be different from item A") if item_a_id == item_b_id
+  end
+
+  # A pair only needs comparing once, in either direction — Bradley-Terry gains
+  # nothing from a repeat. Matched on the unordered pair so A-vs-B and B-vs-A
+  # count as the same. A DB-level unique index on LEAST/GREATEST is the real
+  # guard; this validation just turns the race into a friendly error.
+  def pair_not_already_compared
+    return if item_a_id.nil? || item_b_id.nil? || item_a_id == item_b_id
+
+    lo, hi = [ item_a_id, item_b_id ].minmax
+    scope = Comparison.where(
+      "LEAST(item_a_id, item_b_id) = ? AND GREATEST(item_a_id, item_b_id) = ?", lo, hi
+    )
+    scope = scope.where.not(id: id) if persisted?
+
+    errors.add(:base, "These two items have already been compared.") if scope.exists?
   end
 
   # Prioritization is per-project: pairs are only meaningful inside one

@@ -65,12 +65,15 @@ module ApplicationHelper
   # @param pair [Array<Item>, nil]
   # @param count [Integer]
   # @return [Hash]
-  def prioritize_props(project:, pair:, count:, pinned: nil)
+  def prioritize_props(project:, selection:, count:, pinned: nil)
     organization = project.organization
     {
       createUrl: project_comparisons_path(project),
       refreshUrl: prioritize_project_path(project, format: :json),
-      pair: pair&.map(&:comparison_payload),
+      prioritiesUrl: priorities_project_path(project),
+      pair: selection[:pair]&.map(&:comparison_payload),
+      total: selection[:total],
+      remaining: selection[:remaining],
       count: count,
       pinned: pinned&.comparison_payload,
       pinnedCount: pinned ? Comparison.counts_by_item(project: project).fetch(pinned.id, 0) : 0,

@@ -37,11 +37,22 @@ RSpec.describe Comparison, type: :model do
     expect(comparison.errors[:item_b]).to be_present
   end
 
-  it "allows the same pair to be compared more than once" do
+  it "rejects re-comparing a pair, in either order" do
     first = create(:comparison)
-    duplicate = build(:comparison, item_a: first.item_a, item_b: first.item_b, user: first.user)
 
-    expect(duplicate).to be_valid
+    same = build(:comparison, item_a: first.item_a, item_b: first.item_b, user: first.user)
+    reversed = build(:comparison, item_a: first.item_b, item_b: first.item_a, user: first.user)
+
+    expect(same).not_to be_valid
+    expect(same.errors[:base]).to be_present
+    expect(reversed).not_to be_valid
+  end
+
+  it "enforces pair uniqueness at the database level too" do
+    first = create(:comparison)
+    reversed = build(:comparison, item_a: first.item_b, item_b: first.item_a, user: first.user)
+
+    expect { reversed.save!(validate: false) }.to raise_error(ActiveRecord::RecordNotUnique)
   end
 
   describe "strength recomputation" do

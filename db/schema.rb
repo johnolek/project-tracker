@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_18_090000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_19_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -84,6 +84,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_18_090000) do
     t.string "outcome", null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.index "LEAST(item_a_id, item_b_id), GREATEST(item_a_id, item_b_id)", name: "index_comparisons_on_unordered_pair", unique: true
     t.index ["item_a_id"], name: "index_comparisons_on_item_a_id"
     t.index ["item_b_id"], name: "index_comparisons_on_item_b_id"
     t.index ["user_id"], name: "index_comparisons_on_user_id"

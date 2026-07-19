@@ -4,12 +4,12 @@ class ComparisonsController < ApplicationController
 
   def new
     @pinned = pinned_item
-    @pair = next_pair(pinned: @pinned)
+    @selection = selection(pinned: @pinned)
     @comparison_count = Comparison.for_project(@project).count
 
     respond_to do |format|
       format.html
-      format.json { render json: pair_payload(pair: @pair, count: @comparison_count, pinned: @pinned) }
+      format.json { render json: pair_payload(selection: @selection, count: @comparison_count, pinned: @pinned) }
     end
   end
 
@@ -25,7 +25,7 @@ class ComparisonsController < ApplicationController
         format.html { redirect_to prioritize_project_path(@project), notice: "Recorded. Here's another pair." }
         format.json do
           pinned = pinned_item
-          render json: pair_payload(pair: next_pair(pinned: pinned), count: Comparison.for_project(@project).count, pinned: pinned)
+          render json: pair_payload(selection: selection(pinned: pinned), count: Comparison.for_project(@project).count, pinned: pinned)
         end
       end
     else
@@ -110,46 +110,62 @@ class ComparisonsController < ApplicationController
     @item_type_names ||= current_organization.item_types.pluck(:name)
   end
 
-  # @param pair [Array<Item>, nil]
+  # @param selection [Hash] the result of +selection+ (pair + progress)
   # @param count [Integer]
   # @param pinned [Item, nil] the anchored item, echoed back so the client stays
   #   in sync (nil when no valid pin is active)
   # @return [Hash] the JSON the Prioritize island consumes after each action
-  def pair_payload(pair:, count:, pinned: nil)
+  def pair_payload(selection:, count:, pinned: nil)
     {
-      pair: pair&.map(&:comparison_payload),
+      pair: selection[:pair]&.map(&:comparison_payload),
       count: count,
+      total: selection[:total],
+      remaining: selection[:remaining],
       pinned_id: pinned&.id,
       pinned_count: pinned && Comparison.counts_by_item(project: @project).fetch(pinned.id, 0)
     }
   end
 
-  # Picks the next pair of open items to compare, breaking ties randomly.
+  # Picks the next uncompared pair and reports progress toward covering them all.
   #
-  # The pool is the project's not_done items narrowed by the active filters
-  # (item type, points, tags, status). With no pin, returns the two
-  # least-compared items in that pool (steering attention toward under-compared
-  # items while the random tiebreak keeps the same pair from recurring). With a
-  # +pinned+ item, the pair is anchored on it as item A while the opponent is
-  # drawn from the filtered pool: an explicit pin is honored even when it no
-  # longer matches the filters, but its opponents still respect them. Returns
-  # nil when the pool is too small to form a pair.
+  # Each unordered pair is only worth comparing once (Bradley-Terry gains nothing
+  # from a repeat), so already-compared pairs are excluded and the flow ends when
+  # none remain — that exhaustion is the completion state the client celebrates.
+  #
+  # The pool is the project's not_done items narrowed by the active filters. With
+  # no pin, the pair is the least-compared uncompared combination (the random
+  # tiebreak spreads coverage). With a +pinned+ item, it's anchored as item A
+  # against its least-compared uncompared opponent from the filtered pool: an
+  # explicit pin is honored even when it no longer matches the filters, but its
+  # opponents still respect them.
+  #
+  # +total+ is the number of pairs the current context could yield and
+  # +remaining+ how many are still uncompared, so the client can show progress
+  # and know when it's done (remaining zero with total positive).
   #
   # @param pinned [Item, nil]
-  # @return [Array<Item>, nil]
-  def next_pair(pinned: nil)
+  # @return [Hash{Symbol => Object}] { pair: Array<Item> | nil, total:, remaining: }
+  def selection(pinned: nil)
     items = @project.items.not_done.includes(:status, :tags).select { |item| matches_filters?(item) }
+    compared = Comparison.compared_pairs(project: @project)
     counts = Comparison.counts_by_item(project: @project)
 
     if pinned
       opponents = items.reject { |item| item.id == pinned.id }
-      return nil if opponents.empty?
+      available = opponents.reject { |item| compared.include?(pair_key(pinned.id, item.id)) }
+      opponent = available.min_by { |item| [ counts.fetch(item.id, 0), rand ] }
 
-      [ pinned, opponents.min_by { |item| [ counts.fetch(item.id, 0), rand ] } ]
+      { pair: opponent && [ pinned, opponent ], total: opponents.size, remaining: available.size }
     else
-      return nil if items.size < 2
+      uncompared = items.size < 2 ? [] : items.combination(2).reject { |a, b| compared.include?(pair_key(a.id, b.id)) }
+      pair = uncompared.min_by { |a, b| [ counts.fetch(a.id, 0) + counts.fetch(b.id, 0), rand ] }
 
-      items.sort_by { |item| [ counts.fetch(item.id, 0), rand ] }.first(2)
+      { pair: pair, total: items.size * (items.size - 1) / 2, remaining: uncompared.size }
     end
+  end
+
+  # @return [Array(Integer, Integer)] the two ids as a sorted tuple
+  def pair_key(first, second)
+    first < second ? [ first, second ] : [ second, first ]
   end
 end
