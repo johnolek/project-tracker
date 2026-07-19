@@ -15,6 +15,27 @@
       <% end %>
     </div>
 
+    <div class="is-flex is-align-items-center my-4">
+      <hr class="is-flex-grow-1 my-0">
+      <span class="mx-3 has-text-weak is-size-7">or</span>
+      <hr class="is-flex-grow-1 my-0">
+    </div>
+
+    <div class="box">
+      <%= form_with url: email_sign_in_request_path, method: :post do |form| %>
+        <div class="field">
+          <%= form.label :email, "Email", class: "label" %>
+          <div class="control">
+            <%= form.email_field :email, class: "input", autocomplete: "email", required: true, placeholder: "you@example.com" %>
+          </div>
+        </div>
+        <div class="field">
+          <%= form.submit "Email me a sign-in link", class: "button is-fullwidth" %>
+        </div>
+      <% end %>
+      <p class="help">A one-tap link, valid 20 minutes. Works on any device — handy if your passkey isn't available here.</p>
+    </div>
+
     <p><%= link_to "Need an account? Register", signup_path %></p>
   </div>
 </div>

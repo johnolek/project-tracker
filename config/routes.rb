@@ -10,6 +10,11 @@ Rails.application.routes.draw do
   post "login", to: "sessions#create"
   delete "logout", to: "sessions#destroy"
 
+  # Passwordless email sign-in (also the domain-change / lost-passkey bridge)
+  post "sign-in/email", to: "email_sign_ins#create", as: :email_sign_in_request
+  get "sign-in/email/:token", to: "email_sign_ins#show", as: :email_sign_in
+  post "sign-in/email/:token", to: "email_sign_ins#update"
+
   get "search", to: "search#show", as: :search
 
   resources :projects do
@@ -26,6 +31,7 @@ Rails.application.routes.draw do
   end
 
   namespace :settings do
+    resource :account, only: %i[edit update], controller: "account"
     resources :api_keys, only: %i[index create destroy]
     resources :statuses, only: %i[index create update destroy] do
       patch :move, on: :member

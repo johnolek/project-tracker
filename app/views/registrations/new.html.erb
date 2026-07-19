@@ -14,6 +14,14 @@
           </div>
         </div>
 
+        <div class="field">
+          <%= form.label :email, class: "label" %>
+          <div class="control">
+            <%= form.email_field :email, class: "input", autocomplete: "email", required: true %>
+          </div>
+          <p class="help">Used for email sign-in and account recovery if a passkey isn't available.</p>
+        </div>
+
         <p data-passkey-error class="help is-danger"></p>
 
         <div class="field">

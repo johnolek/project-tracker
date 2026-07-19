@@ -61,6 +61,7 @@
                 <a class="navbar-link" role="button" tabindex="0"
                    aria-haspopup="true" aria-expanded="false"><%= current_user.username %></a>
                 <div class="navbar-dropdown is-right">
+                  <%= link_to "Account", edit_settings_account_path, class: "navbar-item" %>
                   <%= link_to "Statuses", settings_statuses_path, class: "navbar-item" %>
                   <%= link_to "Item types", settings_item_types_path, class: "navbar-item" %>
                   <%= link_to "Passkeys", settings_credentials_path, class: "navbar-item" %>
@@ -83,6 +84,12 @@
 
     <main class="section">
       <div class="container">
+        <% if signed_in? && current_user.email.blank? %>
+          <div class="notification is-warning">
+            Add a recovery email so you can always get back in — even without your passkey.
+            <%= link_to "Add email", edit_settings_account_path, class: "has-text-weight-semibold" %>
+          </div>
+        <% end %>
         <%= yield %>
       </div>
     </main>

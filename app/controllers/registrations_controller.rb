@@ -5,13 +5,22 @@ class RegistrationsController < ApplicationController
   # Issues WebAuthn credential-creation options and stashes the challenge for #create.
   def options
     username = params[:username].to_s.strip
+    email = params[:email].to_s.strip.downcase
 
     if username.blank?
       return render json: { error: "Please choose a username." }, status: :unprocessable_entity
     end
-
     if User.exists?(username: username)
       return render json: { error: "That username is taken." }, status: :unprocessable_entity
+    end
+    if email.blank?
+      return render json: { error: "Please enter an email for sign-in and recovery." }, status: :unprocessable_entity
+    end
+    unless email.match?(URI::MailTo::EMAIL_REGEXP)
+      return render json: { error: "Please enter a valid email address." }, status: :unprocessable_entity
+    end
+    if User.exists?([ "lower(email) = ?", email ])
+      return render json: { error: "That email is already registered." }, status: :unprocessable_entity
     end
 
     webauthn_id = WebAuthn.generate_user_id
@@ -23,7 +32,8 @@ class RegistrationsController < ApplicationController
     session[:registration] = {
       challenge: create_options.challenge,
       username: username,
-      webauthn_id: webauthn_id
+      webauthn_id: webauthn_id,
+      email: email
     }
 
     render json: create_options
@@ -40,7 +50,7 @@ class RegistrationsController < ApplicationController
     webauthn_credential = WebAuthn::Credential.from_create(credential_param)
     webauthn_credential.verify(registration["challenge"])
 
-    user = User.new(username: registration["username"], webauthn_id: registration["webauthn_id"])
+    user = User.new(username: registration["username"], webauthn_id: registration["webauthn_id"], email: registration["email"])
     user.credentials.build(
       external_id: webauthn_credential.id,
       public_key: webauthn_credential.public_key,

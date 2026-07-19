@@ -71,7 +71,8 @@ function serializeGet(assertion) {
 async function register(form) {
   showError(form, "");
   const username = form.querySelector('[name="username"]').value;
-  const started = await postJson(form.dataset.optionsUrl, { username });
+  const email = form.querySelector('[name="email"]')?.value || "";
+  const started = await postJson(form.dataset.optionsUrl, { username, email });
   if (!started.ok) return showError(form, started.data.error || "Could not start registration.");
 
   const options = started.data;

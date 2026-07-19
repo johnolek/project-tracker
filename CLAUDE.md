@@ -21,6 +21,7 @@ Personal project/item tracker. Rails 8.1, PostgreSQL, passkey-only auth (WebAuth
 ## Deployment
 
 - Coolify builds the Dockerfile; deploy env needs `DATABASE_URL`, `RAILS_MASTER_KEY`, `WEBAUTHN_RP_ID`, `WEBAUTHN_ORIGIN`.
+- Email sign-in / recovery needs SMTP env (provider-agnostic): `SMTP_ADDRESS`, `SMTP_USERNAME`, `SMTP_PASSWORD`, optional `SMTP_PORT` (587), `SMTP_AUTHENTICATION` (plain), `SMTP_DOMAIN`, plus `MAIL_FROM` and `MAIL_HOST` (falls back to the `WEBAUTHN_ORIGIN` host). Without these, magic-link emails silently don't send (delivery errors are swallowed). Dev writes emails to `tmp/mails/` instead of sending.
 - Active Storage uses local disk: a persistent volume must be mounted at `/rails/storage` (Coolify → Persistent Storage) or uploads are lost on redeploy.
 
 ## Direction

@@ -12,8 +12,8 @@ module WebauthnHelpers
   end
 
   # Runs the full two-step registration handshake and leaves the session signed in.
-  def register_passkey(username:, client: fake_webauthn_client)
-    post signup_options_path, params: { username: username }, as: :json
+  def register_passkey(username:, email: "#{username}@example.com", client: fake_webauthn_client)
+    post signup_options_path, params: { username: username, email: email }, as: :json
     challenge = response.parsed_body["challenge"]
     credential = client.create(challenge: challenge, user_verified: true)
     post signup_path, params: { credential: credential }, as: :json

@@ -51,21 +51,27 @@ Rails.application.configure do
   # Solid Queue runs in the primary database, supervised in-process by Puma.
   config.active_job.queue_adapter = :solid_queue
 
-  # Ignore bad email addresses and do not raise email delivery errors.
-  # Set this to true and configure the email server for immediate delivery to raise delivery errors.
-  # config.action_mailer.raise_delivery_errors = false
+  # Don't raise on delivery failures (a missing SMTP config shouldn't 500 a
+  # sign-in request); mail simply won't send until SMTP env vars are set.
+  config.action_mailer.raise_delivery_errors = false
 
-  # Set host to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: "example.com" }
+  # Host for links in emails (the magic-link sign-in URL). Prefer MAIL_HOST,
+  # else derive from the WebAuthn origin the app is already deployed under.
+  mail_host = ENV["MAIL_HOST"].presence ||
+              (ENV["WEBAUTHN_ORIGIN"].present? ? URI(ENV["WEBAUTHN_ORIGIN"]).host : "localhost")
+  config.action_mailer.default_url_options = { host: mail_host, protocol: "https" }
 
-  # Specify outgoing SMTP server. Remember to add smtp/* credentials via bin/rails credentials:edit.
-  # config.action_mailer.smtp_settings = {
-  #   user_name: Rails.application.credentials.dig(:smtp, :user_name),
-  #   password: Rails.application.credentials.dig(:smtp, :password),
-  #   address: "smtp.example.com",
-  #   port: 587,
-  #   authentication: :plain
-  # }
+  # Provider-agnostic SMTP, configured entirely from the environment.
+  config.action_mailer.delivery_method = :smtp
+  config.action_mailer.smtp_settings = {
+    address: ENV["SMTP_ADDRESS"],
+    port: ENV.fetch("SMTP_PORT", 587).to_i,
+    user_name: ENV["SMTP_USERNAME"],
+    password: ENV["SMTP_PASSWORD"],
+    authentication: ENV.fetch("SMTP_AUTHENTICATION", "plain").to_sym,
+    domain: ENV["SMTP_DOMAIN"],
+    enable_starttls_auto: true
+  }.compact
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to
   # the I18n.default_locale when a translation cannot be found).

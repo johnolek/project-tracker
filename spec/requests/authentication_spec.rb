@@ -31,6 +31,11 @@ RSpec.describe "Passkey authentication", type: :request do
       post signup_options_path, params: { username: "ALICE" }, as: :json
       expect(response).to have_http_status(:unprocessable_entity)
     end
+
+    it "requires an email address" do
+      post signup_options_path, params: { username: "eve" }, as: :json
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
   end
 
   describe "sign in" do
