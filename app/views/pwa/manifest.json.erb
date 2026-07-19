@@ -1,5 +1,7 @@
-<%# Home-screen icon mirrors the favicon split: green P in dev, terracotta P in prod. %>
-<% icon_svg = Rails.env.production? ? "/icon.svg" : "/icon-dev.svg" %>
+<%# Home-screen icon mirrors the favicon split: green P in dev, terracotta P in prod.
+    The PNGs are opaque, full-square (bin/generate_favicons) so maskable is safe. %>
+<% suffix = Rails.env.production? ? "" : "-dev" %>
+<% icon_svg = "/icon#{suffix}.svg" %>
 {
   "name": "Project Tracker",
   "short_name": "Tracker",
@@ -17,19 +19,19 @@
       "purpose": "any"
     },
     {
-      "src": "<%= icon_svg %>",
-      "type": "image/svg+xml",
-      "sizes": "any",
-      "purpose": "maskable"
+      "src": "/icon-192<%= suffix %>.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
     },
     {
-      "src": "/icon.png",
+      "src": "/icon-512<%= suffix %>.png",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "any"
     },
     {
-      "src": "/icon.png",
+      "src": "/icon-512<%= suffix %>.png",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "maskable"

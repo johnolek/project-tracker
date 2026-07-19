@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# Regenerates every raster favicon/app-icon in public/ from inline SVG sources.
+#
+# Two design rules baked in here:
+#   1. Home-screen and PWA-maskable icons must be OPAQUE and FULL-SQUARE (no
+#      rounded corners of our own). iOS and Android apply their own mask; if we
+#      ship transparent/rounded corners they render as black corners. So the
+#      raster sources below use a full-bleed rect (no rx), unlike the rounded
+#      public/icon.svg we serve as the browser-tab favicon.
+#   2. The dev(green)/prod(terracotta) split mirrors public/icon{,-dev}.svg so a
+#      locally-installed PWA / home-screen icon is unmistakably the dev build.
+#
+# Requires: rsvg-convert (librsvg) and ImageMagick (magick). Both via Homebrew.
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+out="public"
+
+PROD="#a1462b" # terracotta
+DEV="#16a34a"  # green
+
+# Opaque, full-square icon used for every raster (home-screen + PWA) asset.
+square_svg() {
+  local color="$1"
+  cat <<SVG
+<svg width="512" height="512" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <rect width="64" height="64" fill="${color}"/>
+  <text x="32" y="46" font-family="Helvetica, Arial, sans-serif" font-size="42" font-weight="bold" text-anchor="middle" fill="#ffffff">P</text>
+</svg>
+SVG
+}
+
+render() { # color size out.png
+  square_svg "$1" | rsvg-convert -w "$2" -h "$2" -b none -o "$3" -
+  # Flatten onto the icon color so the PNG is guaranteed opaque (belt and suspenders).
+  magick "$3" -background "$1" -alpha remove -alpha off "$3"
+}
+
+# Prod (terracotta) home-screen + PWA icons.
+render "$PROD" 180 "$out/apple-touch-icon.png"
+render "$PROD" 192 "$out/icon-192.png"
+render "$PROD" 512 "$out/icon-512.png"
+
+# Dev (green) variants.
+render "$DEV" 180 "$out/apple-touch-icon-dev.png"
+render "$DEV" 192 "$out/icon-192-dev.png"
+render "$DEV" 512 "$out/icon-512-dev.png"
+
+# favicon.ico: the legacy/auto-requested (/favicon.ico) fallback for browsers
+# that don't honor the SVG favicon. Rounded terracotta tab icon at 16/32/48.
+rsvg-convert -w 48 -h 48 "$out/icon.svg" -o /tmp/favicon-48.png
+rsvg-convert -w 32 -h 32 "$out/icon.svg" -o /tmp/favicon-32.png
+rsvg-convert -w 16 -h 16 "$out/icon.svg" -o /tmp/favicon-16.png
+magick /tmp/favicon-16.png /tmp/favicon-32.png /tmp/favicon-48.png "$out/favicon.ico"
+rm -f /tmp/favicon-16.png /tmp/favicon-32.png /tmp/favicon-48.png
+
+echo "Wrote:"
+ls -1 "$out"/favicon.ico "$out"/apple-touch-icon*.png "$out"/icon-192*.png "$out"/icon-512*.png

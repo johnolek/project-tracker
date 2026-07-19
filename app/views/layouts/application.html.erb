@@ -18,9 +18,12 @@
     <meta name="theme-color" content="#a1462b">
     <meta name="theme-color" content="#1d1711" media="(prefers-color-scheme: dark)">
 
-    <%# Green P locally, terracotta P in production, so tabs are unmistakable %>
+    <%# Green P locally, terracotta P in production, so tabs are unmistakable.
+        SVG for modern browsers, favicon.ico as the legacy/auto-requested fallback,
+        and an opaque 180×180 apple-touch-icon (square corners; iOS masks its own). %>
     <link rel="icon" href="<%= Rails.env.production? ? "/icon.svg" : "/icon-dev.svg" %>" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/icon.png">
+    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
+    <link rel="apple-touch-icon" href="<%= Rails.env.production? ? "/apple-touch-icon.png" : "/apple-touch-icon-dev.png" %>">
 
     <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
