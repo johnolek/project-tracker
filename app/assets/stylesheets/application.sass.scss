@@ -1045,3 +1045,21 @@ $tag-colors: (
     }
   }
 }
+
+// PROJ-61: iOS Safari zooms the whole page when a text control with a font-size
+// under 16px gains focus. The compact Bulma controls (is-small: 0.75rem) — the
+// nav search, the board/prioritize filters, the typeahead, and the sidebar
+// selects — all trip this, so tapping them on a phone yanks the layout in.
+// Rather than lock the viewport (maximum-scale would break pinch-zoom and fail
+// WCAG 1.4.4), lift those controls to 16px at mobile widths; focusing them no
+// longer crosses the zoom threshold. Desktop keeps the denser 0.75rem sizing.
+// Selectors match Bulma's own specificity and sit later in the cascade, so they
+// win without !important.
+@media screen and (max-width: 768px) {
+  .input.is-small,
+  .textarea.is-small,
+  .select.is-small,
+  .select.is-small select {
+    font-size: 16px;
+  }
+}
