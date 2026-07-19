@@ -15,16 +15,10 @@ class EmailSignInsController < ApplicationController
     redirect_to login_path, notice: "If that email has an account, a sign-in link is on its way."
   end
 
-  # GET /sign-in/email/:token — confirm before signing in, so an email-link
-  # prefetcher can't silently establish a session from the token.
+  # GET /sign-in/email/:token — verify the token and sign in. Acting on the link
+  # directly matches how email magic links work elsewhere; the token expires and
+  # isn't single-use, so link prefetchers don't break it for the real click.
   def show
-    @user = User.find_by_token_for(:email_login, params[:token])
-
-    redirect_to login_path, alert: "That sign-in link is invalid or has expired." if @user.nil?
-  end
-
-  # POST /sign-in/email/:token — verify the token and sign in.
-  def update
     user = User.find_by_token_for(:email_login, params[:token])
 
     if user

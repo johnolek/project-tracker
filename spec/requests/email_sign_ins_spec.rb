@@ -36,14 +36,11 @@ RSpec.describe "Email sign-in", type: :request do
   end
 
   describe "using the link" do
-    it "signs the user in after confirming a valid token" do
+    it "signs the user in from a valid link" do
       post email_sign_in_request_path, params: { email: "owner@example.com" }
       token = emailed_token
 
       get email_sign_in_path(token: token)
-      expect(response).to have_http_status(:ok)
-
-      post email_sign_in_path(token: token)
       expect(response).to redirect_to(root_path)
 
       # Session is authenticated: a login-required page renders.
@@ -55,9 +52,6 @@ RSpec.describe "Email sign-in", type: :request do
       get email_sign_in_path(token: "garbage")
       expect(response).to redirect_to(login_path)
       expect(flash[:alert]).to be_present
-
-      post email_sign_in_path(token: "garbage")
-      expect(response).to redirect_to(login_path)
     end
   end
 end

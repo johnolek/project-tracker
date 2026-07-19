@@ -17,15 +17,12 @@ RSpec.describe "Email verification", type: :request do
   end
 
   describe "confirming the link" do
-    it "verifies the email and signs the user in" do
+    it "verifies the email and signs the user in from the link" do
       register_passkey(username: "newbie", email: "newbie@example.com")
       delete logout_path
       token = emailed_verification_token
 
       get email_verification_path(token: token)
-      expect(response).to have_http_status(:ok)
-
-      post email_verification_path(token: token)
       expect(response).to redirect_to(root_path)
 
       expect(User.find_by(username: "newbie").email_verified?).to be(true)
@@ -36,7 +33,7 @@ RSpec.describe "Email verification", type: :request do
 
     it "rejects an invalid or expired token" do
       get email_verification_path(token: "garbage")
-      expect(response).to redirect_to(root_path)
+      expect(response).to redirect_to(login_path)
     end
   end
 

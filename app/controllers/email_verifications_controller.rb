@@ -14,17 +14,10 @@ class EmailVerificationsController < ApplicationController
     end
   end
 
-  # GET /verify-email/:token — confirm before verifying, so an email-link
-  # prefetcher can't silently act on the token.
+  # GET /verify-email/:token — confirm the address and sign in. Acting on the
+  # link directly is safe: marking an email verified is idempotent and is exactly
+  # what the recipient wants, so no interstitial confirm is needed.
   def show
-    @user = User.find_by_token_for(:email_verification, params[:token])
-
-    redirect_to root_path, alert: "That verification link is invalid or has expired." if @user.nil?
-  end
-
-  # POST /verify-email/:token — mark the email verified and sign in (clicking the
-  # link proves control of the address).
-  def update
     user = User.find_by_token_for(:email_verification, params[:token])
 
     if user

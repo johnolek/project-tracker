@@ -16,12 +16,13 @@ Personal project/item tracker. Rails 8.1, PostgreSQL, passkey-only auth (WebAuth
 - Tests: `bundle exec rspec`. Request specs authenticate with `register_passkey(username:)` (WebAuthn FakeClient); API specs use `spec/support/api_helpers.rb`.
 - Browser verification: Playwright (devDependency) with a CDP virtual authenticator handles the passkey flow; see the pattern in past session scratchpads if needed.
 - `bin/rails db:seed` (development only) fills an organization with demo projects, items, and comparisons for manual testing. Register a passkey user first; it targets `SEED_USER=<username>` or the oldest user with a credential.
+- Email in development goes to a browser inbox at `/letter_opener` (letter_opener_web), not real SMTP — use it to grab magic-link / verification links. (When scripting: letter_opener's `rich.html` entity-encodes the mail, so stop token extraction at `&`.)
 - Theme: seed palette in `app/assets/stylesheets/application.sass.scss`. Any color change must keep WCAG AA contrast in BOTH light and dark schemes (verify against built CSS values, not intended ones). Scope light-theme variable overrides so they don't leak into dark mode.
 
 ## Deployment
 
 - Coolify builds the Dockerfile; deploy env needs `DATABASE_URL`, `RAILS_MASTER_KEY`, `WEBAUTHN_RP_ID`, `WEBAUTHN_ORIGIN`.
-- Email sign-in / recovery needs SMTP env (provider-agnostic): `SMTP_ADDRESS`, `SMTP_USERNAME`, `SMTP_PASSWORD`, optional `SMTP_PORT` (587), `SMTP_AUTHENTICATION` (plain), `SMTP_DOMAIN`, plus `MAIL_FROM` and `MAIL_HOST` (falls back to the `WEBAUTHN_ORIGIN` host). Without these, magic-link emails silently don't send (delivery errors are swallowed). Dev writes emails to `tmp/mails/` instead of sending.
+- Email sign-in / verification / recovery needs SMTP env (provider-agnostic): `SMTP_ADDRESS`, `SMTP_USERNAME`, `SMTP_PASSWORD`, optional `SMTP_PORT` (587), `SMTP_AUTHENTICATION` (plain), `SMTP_DOMAIN`, plus `MAIL_FROM` and `MAIL_HOST` (falls back to the `WEBAUTHN_ORIGIN` host). Without these, magic-link/verification emails silently don't send (delivery errors are swallowed).
 - Active Storage uses local disk: a persistent volume must be mounted at `/rails/storage` (Coolify → Persistent Storage) or uploads are lost on redeploy.
 
 ## Direction
