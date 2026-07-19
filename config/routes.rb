@@ -1,4 +1,7 @@
 Rails.application.routes.draw do
+  # Local email inbox (development only): browse sent mail at /letter_opener.
+  mount LetterOpenerWeb::Engine, at: "/letter_opener" if Rails.env.development?
+
   # Passkey (WebAuthn) registration
   get "signup", to: "registrations#new"
   post "signup/options", to: "registrations#options", as: :signup_options

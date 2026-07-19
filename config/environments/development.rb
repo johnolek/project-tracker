@@ -40,9 +40,9 @@ Rails.application.configure do
   # Set localhost to be used by links generated in mailer templates.
   config.action_mailer.default_url_options = { host: "localhost", port: 3000 }
 
-  # Write emails to tmp/mails/ instead of sending them, so magic links can be
-  # inspected locally without an SMTP server.
-  config.action_mailer.delivery_method = :file
+  # Collect sent emails in a browser inbox at /letter_opener instead of sending
+  # them, so magic links are easy to inspect locally (no SMTP server).
+  config.action_mailer.delivery_method = :letter_opener_web
 
   # Print deprecation notices to the Rails logger.
   config.active_support.deprecation = :log

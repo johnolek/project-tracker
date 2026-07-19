@@ -67,6 +67,10 @@ end
 group :development do
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem "web-console"
+
+  # Local email inbox UI at /letter_opener — view sent mail in the browser
+  # instead of reading tmp/mails.
+  gem "letter_opener_web"
 end
 
 gem "cssbundling-rails", "~> 1.4"
