@@ -37,8 +37,12 @@ Rails.application.configure do
   # Make template changes take effect immediately.
   config.action_mailer.perform_caching = false
 
-  # Set localhost to be used by links generated in mailer templates.
-  config.action_mailer.default_url_options = { host: "localhost", port: 3000 }
+  # Set localhost to be used by links generated in mailer templates. The port
+  # defaults to 3003 but follows PORT/MAIL_HOST so links match the running server.
+  config.action_mailer.default_url_options = {
+    host: ENV.fetch("MAIL_HOST", "localhost"),
+    port: ENV.fetch("PORT", 3003)
+  }
 
   # Collect sent emails in a browser inbox at /letter_opener instead of sending
   # them, so magic links are easy to inspect locally (no SMTP server).
