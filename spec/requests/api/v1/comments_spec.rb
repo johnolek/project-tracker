@@ -97,4 +97,27 @@ RSpec.describe "API v1 comments", type: :request do
       expect(json_body["errors"]).to include("Body can't be blank")
     end
   end
+
+  describe "PATCH /api/v1/comments/:id" do
+    it "rewrites the body with the same sanitization as create, regardless of author" do
+      comment = create(:comment, item: item, user: create(:user), body: "wall of text", source: "api")
+
+      patch api_v1_comment_path(comment),
+            params: { comment: { body: "<h1>Findings</h1><table><tr><td>dropped</td></tr></table>" } },
+            headers: auth_headers
+
+      expect(response).to have_http_status(:ok)
+      expect(json_body["body_html"]).to include("Findings</h1>")
+      expect(json_body["body_html"]).not_to include("<table")
+      expect(comment.reload.body.to_plain_text).to include("Findings")
+    end
+
+    it "404s for a comment in another organization" do
+      comment = create(:comment)
+
+      patch api_v1_comment_path(comment), params: { comment: { body: "nope" } }, headers: auth_headers
+
+      expect(response).to have_http_status(:not_found)
+    end
+  end
 end

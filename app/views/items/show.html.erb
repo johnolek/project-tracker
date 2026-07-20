@@ -105,7 +105,8 @@
                   <%= time_ago_in_words(comment.created_at) %> ago
                 </time>
               </div>
-              <div class="content comment-body"><%= comment.body %></div>
+              <div data-svelte-component="CommentEditor"
+                   data-props="<%= comment_editor_props(project: @project, item: @item, comment: comment).to_json %>"></div>
             </li>
           <% end %>
         </ol>

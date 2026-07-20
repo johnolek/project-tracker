@@ -280,6 +280,14 @@ curl -X POST http://localhost:3000/api/v1/items/42/comments \
   -H "Authorization: Bearer pt_YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{ "comment": { "body": "<p>Reproduced on staging.</p><ol><li><code>POST /sessions</code> with a stale token</li><li>observe the <strong>500</strong></li></ol>" } }'
+
+# Update (200) — rewrite a comment's body (same sanitization as create). The
+# path is flat: any comment on an organization item is editable by id,
+# regardless of author.
+curl -X PATCH http://localhost:3000/api/v1/comments/7 \
+  -H "Authorization: Bearer pt_YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{ "comment": { "body": "<p>Corrected: the fix shipped in <code>abc123</code>.</p>" } }'
 ```
 
 ## Statuses

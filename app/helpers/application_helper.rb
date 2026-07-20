@@ -117,6 +117,21 @@ module ApplicationHelper
     }
   end
 
+  # Props for one CommentEditor island (inline comment-body editing, PROJ-75).
+  #
+  # @param project [Project]
+  # @param item [Item]
+  # @param comment [Comment]
+  # @return [Hash]
+  def comment_editor_props(project:, item:, comment:)
+    {
+      comment: comment.edit_payload,
+      updateUrl: project_item_comment_path(project, item, comment),
+      blobUrlTemplate: rails_service_blob_url(":signed_id", ":filename"),
+      directUploadUrl: rails_direct_uploads_url
+    }
+  end
+
   # Props for the ItemSidebar island (inline status/type/points/tags editing).
   #
   # @param project [Project]

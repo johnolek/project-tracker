@@ -13,6 +13,18 @@ class CommentsController < ApplicationController
     end
   end
 
+  # JSON-only inline edit from the CommentEditor island (PROJ-75). Any member
+  # of the organization can edit any comment, matching item notes.
+  def update
+    comment = @item.comments.find(params[:id])
+
+    if comment.update(comment_params)
+      render json: comment.edit_payload
+    else
+      render json: { errors: comment.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
+
   private
 
   def set_project

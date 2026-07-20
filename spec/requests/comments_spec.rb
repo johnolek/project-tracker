@@ -40,6 +40,55 @@ RSpec.describe "Comments", type: :request do
       end
     end
 
+    describe "PATCH update" do
+      it "rewrites the body and returns the fresh edit payload as JSON" do
+        comment = create(:comment, item: item, body: "Original")
+
+        patch project_item_comment_path(project, item, comment),
+              params: { comment: { body: "<p>Rewritten <strong>body</strong></p>" } }, as: :json
+
+        expect(response).to have_http_status(:ok)
+        payload = JSON.parse(response.body)
+        expect(payload["id"]).to eq(comment.id)
+        expect(payload["body_html"]).to include("Rewritten <strong>body</strong>")
+        expect(payload["body_trix"]).to be_present
+        expect(comment.reload.body.to_plain_text).to eq("Rewritten body")
+      end
+
+      it "edits comments authored by other users in the organization" do
+        other = create(:user)
+        organization.memberships.create!(user: other)
+        comment = create(:comment, item: item, user: other, body: "Theirs", source: "api")
+
+        patch project_item_comment_path(project, item, comment),
+              params: { comment: { body: "Cleaned up" } }, as: :json
+
+        expect(response).to have_http_status(:ok)
+        expect(comment.reload.body.to_plain_text).to eq("Cleaned up")
+      end
+
+      it "422s with errors on a blank body" do
+        comment = create(:comment, item: item, body: "Keep me")
+
+        patch project_item_comment_path(project, item, comment),
+              params: { comment: { body: "" } }, as: :json
+
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(JSON.parse(response.body)["errors"]).to include("Body can't be blank")
+        expect(comment.reload.body.to_plain_text).to eq("Keep me")
+      end
+
+      it "404s for a comment on another organization's item" do
+        foreign_item = create(:item)
+        comment = create(:comment, item: foreign_item)
+
+        patch project_item_comment_path(project, item, comment),
+              params: { comment: { body: "nope" } }, as: :json
+
+        expect(response).to have_http_status(:not_found)
+      end
+    end
+
     describe "the thread on the item detail page" do
       it "renders comments chronologically and badges API-sourced ones" do
         create(:comment, item: item, body: "Human note", source: "web")

@@ -1167,6 +1167,13 @@ $tag-colors: (
   margin-right: -0.6rem;
 }
 
+// Same treatment for editable comment bodies (PROJ-75); nothing follows the
+// body inside its box, so the plain shorthand is safe.
+.comment-body.item-editable {
+  padding: 0.4rem 0.6rem;
+  margin: -0.4rem -0.6rem;
+}
+
 // Human key (PROJ-12) sitting quietly above the item title.
 // Copy-key button sits just to the right of the breadcrumb on the item page.
 .breadcrumb-copy {

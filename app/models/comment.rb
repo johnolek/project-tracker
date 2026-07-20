@@ -16,4 +16,18 @@ class Comment < ApplicationRecord
   def from_api?
     source == "api"
   end
+
+  # JSON shape the CommentEditor island renders and receives back after every
+  # inline save. body_html is the rendered rich text for display; body_trix
+  # seeds the rhino editor when editing begins.
+  #
+  # @return [Hash]
+  def edit_payload
+    {
+      id: id,
+      body_html: body.to_s,
+      body_trix: body.body&.to_trix_html.to_s,
+      updated_at: updated_at.to_i
+    }
+  end
 end

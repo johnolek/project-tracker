@@ -4,6 +4,7 @@
 // so restored snapshots hold an empty root and remount cleanly.
 import { mount, unmount } from "svelte"
 import Board from "./components/Board.svelte"
+import CommentEditor from "./components/CommentEditor.svelte"
 import CopyButton from "./components/CopyButton.svelte"
 import ItemEditor from "./components/ItemEditor.svelte"
 import ItemLinkField from "./components/ItemLinkField.svelte"
@@ -13,7 +14,7 @@ import ReviewBanner from "./components/ReviewBanner.svelte"
 import ReviewQueueLink from "./components/ReviewQueueLink.svelte"
 import Toasts from "./components/Toasts.svelte"
 
-const registry = { Board, CopyButton, ItemEditor, ItemLinkField, ItemSidebar, Prioritize, ReviewBanner, ReviewQueueLink, Toasts }
+const registry = { Board, CommentEditor, CopyButton, ItemEditor, ItemLinkField, ItemSidebar, Prioritize, ReviewBanner, ReviewQueueLink, Toasts }
 const active = new Map()
 
 function mountIslands() {

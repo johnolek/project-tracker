@@ -35,7 +35,7 @@ Rails.application.routes.draw do
         patch :review
         delete :review, action: :unreview, as: nil
       end
-      resources :comments, only: :create
+      resources :comments, only: %i[create update]
       resources :links, only: %i[create destroy]
     end
     resources :comparisons, only: :create
@@ -65,6 +65,8 @@ Rails.application.routes.draw do
         resources :comments, only: %i[index create]
         resources :links, only: :create
       end
+      # Flat update path so the CLI can address a comment by its id alone.
+      resources :comments, only: :update
       resources :links, only: :destroy
       resources :statuses, only: %i[index create update destroy]
       resources :tags, only: :index

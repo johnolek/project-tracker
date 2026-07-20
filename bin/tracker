@@ -40,6 +40,9 @@ USAGE = <<~TEXT
                                       carries the link_id used by unlink).
     unlink LINK_ID                    Remove a relationship
     comments ID                       List an item's comments
+    update-comment COMMENT_ID --body HTML
+                                      Rewrite a comment's body (the comment id
+                                      comes from the comments listing)
     comment ID --body HTML [--no-branch]
                                       Add a comment (HTML, web-editor tags
                                       only; plain-text newlines collapse).
@@ -64,6 +67,7 @@ COMMANDS = {
   "unlink"         => { method: :delete, path: "/links/%{id}", positional: 1 },
   "comments"       => { method: :get,    path: "/items/%{id}/comments", positional: 1 },
   "comment"        => { method: :post,   path: "/items/%{id}/comments", positional: 1, wrap: "comment" },
+  "update-comment" => { method: :patch,  path: "/comments/%{id}", positional: 1, wrap: "comment" },
   "statuses"       => { method: :get,    path: "/statuses" },
   "tags"           => { method: :get,    path: "/tags" }
 }.freeze
