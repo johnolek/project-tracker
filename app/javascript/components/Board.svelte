@@ -3,6 +3,7 @@
   import { fade } from "svelte/transition"
   import Sortable from "sortablejs"
   import consumer from "../cable"
+  import matchesItemFilters from "../item_filters"
   import ItemFilters from "./ItemFilters.svelte"
   import ItemCardBody from "./ItemCardBody.svelte"
 
@@ -67,23 +68,17 @@
     return value == null || value === "" || Number.isNaN(value) ? null : Number(value)
   }
 
-  // Every criterion composes with AND, including the title query.
+  // Every criterion composes with AND, including the title query; semantics
+  // live in item_filters.js (shared with its unit tests and the server mirror).
   function matchesFilters(item) {
-    if (
-      normalizedQuery &&
-      !item.title.toLowerCase().includes(normalizedQuery) &&
-      !item.key.toLowerCase().includes(normalizedQuery)
-    ) return false
-    if (reviewOnly && !item.needs_review) return false
-    if (itemType && item.item_type !== itemType) return false
-    // Unpointed items are excluded once a minimum is set (an item with no
-    // estimate can't be shown to clear a floor) but pass under any maximum (a
-    // ceiling shouldn't hide work simply because it lacks an estimate).
-    if (minBound != null && (item.points == null || item.points < minBound)) return false
-    if (maxBound != null && item.points != null && item.points > maxBound) return false
-    // Multi-selected tags AND together: the item must carry all of them.
-    if (selectedTags.length && !selectedTags.every((tag) => item.tags.includes(tag))) return false
-    return true
+    return matchesItemFilters(item, {
+      query: normalizedQuery,
+      reviewOnly,
+      itemType,
+      minPoints: minBound,
+      maxPoints: maxBound,
+      tags: selectedTags,
+    })
   }
 
   function toggleTag(tag) {

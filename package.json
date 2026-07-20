@@ -16,10 +16,16 @@
     "build:css": "sass ./app/assets/stylesheets/application.sass.scss:./app/assets/builds/application.css --no-source-map --load-path=node_modules",
     "watch:css": "sass ./app/assets/stylesheets/application.sass.scss:./app/assets/builds/application.css --no-source-map --load-path=node_modules --watch",
     "build": "node build.mjs --minify",
-    "watch:js": "node build.mjs --watch"
+    "watch:js": "node build.mjs --watch",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "devDependencies": {
-    "playwright": "^1.61.1"
+    "@sveltejs/vite-plugin-svelte": "^7.2.0",
+    "@testing-library/svelte": "^5.4.2",
+    "jsdom": "^29.1.1",
+    "playwright": "^1.61.1",
+    "vitest": "^4.1.10"
   },
   "resolutions": {
     "@tiptap/core": "~3.4.0",
