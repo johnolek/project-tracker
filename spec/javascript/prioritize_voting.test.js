@@ -144,3 +144,63 @@ describe("voting without a lookahead", () => {
     expect(body.exclude_pair).toBeNull()
   })
 })
+
+describe("undo (PROJ-66)", () => {
+  it("is disabled until a vote settles, then deletes the comparison and restores the voted pair", async () => {
+    global.fetch = vi.fn().mockResolvedValue(
+      jsonResponse({ pair: [E, F], count: 11, total: 20, remaining: 4, pinned_id: null, comparison_id: 77 })
+    )
+
+    render(Prioritize, { props: baseProps() })
+    expect(screen.getByText("Undo").disabled).toBe(true)
+
+    await fireEvent.click(screen.getByText("Alpha").closest(".comparison-card"))
+    await waitFor(() => expect(screen.getByText("Undo").disabled).toBe(false))
+
+    global.fetch.mockResolvedValue(
+      jsonResponse({ pair: [E, F], count: 10, total: 20, remaining: 5, pinned_id: null })
+    )
+    await fireEvent.click(screen.getByText("Undo"))
+
+    // DELETE hit the vote's comparison, excluding the undone pair from the refill.
+    await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(2))
+    const [url, options] = global.fetch.mock.calls[1]
+    expect(url).toBe("/comparisons/77")
+    expect(options.method).toBe("DELETE")
+    expect(JSON.parse(options.body).exclude_pair).toEqual([A.id, B.id])
+
+    // The undone pair is back on screen with the pre-vote progress, and the
+    // undo has been consumed.
+    await waitFor(() => expect(screen.getByText("Alpha")).toBeTruthy())
+    expect(screen.getByText(/15 of 20 pairs compared/)).toBeTruthy()
+    expect(screen.getByText("Undo").disabled).toBe(true)
+  })
+
+  it("restores the undo slot and complains when the DELETE fails", async () => {
+    global.fetch = vi.fn().mockResolvedValue(
+      jsonResponse({ pair: [E, F], count: 11, total: 20, remaining: 4, pinned_id: null, comparison_id: 78 })
+    )
+
+    render(Prioritize, { props: baseProps() })
+    await fireEvent.click(screen.getByText("Alpha").closest(".comparison-card"))
+    await waitFor(() => expect(screen.getByText("Undo").disabled).toBe(false))
+
+    global.fetch.mockResolvedValue({ ok: false, json: async () => ({}) })
+    await fireEvent.click(screen.getByText("Undo"))
+
+    await waitFor(() => expect(screen.getByText("Undo").disabled).toBe(false))
+  })
+
+  it("invalidates undo on a context change", async () => {
+    global.fetch = vi.fn().mockResolvedValue(
+      jsonResponse({ pair: [E, F], next_pair: null, count: 11, total: 20, remaining: 4, pinned_id: null, comparison_id: 79 })
+    )
+
+    render(Prioritize, { props: baseProps() })
+    await fireEvent.click(screen.getByText("Alpha").closest(".comparison-card"))
+    await waitFor(() => expect(screen.getByText("Undo").disabled).toBe(false))
+
+    await fireEvent.click(screen.getByText("Skip"))
+    await waitFor(() => expect(screen.getByText("Undo").disabled).toBe(true))
+  })
+})

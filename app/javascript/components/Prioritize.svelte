@@ -47,6 +47,10 @@
   let pendingVote = null
   let pairKey = $state(0)
   let refreshQueued = false
+  // The most recent settled vote, undoable until the context changes (skip,
+  // filter, pin — anything that goes through refreshPair): the comparison to
+  // delete plus the pair to put back on screen (PROJ-66).
+  let lastVote = $state(null)
 
   const locked = $derived(busy || recording)
 
@@ -216,6 +220,7 @@
         remaining = data.remaining ?? 0
         preloaded = data.pair ?? null
         if (pinnedItem && data.pinned_count != null) pinnedCount = data.pinned_count
+        lastVote = { comparisonId: data.comparison_id, pair: voted }
       } else {
         count = snapshot.count
         total = snapshot.total
@@ -234,8 +239,12 @@
       recording = false
       busy = false
 
-      if (data) applyPair(data)
-      else toast("alert", "That vote didn't save — try again.")
+      if (data) {
+        applyPair(data)
+        lastVote = { comparisonId: data.comparison_id, pair: voted }
+      } else {
+        toast("alert", "That vote didn't save — try again.")
+      }
     }
 
     drainAfterRecord()
@@ -291,8 +300,10 @@
       return
     }
     busy = true
-    // The new context supersedes any vote queued against the old pair.
+    // The new context supersedes any vote queued against the old pair, and
+    // invalidates undo: the undone pair might not exist under the new context.
     pendingVote = null
+    lastVote = null
 
     const response = await fetch(refreshRequestUrl(), { headers: { Accept: "application/json" } }).catch(() => null)
     if (response?.ok) applyPair(await response.json())
@@ -307,6 +318,49 @@
   }
 
   const skip = refreshPair
+
+  // Deletes the last recorded comparison and puts its pair back on screen so
+  // the vote can be re-cast (PROJ-66). The response is a fresh selection with
+  // the undone pair excluded, which refills the preload slot; count/progress
+  // come from the server so they roll back exactly.
+  async function undo() {
+    if (locked || !lastVote) return
+    const undone = lastVote
+    lastVote = null
+    busy = true
+
+    const response = await fetch(`${createUrl}/${undone.comparisonId}`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]')?.content,
+      },
+      body: JSON.stringify({
+        pinned_item_id: pinnedItem?.id ?? null,
+        exclude_pair: [ undone.pair[0].id, undone.pair[1].id ],
+        ...filterParams(),
+      }),
+    }).catch(() => null)
+
+    busy = false
+
+    if (!response?.ok) {
+      lastVote = undone
+      toast("alert", "Couldn't undo that vote.")
+      drainQueuedRefresh()
+      return
+    }
+
+    const data = await response.json()
+    showPair(undone.pair)
+    preloaded = data.pair ?? null
+    count = data.count
+    total = data.total ?? 0
+    remaining = data.remaining ?? 0
+    if (pinnedItem && data.pinned_count != null) pinnedCount = data.pinned_count
+    drainQueuedRefresh()
+  }
 
   async function pin(item) {
     if (locked) return
@@ -597,6 +651,13 @@
 
   <div class="buttons is-centered mt-4">
     <button type="button" class="button is-light" disabled={locked} onclick={skip}>Skip</button>
+    <button
+      type="button"
+      class="button is-light"
+      disabled={locked || !lastVote}
+      title="Take back the last vote and show that pair again"
+      onclick={undo}
+    >Undo</button>
   </div>
 
   <p class="has-text-centered has-text-weak">
@@ -611,6 +672,9 @@
     <p>You've compared <strong>{pinnedItem.title}</strong> against everything else here. Unpin to keep prioritizing.</p>
     <div class="buttons is-centered mt-4">
       <button type="button" class="button" disabled={locked} onclick={unpin}>Unpin</button>
+      {#if lastVote}
+        <button type="button" class="button" disabled={locked} onclick={undo}>Undo last vote</button>
+      {/if}
     </div>
   </div>
 {:else if pinnedItem}
@@ -626,6 +690,9 @@
     </p>
     <div class="buttons is-centered mt-4">
       <a class="button is-primary" href={prioritiesUrl}>View priorities</a>
+      {#if lastVote}
+        <button type="button" class="button" disabled={locked} onclick={undo}>Undo last vote</button>
+      {/if}
       {#if anyFilterActive}
         <button type="button" class="button" onclick={clearFilters}>Clear filters</button>
       {/if}

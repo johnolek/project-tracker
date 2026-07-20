@@ -177,6 +177,14 @@ RSpec.describe "Comparisons", type: :request do
         expect(titles).not_to match_array([ "Item A", "Item B" ])
       end
 
+      it "returns the created comparison id as JSON so the island can undo (PROJ-66)" do
+        post project_comparisons_path(project),
+             params: { item_a_id: item_a.id, item_b_id: item_b.id, outcome: "a_wins" },
+             as: :json
+
+        expect(response.parsed_body["comparison_id"]).to eq(Comparison.last.id)
+      end
+
       it "returns validation errors as JSON" do
         post project_comparisons_path(project),
              params: { item_a_id: item_a.id, item_b_id: item_a.id, outcome: "a_wins" },
@@ -205,6 +213,48 @@ RSpec.describe "Comparisons", type: :request do
         expect do
           post project_comparisons_path(foreign_project),
                params: { item_a_id: foreign_item.id, item_b_id: other_foreign_item.id, outcome: "a_wins" }
+        end.not_to change(Comparison, :count)
+
+        expect(response).to have_http_status(:not_found)
+      end
+    end
+
+    describe "DELETE /projects/:project_id/comparisons/:id (undo, PROJ-66)" do
+      let!(:item_a) { create(:item, project: project, title: "Item A") }
+      let!(:item_b) { create(:item, project: project, title: "Item B") }
+
+      def record_comparison(first, second)
+        Comparison.create!(item_a: first, item_b: second, user: User.find_by(username: "owner"), outcome: "a_wins")
+      end
+
+      it "deletes the comparison, recomputes strengths, and returns a selection excluding the undone pair" do
+        create(:item, project: project, title: "Item C")
+        comparison = record_comparison(item_a, item_b)
+        expect(item_a.reload.strength).to be > 0
+
+        delete project_comparison_path(project, comparison),
+               params: { exclude_pair: [ item_a.id, item_b.id ] },
+               as: :json
+
+        expect(response).to have_http_status(:ok)
+        expect(Comparison.exists?(comparison.id)).to be(false)
+        expect(item_a.reload.strength).to eq(0.0)
+
+        payload = response.parsed_body
+        expect(payload["count"]).to eq(0)
+        titles = payload["pair"].map { |item| item["title"] }
+        expect(titles).to include("Item C")
+        expect(titles).not_to match_array([ "Item A", "Item B" ])
+      end
+
+      it "404s for a comparison belonging to another project" do
+        other_project = organization.projects.create!(name: "Elsewhere")
+        stray_a = create(:item, project: other_project)
+        stray_b = create(:item, project: other_project)
+        foreign_comparison = record_comparison(stray_a, stray_b)
+
+        expect do
+          delete project_comparison_path(project, foreign_comparison), as: :json
         end.not_to change(Comparison, :count)
 
         expect(response).to have_http_status(:not_found)

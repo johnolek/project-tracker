@@ -38,7 +38,7 @@ Rails.application.routes.draw do
       resources :comments, only: %i[create update]
       resources :links, only: %i[create destroy]
     end
-    resources :comparisons, only: :create
+    resources :comparisons, only: %i[create destroy]
   end
 
   namespace :settings do

@@ -26,7 +26,9 @@ class ComparisonsController < ApplicationController
         format.json do
           pinned = pinned_item
           selection = selection(pinned: pinned, exclude: excluded_pairs)
+          # comparison_id lets the island undo this vote (PROJ-66).
           render json: pair_payload(selection: selection, count: Comparison.for_project(@project).count, pinned: pinned)
+                         .merge(comparison_id: comparison.id)
         end
       end
     else
@@ -35,6 +37,21 @@ class ComparisonsController < ApplicationController
         format.json { render json: { errors: comparison.errors.full_messages }, status: :unprocessable_entity }
       end
     end
+  end
+
+  # Undo for the prioritize flow (PROJ-66): deletes one recorded comparison
+  # (destroying recomputes strengths) and hands back a fresh selection under
+  # the caller's filters/pin. The island shows the undone pair again itself and
+  # uses the returned pair as its lookahead — exclude_pair (the undone pair)
+  # keeps the two from colliding.
+  def destroy
+    comparison = Comparison.for_project(@project).find_by(id: params[:id])
+    return head :not_found unless comparison
+
+    comparison.destroy
+    pinned = pinned_item
+    selection = selection(pinned: pinned, exclude: excluded_pairs)
+    render json: pair_payload(selection: selection, count: Comparison.for_project(@project).count, pinned: pinned)
   end
 
   private
