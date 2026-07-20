@@ -18,6 +18,37 @@
     node.select?.()
   }
 
+  // Clicking the notes opens the editor; the caret should land in it without a
+  // second click. tiptap's focus command alone doesn't move DOM focus while
+  // the view is still mounting, so wait for the view's element and focus it
+  // directly before placing the caret.
+  function focusRhino(node) {
+    const focus = () => {
+      const dom = node.editor?.view?.dom
+      if (!dom?.isConnected) {
+        requestAnimationFrame(focus)
+        return
+      }
+      dom.focus()
+      node.editor.commands.focus("end")
+    }
+    const focusIfIdle = () => {
+      if (!node.contains(document.activeElement)) focus()
+    }
+
+    // The editor can rebuild its view right after mount (dropping focus set on
+    // the first view), so re-assert on every initialize plus a settle check.
+    node.addEventListener("rhino-initialize", focus)
+    queueMicrotask(focus)
+    const settle = setTimeout(focusIfIdle, 250)
+    return {
+      destroy() {
+        node.removeEventListener("rhino-initialize", focus)
+        clearTimeout(settle)
+      },
+    }
+  }
+
   function beginTitle() {
     titleDraft = item.title
     editingTitle = true
@@ -95,6 +126,7 @@
       input={notesInputId}
       data-blob-url-template={blobUrlTemplate}
       data-direct-upload-url={directUploadUrl}
+      use:focusRhino
     ></rhino-editor>
   </div>
   <div class="buttons">

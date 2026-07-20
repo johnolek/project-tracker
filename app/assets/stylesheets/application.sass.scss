@@ -103,8 +103,20 @@ rhino-editor .trix-content {
   --rhino-button-dark-text-color: var(--bulma-text);
   --rhino-button-border-color: var(--bulma-border);
   --rhino-button-active-border-color: var(--bulma-primary);
-  --rhino-button-active-background-color: var(--bulma-primary-light);
+  // Translucent primary works in both themes; Bulma's -light variant is a
+  // light-mode color that glares in dark mode.
+  --rhino-button-active-background-color: hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.15);
   --rhino-button-focus-background-color: var(--bulma-background);
+  // Rhino's disabled-button defaults are light greys (#d1d5db) that read as
+  // *highlighted* against a dark toolbar, making disabled buttons (indent
+  // outside a nested list, redo with nothing to redo) look switched on.
+  --rhino-button-disabled-text-color: var(--bulma-text-weak);
+  --rhino-button-disabled-border-color: var(--bulma-border-weak);
+  --rhino-button-disabled-background-color: var(--bulma-scheme-main);
+  // The toolbar (role-toolbar) paints a focus-within border in this color; it
+  // sticks after clicking a disabled button (focus stays in the toolbar) and
+  // primary reads as a state, not a focus hint. Per-button focus rings remain.
+  --role-border-focus-color: var(--bulma-border);
   --rhino-dialog-border-color: var(--bulma-border);
   --rhino-fake-selection-color: hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.3);
   --rhino-danger-border-color: var(--bulma-danger);
@@ -120,6 +132,29 @@ rhino-editor {
 
   &::part(toolbar__button) {
     background: var(--bulma-scheme-main-bis);
+  }
+
+  // Disabled buttons drop back instead of lighting up (their shadow-DOM styles
+  // hardcode light-dark() greys the variables above can't reach).
+  &::part(toolbar__button--disabled) {
+    background: var(--bulma-scheme-main);
+    border-color: var(--bulma-border-weak);
+    color: var(--bulma-text-weak);
+    opacity: 0.5;
+  }
+
+  // Genuinely-active toggles carry the primary accent.
+  &::part(toolbar__button--active) {
+    border-color: var(--bulma-primary);
+    color: var(--bulma-primary);
+  }
+
+  // role-toolbar re-maps its focus-border variable inside its own shadow, so
+  // the inherited override above can't reach it; the exported part can. Keep a
+  // focus hint, but as a hairline — the primary ring read as a state, and it
+  // sticks after clicking a disabled button (focus stays in the toolbar).
+  &::part(toolbar__base):focus-within {
+    border-color: var(--bulma-border);
   }
 }
 
