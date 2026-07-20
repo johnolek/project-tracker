@@ -3,6 +3,7 @@
   // ItemEditor: rendered rich text until clicked, then a rhino editor with
   // Save/Cancel that PATCHes JSON and swaps the fresh HTML back in.
   import focusRhino from "../focus_rhino"
+  import hasTextSelection from "../text_selection"
 
   let { comment: initialComment, updateUrl, blobUrlTemplate, directUploadUrl } = $props()
 
@@ -16,6 +17,7 @@
 
   function begin(event) {
     if (event.target.closest("a")) return
+    if (hasTextSelection()) return
     editing = true
   }
 

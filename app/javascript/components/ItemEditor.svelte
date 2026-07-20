@@ -1,6 +1,7 @@
 <script>
   import saveItem from "../save_item"
   import focusRhino from "../focus_rhino"
+  import hasTextSelection from "../text_selection"
 
   let { item: initialItem, updateUrl, blobUrlTemplate, directUploadUrl } = $props()
 
@@ -51,9 +52,11 @@
     }
   }
 
-  // Links inside rendered notes still navigate; anywhere else starts editing.
+  // Links inside rendered notes still navigate; anywhere else starts editing —
+  // unless the click was really a select-drag to copy text.
   function beginNotes(event) {
     if (event.target.closest("a")) return
+    if (hasTextSelection()) return
     editingNotes = true
   }
 

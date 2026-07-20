@@ -3,6 +3,8 @@
   // and its note. The note is click-to-edit — a plain textarea PATCHed to the
   // same review endpoint (which keeps the original flag time) — and Resolve
   // clears the flag, removing the banner without a reload.
+  import hasTextSelection from "../text_selection"
+
   let { note: initialNote, timeAgo, reviewUrl } = $props()
 
   // svelte-ignore state_referenced_locally -- islands remount per visit; prop seeds state once
@@ -17,6 +19,7 @@
   }
 
   function beginEdit() {
+    if (hasTextSelection()) return
     draft = note
     editing = true
   }
