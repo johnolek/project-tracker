@@ -37,6 +37,15 @@ class Comparison < ApplicationRecord
     for_project(project).pluck(:item_a_id, :item_b_id).map { |a, b| a < b ? [ a, b ] : [ b, a ] }.to_set
   end
 
+  # Ids of every item the given item has already been compared against, for
+  # pinned-mode pair selection without loading the project's full pair set.
+  #
+  # @param item [Item]
+  # @return [Set<Integer>]
+  def self.partner_ids(item:)
+    (where(item_a_id: item.id).pluck(:item_b_id) + where(item_b_id: item.id).pluck(:item_a_id)).to_set
+  end
+
   # @param project [Project]
   # @return [Hash{Integer => Integer}] item_id => number of comparisons it appears in
   def self.counts_by_item(project:)

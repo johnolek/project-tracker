@@ -156,15 +156,20 @@ class ComparisonsController < ApplicationController
   # @param pinned [Item, nil]
   # @param exclude [Array<Array(Integer, Integer)>] id pairs to skip when picking
   # @return [Hash{Symbol => Object}] { pair:, next_pair:, total:, remaining: }
+  # Never enumerates the pair space (PROJ-83): progress is arithmetic over the
+  # compared-pair rows, and picking walks items least-compared-first, taking
+  # the first partner not already faced. Fairness matches the old sum-of-counts
+  # pair ranking in spirit: under-compared items surface first, ties break
+  # randomly.
   def selection(pinned: nil, exclude: [])
     items = @project.items.not_done.not_needing_review.includes(:status, :tags).select { |item| matches_filters?(item) }
-    compared = Comparison.compared_pairs(project: @project)
     counts = Comparison.counts_by_item(project: @project)
     skip = exclude.map { |first, second| pair_key(first, second) }.to_set
 
     if pinned
+      faced = Comparison.partner_ids(item: pinned)
       opponents = items.reject { |item| item.id == pinned.id }
-      available = opponents.reject { |item| compared.include?(pair_key(pinned.id, item.id)) }
+      available = opponents.reject { |item| faced.include?(item.id) }
       ranked = available.sort_by { |item| [ counts.fetch(item.id, 0), rand ] }
 
       first, second = pick_two(ranked, skip) { |item| pair_key(pinned.id, item.id) }
@@ -176,18 +181,50 @@ class ComparisonsController < ApplicationController
         remaining: available.size
       }
     else
-      uncompared = items.size < 2 ? [] : items.combination(2).reject { |a, b| compared.include?(pair_key(a.id, b.id)) }
-      ranked = uncompared.sort_by { |a, b| [ counts.fetch(a.id, 0) + counts.fetch(b.id, 0), rand ] }
+      candidate_ids = items.map(&:id).to_set
+      faced = Hash.new { |hash, id| hash[id] = Set.new }
+      compared_within = 0
+      Comparison.compared_pairs(project: @project).each do |low, high|
+        next unless candidate_ids.include?(low) && candidate_ids.include?(high)
 
-      first, second = pick_two(ranked, skip) { |a, b| pair_key(a.id, b.id) }
+        faced[low] << high
+        faced[high] << low
+        compared_within += 1
+      end
+
+      ranked = items.sort_by { |item| [ counts.fetch(item.id, 0), rand ] }
+      first = next_uncompared_pair(ranked, faced, skip)
+      second = first && next_uncompared_pair(ranked, faced, skip + [ pair_key(first[0].id, first[1].id) ])
+      total = items.size * (items.size - 1) / 2
 
       {
         pair: first,
         next_pair: second,
-        total: items.size * (items.size - 1) / 2,
-        remaining: uncompared.size
+        total: total,
+        remaining: total - compared_within
       }
     end
+  end
+
+  # The first eligible pair in fairness order: for each item (least compared
+  # first), the first later-ranked partner it hasn't faced whose pair isn't
+  # skipped. Returns immediately in the common case; only a nearly fully
+  # compared pool scans far, and then it's set probes, not pair allocation.
+  #
+  # @param ranked [Array<Item>] items sorted least-compared-first
+  # @param faced [Hash{Integer => Set<Integer>}] adjacency of compared ids
+  # @param skip [Set<Array(Integer, Integer)>]
+  # @return [Array(Item, Item), nil]
+  def next_uncompared_pair(ranked, faced, skip)
+    ranked.each_with_index do |first, index|
+      ranked.drop(index + 1).each do |second|
+        next if faced[first.id].include?(second.id)
+        next if skip.include?(pair_key(first.id, second.id))
+
+        return [ first, second ]
+      end
+    end
+    nil
   end
 
   # The first two entries of an already-ranked list whose pair keys aren't in
