@@ -43,6 +43,7 @@ Rails.application.routes.draw do
 
   namespace :settings do
     resource :account, only: %i[edit update], controller: "account"
+    resource :admin, only: %i[edit update], controller: "admin"
     resources :api_keys, only: %i[index create destroy]
     resources :statuses, only: %i[index create update destroy] do
       patch :move, on: :member

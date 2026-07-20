@@ -69,6 +69,7 @@
                   <%= link_to "Item types", settings_item_types_path, class: "navbar-item" %>
                   <%= link_to "Passkeys", settings_credentials_path, class: "navbar-item" %>
                   <%= link_to "API keys", settings_api_keys_path, class: "navbar-item" %>
+                  <%= link_to "Admin", edit_settings_admin_path, class: "navbar-item" %>
                   <hr class="navbar-divider">
                   <%= button_to "Sign out", logout_path, method: :delete, class: "navbar-item",
                         form: { data: { turbo: false } } %>
@@ -77,7 +78,7 @@
             <% else %>
               <%= link_to "Sign in", login_path, class: "navbar-item" %>
               <div class="navbar-item">
-                <% if Rails.configuration.x.allow_signups %>
+                <% if AppSetting.signups_open? %>
                   <%= link_to "Register", signup_path, class: "button is-primary is-small" %>
                 <% end %>
               </div>

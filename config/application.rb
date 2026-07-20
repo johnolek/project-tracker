@@ -38,11 +38,5 @@ module ProjectTracker
 
     # Don't generate system test files.
     config.generators.system_tests = nil
-
-    # Single-user app on the public internet: self-registration is closed in
-    # production unless ALLOW_SIGNUPS=true is set (PROJ-76). Development and
-    # test keep it open so the signup flow stays testable.
-    config.x.allow_signups =
-      ENV.fetch("ALLOW_SIGNUPS") { Rails.env.production? ? "false" : "true" } == "true"
   end
 end

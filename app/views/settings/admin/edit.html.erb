@@ -1,0 +1,29 @@
+<div class="container">
+  <h1 class="title">Admin</h1>
+
+  <div class="box">
+    <%= form_with url: settings_admin_path, method: :patch, scope: :app_setting do |form| %>
+      <div class="field">
+        <%= form.label :allow_signups, "New account sign-ups", class: "label" %>
+        <div class="control">
+          <div class="select">
+            <%= form.select :allow_signups,
+                  options_for_select(
+                    [ [ "Automatic — open only while no accounts exist", "auto" ],
+                      [ "Open", "true" ],
+                      [ "Closed", "false" ] ],
+                    selected: @setting.allow_signups.nil? ? "auto" : @setting.allow_signups.to_s
+                  ) %>
+          </div>
+        </div>
+        <p class="help">
+          Currently <strong><%= AppSetting.signups_open? ? "open" : "closed" %></strong>.
+          Automatic keeps sign-ups closed once an account exists (development stays open).
+        </p>
+      </div>
+      <div class="field">
+        <%= form.submit "Save", class: "button is-primary" %>
+      </div>
+    <% end %>
+  </div>
+</div>

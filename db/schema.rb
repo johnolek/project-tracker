@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_20_210000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_20_230000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -65,6 +65,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_20_210000) do
     t.index ["organization_id"], name: "index_api_keys_on_organization_id"
     t.index ["token_digest"], name: "index_api_keys_on_token_digest", unique: true
     t.index ["user_id"], name: "index_api_keys_on_user_id"
+  end
+
+  create_table "app_settings", force: :cascade do |t|
+    t.boolean "allow_signups"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "comments", force: :cascade do |t|

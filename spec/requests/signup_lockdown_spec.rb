@@ -1,14 +1,8 @@
 require "rails_helper"
 
 RSpec.describe "Signup lockdown and rate limits", type: :request do
-  describe "when signups are closed" do
-    around do |example|
-      original = Rails.configuration.x.allow_signups
-      Rails.configuration.x.allow_signups = false
-      example.run
-    ensure
-      Rails.configuration.x.allow_signups = original
-    end
+  describe "when signups are closed by the admin setting" do
+    before { AppSetting.instance.update!(allow_signups: false) }
 
     it "redirects the signup form away" do
       get signup_path
@@ -37,6 +31,34 @@ RSpec.describe "Signup lockdown and rate limits", type: :request do
       follow_redirect! while response.redirect?
 
       expect(response.body).not_to include(signup_path)
+    end
+  end
+
+  describe "the admin setting" do
+    it "reopens signups when set to open" do
+      AppSetting.instance.update!(allow_signups: false)
+      AppSetting.instance.update!(allow_signups: true)
+
+      expect do
+        post signup_path, params: { username: "invited", email: "invited@example.com" }
+      end.to change(User, :count).by(1)
+    end
+
+    it "is editable from the admin settings page" do
+      register_passkey(username: "owner")
+
+      patch settings_admin_path, params: { app_setting: { allow_signups: "false" } }
+      expect(AppSetting.instance.reload.allow_signups).to be(false)
+
+      patch settings_admin_path, params: { app_setting: { allow_signups: "auto" } }
+      expect(AppSetting.instance.reload.allow_signups).to be_nil
+    end
+
+    it "requires login to edit" do
+      patch settings_admin_path, params: { app_setting: { allow_signups: "true" } }
+
+      expect(response).to redirect_to(login_path)
+      expect(AppSetting.instance.allow_signups).to be_nil
     end
   end
 

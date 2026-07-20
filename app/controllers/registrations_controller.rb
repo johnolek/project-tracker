@@ -98,7 +98,7 @@ class RegistrationsController < ApplicationController
   private
 
   def ensure_signups_open
-    return if Rails.configuration.x.allow_signups
+    return if AppSetting.signups_open?
 
     respond_to do |format|
       format.html { redirect_to login_path, alert: "Sign-ups are closed." }
