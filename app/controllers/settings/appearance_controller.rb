@@ -28,7 +28,7 @@ module Settings
     private
 
     def appearance_params
-      params.require(:user).permit(:color_scheme, :theme_mode)
+      params.require(:user).permit(:color_scheme, :theme_mode, custom_colors: CustomScheme::KEYS)
     end
   end
 end

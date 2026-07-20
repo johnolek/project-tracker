@@ -1337,6 +1337,48 @@ $tag-colors: (
   }
 }
 
+// Custom scheme editor below the cards: a column of color wells with labels,
+// then the contrast report.
+.custom-scheme-editor {
+  margin-top: 1.25rem;
+  max-width: 32rem;
+
+  .custom-scheme-field {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.35rem 0;
+    cursor: pointer;
+
+    input[type="color"] {
+      inline-size: 3rem;
+      block-size: 2rem;
+      padding: 0;
+      border: 1px solid var(--bulma-border);
+      border-radius: var(--bulma-radius-small);
+      background: none;
+      cursor: pointer;
+    }
+
+    .custom-scheme-field-label {
+      font-weight: 600;
+    }
+
+    .help {
+      margin-top: 0;
+    }
+  }
+
+  .custom-scheme-warnings {
+    margin-top: 1rem;
+
+    ul {
+      margin: 0.5rem 0 0.5rem 1.25rem;
+      list-style: disc;
+    }
+  }
+}
+
 // Human key (PROJ-12) sitting quietly above the item title.
 // Copy-key button sits just to the right of the breadcrumb on the item page.
 .breadcrumb-copy {

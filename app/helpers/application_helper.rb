@@ -156,10 +156,34 @@ module ApplicationHelper
   end
 
   # The signed-in user's scheme, falling back to the default for visitors.
+  # A custom scheme resolves to the default for scheme metadata; its actual
+  # colors ride in as inline variables (custom_scheme_style).
   #
   # @return [ColorScheme::Scheme]
   def current_color_scheme
     ColorScheme.fetch(current_user&.color_scheme || ColorScheme::DEFAULT)
+  end
+
+  # @return [Boolean]
+  def custom_scheme_active?
+    current_user&.color_scheme == "custom" && CustomScheme.valid?(current_user.custom_colors)
+  end
+
+  # Inline CSS variables for the <html> element when the user's custom scheme
+  # is active (nil otherwise, so no style attribute is emitted).
+  #
+  # @return [String, nil]
+  def custom_scheme_style
+    CustomScheme.css_variables(current_user.custom_colors) if custom_scheme_active?
+  end
+
+  # @return [Array(String, String)] light/dark browser theme-color hexes
+  def appearance_theme_colors
+    if custom_scheme_active?
+      CustomScheme.theme_colors(current_user.custom_colors)
+    else
+      [ current_color_scheme.theme_color_light, current_color_scheme.theme_color_dark ]
+    end
   end
 
   # Props for the ThemeSettings island (Settings → Appearance).
@@ -171,6 +195,7 @@ module ApplicationHelper
       updateUrl: settings_appearance_path,
       colorScheme: user.color_scheme,
       themeMode: user.theme_mode,
+      customColors: CustomScheme.valid?(user.custom_colors) ? user.custom_colors : CustomScheme::DEFAULTS,
       schemes: ColorScheme::BUILT_IN.map do |scheme|
         { key: scheme.key, label: scheme.label, description: scheme.description, swatches: scheme.swatches }
       end

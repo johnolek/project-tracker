@@ -1,7 +1,10 @@
 <!DOCTYPE html>
 <%# Appearance (PROJ-32): the scheme attribute selects a CSS override block;
-    data-theme forces light/dark ("auto" matches no CSS, so the OS decides). %>
-<html data-color-scheme="<%= current_color_scheme.key %>" data-theme="<%= current_user&.theme_mode || "auto" %>">
+    data-theme forces light/dark ("auto" matches no CSS, so the OS decides);
+    a custom scheme rides in as inline variables, which beat every block. %>
+<html data-color-scheme="<%= custom_scheme_active? ? "custom" : current_color_scheme.key %>"
+      data-theme="<%= current_user&.theme_mode || "auto" %>"
+      <%= tag.attributes(style: custom_scheme_style) %>>
   <head>
     <title><%= content_for(:title) || "Project Tracker" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -17,8 +20,9 @@
     <%= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
 
     <%# Browser UI color per mode, matching the user's chosen scheme. %>
-    <meta name="theme-color" content="<%= current_color_scheme.theme_color_light %>">
-    <meta name="theme-color" content="<%= current_color_scheme.theme_color_dark %>" media="(prefers-color-scheme: dark)">
+    <% theme_color_light, theme_color_dark = appearance_theme_colors %>
+    <meta name="theme-color" content="<%= theme_color_light %>">
+    <meta name="theme-color" content="<%= theme_color_dark %>" media="(prefers-color-scheme: dark)">
 
     <%# Green P locally, terracotta P in production, so tabs are unmistakable.
         SVG for modern browsers, favicon.ico as the legacy/auto-requested fallback,

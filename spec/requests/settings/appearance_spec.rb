@@ -33,6 +33,30 @@ RSpec.describe "Settings appearance (PROJ-32)", type: :request do
       expect(user.reload.color_scheme).to eq("southwest")
     end
 
+    it "persists a custom scheme and applies it as inline variables on the page shell" do
+      colors = CustomScheme::DEFAULTS.merge("primary" => "#276b9b")
+
+      patch settings_appearance_path, params: { user: { color_scheme: "custom", custom_colors: colors } }, as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(user.reload.custom_colors).to eq(colors)
+
+      get root_path
+      html = Nokogiri::HTML(response.body).at_css("html")
+      expect(html["data-color-scheme"]).to eq("custom")
+      expect(html["style"]).to include("--bulma-primary-h: 205deg")
+      expect(response.body).to include('<meta name="theme-color" content="#276b9b">')
+    end
+
+    it "rejects a custom scheme with malformed colors" do
+      patch settings_appearance_path,
+            params: { user: { color_scheme: "custom", custom_colors: CustomScheme::DEFAULTS.merge("primary" => "terracotta") } },
+            as: :json
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(user.reload.color_scheme).to eq("southwest")
+    end
+
     it "applies the chosen scheme and mode to the page shell" do
       patch settings_appearance_path, params: { user: { color_scheme: "mesa-verde", theme_mode: "light" } }, as: :json
       get root_path

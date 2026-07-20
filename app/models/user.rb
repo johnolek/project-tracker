@@ -21,8 +21,17 @@ class User < ApplicationRecord
                     uniqueness: { case_sensitive: false }, allow_nil: true
 
   THEME_MODES = %w[auto light dark].freeze
-  validates :color_scheme, inclusion: { in: ColorScheme::KEYS }
+  validates :color_scheme, inclusion: { in: ColorScheme::KEYS + [ "custom" ] }
   validates :theme_mode, inclusion: { in: THEME_MODES }
+  validate :custom_scheme_colors
+
+  private def custom_scheme_colors
+    if color_scheme == "custom" && custom_colors.blank?
+      errors.add(:custom_colors, "are required for the custom scheme")
+    elsif custom_colors.present? && !CustomScheme.valid?(custom_colors)
+      errors.add(:custom_colors, "must map #{CustomScheme::KEYS.join('/')} to hex colors")
+    end
+  end
 
   # Signed, expiring token for the email magic-link sign-in (also the domain-
   # change / lost-passkey bridge). Bound to the current email so changing it
