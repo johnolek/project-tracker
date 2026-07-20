@@ -1,4 +1,9 @@
 class SessionsController < ApplicationController
+  # Passkey assertion attempts; generous limit, just a brute-force backstop
+  # (PROJ-76).
+  rate_limit to: 20, within: 1.minute, only: %i[options create],
+             with: -> { render json: { error: "Too many attempts — try again in a minute." }, status: :too_many_requests }
+
   def new
   end
 

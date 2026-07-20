@@ -2,6 +2,10 @@
 # any domain, so it doubles as the recovery path when a passkey can't be used
 # (domain/RP-ID change or a lost device) — sign in here, then enroll a passkey.
 class EmailSignInsController < ApplicationController
+  # Sends outbound email on request; throttled per-IP (PROJ-76).
+  rate_limit to: 5, within: 1.minute, only: :create,
+             with: -> { redirect_to login_path, alert: "Too many attempts — try again in a minute." }
+
   # POST /sign-in/email — email a sign-in link for the given address.
   def create
     email = params[:email].to_s.strip.downcase

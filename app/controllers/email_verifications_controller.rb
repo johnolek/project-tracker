@@ -4,6 +4,10 @@
 class EmailVerificationsController < ApplicationController
   before_action :require_login, only: :create
 
+  # Login-gated, but still an email-sending endpoint; throttled (PROJ-76).
+  rate_limit to: 5, within: 1.minute, only: :create,
+             with: -> { redirect_to edit_settings_account_path, alert: "Too many attempts — try again in a minute." }
+
   # POST /verify-email — (re)send the verification link to the current user.
   def create
     if current_user.email.present? && !current_user.email_verified?

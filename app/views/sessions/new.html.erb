@@ -36,6 +36,8 @@
       <p class="help">A one-tap link, valid 20 minutes. Works on any device — handy if your passkey isn't available here.</p>
     </div>
 
-    <p><%= link_to "Need an account? Register", signup_path %></p>
+    <% if Rails.configuration.x.allow_signups %>
+      <p><%= link_to "Need an account? Register", signup_path %></p>
+    <% end %>
   </div>
 </div>

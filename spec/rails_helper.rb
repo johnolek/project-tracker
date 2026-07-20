@@ -15,6 +15,11 @@ rescue ActiveRecord::PendingMigrationError => e
 end
 
 RSpec.configure do |config|
+  # Rate-limit counters (and anything else cached) must not leak between
+  # examples — the test cache is a memory store precisely so throttling is
+  # testable.
+  config.before { Rails.cache.clear }
+
   config.fixture_paths = [ Rails.root.join("spec/fixtures") ]
   config.use_transactional_fixtures = true
   config.infer_spec_type_from_file_location!

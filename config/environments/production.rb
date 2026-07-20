@@ -91,12 +91,16 @@ Rails.application.configure do
   # Only use :id for inspections in production.
   config.active_record.attributes_for_inspect = [ :id ]
 
-  # Enable DNS rebinding protection and other `Host` header attacks.
-  # config.hosts = [
-  #   "example.com",     # Allow requests from example.com
-  #   /.*\.example\.com/ # Allow requests from subdomains like `www.example.com`
-  # ]
-  #
-  # Skip DNS rebinding protection for the default health check endpoint.
-  # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
+  # Host authorization pinned to the deploy's own hostnames (PROJ-76): the app
+  # host from WEBAUTHN_ORIGIN plus MAIL_HOST when it differs. If neither env
+  # var is set, hosts stays permissive rather than locking everyone out.
+  allowed_hosts = [
+    (URI.parse(ENV["WEBAUTHN_ORIGIN"]).host if ENV["WEBAUTHN_ORIGIN"].present?),
+    ENV["MAIL_HOST"].presence
+  ].compact.uniq
+  if allowed_hosts.any?
+    config.hosts = allowed_hosts
+    # Skip DNS rebinding protection for the health check endpoint.
+    config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
+  end
 end

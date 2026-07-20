@@ -1,4 +1,11 @@
 class RegistrationsController < ApplicationController
+  before_action :ensure_signups_open
+
+  # Signup sends email to a visitor-typed address and options/create hit the
+  # DB per request, so all of it is throttled (PROJ-76). Per-IP, in-memory —
+  # plenty for a single-user app behind one Puma.
+  rate_limit to: 5, within: 1.minute, with: -> { signup_rate_limited }
+
   def new
     @user = User.new
   end
@@ -89,6 +96,23 @@ class RegistrationsController < ApplicationController
   end
 
   private
+
+  def ensure_signups_open
+    return if Rails.configuration.x.allow_signups
+
+    respond_to do |format|
+      format.html { redirect_to login_path, alert: "Sign-ups are closed." }
+      format.json { render json: { error: "Sign-ups are closed." }, status: :forbidden }
+    end
+  end
+
+  # The JSON ceremony endpoints and the HTML form need different shapes.
+  def signup_rate_limited
+    respond_to do |format|
+      format.html { redirect_to login_path, alert: "Too many attempts — try again in a minute." }
+      format.json { render json: { error: "Too many attempts — try again in a minute." }, status: :too_many_requests }
+    end
+  end
 
   def credential_param
     params.require(:credential).permit!.to_h
