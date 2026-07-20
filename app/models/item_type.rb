@@ -18,6 +18,16 @@ class ItemType < ApplicationRecord
 
   belongs_to :organization
 
+  # Type names are lowercase, period. The denormalized items.item_type strings
+  # compare by plain equality everywhere (rename cascade, delete guard, API
+  # filter), so a single canonical case removes the whole class of
+  # mixed-case-drift bugs. Display casing is CSS (chips render uppercase).
+  #
+  # @param value [String, nil]
+  def name=(value)
+    super(value.is_a?(String) ? value.downcase : value)
+  end
+
   validates :name, presence: true, uniqueness: { scope: :organization_id, case_sensitive: false }
   validates :color, presence: true, format: { with: /\A#(?:\h{3}|\h{6})\z/, message: "must be a hex color like #3273dc" }
   validates :position, presence: true, numericality: { only_integer: true }
@@ -60,9 +70,7 @@ class ItemType < ApplicationRecord
   #
   # @return [ActiveRecord::Relation<Item>]
   def items_using
-    Item.joins(:project)
-        .where(projects: { organization_id: organization_id })
-        .where("LOWER(items.item_type) = ?", name.downcase)
+    Item.joins(:project).where(projects: { organization_id: organization_id }, item_type: name)
   end
 
   private
@@ -84,8 +92,7 @@ class ItemType < ApplicationRecord
 
     old_name, new_name = saved_change_to_name
     Item.joins(:project)
-        .where(projects: { organization_id: organization_id })
-        .where("LOWER(items.item_type) = ?", old_name.downcase)
+        .where(projects: { organization_id: organization_id }, item_type: old_name)
         .update_all(item_type: new_name)
   end
 

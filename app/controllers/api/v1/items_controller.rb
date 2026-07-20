@@ -205,12 +205,13 @@ module Api
         items.joins(:status).where("LOWER(statuses.name) = ?", params[:status].downcase)
       end
 
+      # Stored types are lowercase by construction (PROJ-77); normalize the
+      # query the same way so ?item_type=Bug still matches.
       def filter_item_type(items)
         return items if params[:item_type].blank?
 
-        requested = params[:item_type].to_s
-        requested = Item::LEGACY_ITEM_TYPES.fetch(requested, requested)
-        items.where("LOWER(items.item_type) = ?", requested.downcase)
+        requested = params[:item_type].to_s.downcase
+        items.where(item_type: Item::LEGACY_ITEM_TYPES.fetch(requested, requested))
       end
 
       def filter_tags(items)

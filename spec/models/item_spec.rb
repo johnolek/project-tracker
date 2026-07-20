@@ -30,29 +30,27 @@ RSpec.describe Item, type: :model do
       expect(item.errors[:item_type]).to be_present
     end
 
-    it "canonicalizes stored casing to the configured type's name" do
+    it "downcases mixed-case input on write" do
       item = create(:item, project: project, item_type: "BUG")
 
       expect(item.reload.item_type).to eq("bug")
     end
   end
 
-  describe "item_type casing across the type lifecycle" do
+  describe "item_type lifecycle (lowercase by fiat)" do
     let(:project) { create(:project) }
     let(:organization) { project.organization }
 
-    it "rename cascade catches rows regardless of stored case" do
-      item = create(:item, project: project, item_type: "bug")
-      item.update_column(:item_type, "BUG")
+    it "rename cascade updates the denormalized copies" do
+      item = create(:item, project: project, item_type: "Bug")
 
-      organization.item_types.find_by(name: "bug").update!(name: "defect")
+      organization.item_types.find_by(name: "bug").update!(name: "Defect")
 
       expect(item.reload.item_type).to eq("defect")
     end
 
-    it "delete guard sees rows regardless of stored case" do
-      item = create(:item, project: project, item_type: "bug")
-      item.update_column(:item_type, "Bug")
+    it "delete guard blocks removing a type still in use" do
+      create(:item, project: project, item_type: "bug")
 
       type = organization.item_types.find_by(name: "bug")
       expect(type.destroy).to be(false)

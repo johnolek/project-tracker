@@ -46,7 +46,6 @@ class Item < ApplicationRecord
   scope :not_needing_review, -> { where(review_requested_at: nil) }
 
   before_validation :assign_default_status, on: :create
-  before_validation :canonicalize_item_type
   before_create :assign_number
   before_save :apply_pending_tag_names
   # Cascaded comparison destroys skip their per-record refit (PROJ-78); one
@@ -223,20 +222,13 @@ class Item < ApplicationRecord
   end
 
   # @param value [String, Symbol, nil] a current type or a retired alias
-  #   (task/enhancement), which is stored as its consolidated replacement
+  #   (task/enhancement), which is stored as its consolidated replacement.
+  #   Types are lowercase by fiat (PROJ-77) — ItemType downcases its names and
+  #   the denormalized copy here follows, so every comparison (rename cascade,
+  #   delete guard, API filter) is plain string equality.
   def item_type=(value)
-    super(LEGACY_ITEM_TYPES.fetch(value.to_s, value))
-  end
-
-  # Stores the configured type's exact casing (PROJ-77): validation matches
-  # case-insensitively, but the rename cascade, delete guard, and type filter
-  # all compare stored strings — "Bug" alongside "bug" would silently escape
-  # them and then fail every save once the type is deleted.
-  def canonicalize_item_type
-    return if item_type.blank?
-
-    configured = organization&.item_types&.detect { |type| type.name.casecmp?(item_type) }
-    self.item_type = configured.name if configured && configured.name != item_type
+    resolved = LEGACY_ITEM_TYPES.fetch(value.to_s, value)
+    super(resolved.is_a?(String) ? resolved.downcase : resolved)
   end
 
   # @return [Organization, nil] the organization this item belongs to, reached
@@ -323,18 +315,16 @@ class Item < ApplicationRecord
     Item.recompute_strengths(organization: organization) if organization
   end
 
-  # Item types are now per-organization data (PROJ-47), so validity is inclusion
-  # in the item's organization's configured type names rather than a constant.
-  # Matching is case-insensitive to mirror the org's case-insensitive names.
-  # Skipped when the organization can't be determined (no project yet): other
-  # validations surface that, and there's no vocabulary to check against.
+  # Item types are per-organization data (PROJ-47), so validity is inclusion in
+  # the organization's configured type names. Both sides are lowercase by
+  # construction (PROJ-77), so this is plain membership. Skipped when the
+  # organization can't be determined (no project yet): other validations
+  # surface that, and there's no vocabulary to check against.
   def item_type_configured_for_organization
     return if item_type.blank?
 
     names = organization&.item_types&.map(&:name)
-    return if names.nil?
-
-    return if names.any? { |name| name.casecmp?(item_type) }
+    return if names.nil? || names.include?(item_type)
 
     errors.add(:item_type, "is not a configured type for this organization")
   end
