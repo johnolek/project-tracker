@@ -96,8 +96,8 @@ RSpec.describe "Comparisons", type: :request do
 
         island = Nokogiri::HTML(response.body).at_css('[data-svelte-component="Prioritize"]')
         props = JSON.parse(island["data-props"])
-        expect(props["pinned"]["id"]).to eq(anchor.id)
-        expect(props["pinnedCount"]).to eq(0)
+        expect(props["pinned_id"]).to eq(anchor.id)
+        expect(props["pinned_count"]).to eq(0)
         expect(props["pair"].first["id"]).to eq(anchor.id)
       end
 

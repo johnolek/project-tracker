@@ -7,12 +7,12 @@
     refreshUrl,
     prioritiesUrl,
     pair: initialPair,
-    nextPair: initialNextPair,
+    next_pair: initialNextPair,
     count: initialCount,
     total: initialTotal,
     remaining: initialRemaining,
-    pinned: initialPinned,
-    pinnedCount: initialPinnedCount,
+    pinned_id: initialPinnedId,
+    pinned_count: initialPinnedCount,
     reviewCount: initialReviewCount,
     reviewUrl,
     itemTypes,
@@ -78,8 +78,10 @@
   // left) and its running comparison total, both synced from server responses.
   // Seeded from props so ?pinned_item_id=… deep links (the item page's
   // "Prioritize this" button) start pinned.
+  // The server always leads the pair with the pinned item, so props carry only
+  // its id (matching every later JSON response — PROJ-80).
   // svelte-ignore state_referenced_locally -- islands remount per visit; props seed state once
-  let pinnedItem = $state(initialPinned ?? null)
+  let pinnedItem = $state(initialPinnedId != null ? initialPair?.[0] ?? null : null)
   // svelte-ignore state_referenced_locally -- same
   let pinnedCount = $state(initialPinnedCount ?? 0)
 

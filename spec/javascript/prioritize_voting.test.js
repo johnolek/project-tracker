@@ -32,12 +32,12 @@ function baseProps(overrides = {}) {
     refreshUrl: "/selection",
     prioritiesUrl: "/priorities",
     pair: [A, B],
-    nextPair: [C, D],
+    next_pair: [C, D],
     count: 10,
     total: 20,
     remaining: 5,
-    pinned: null,
-    pinnedCount: 0,
+    pinned_id: null,
+    pinned_count: 0,
     reviewCount: 0,
     reviewUrl: "/review",
     itemTypes: [],
@@ -135,7 +135,7 @@ describe("voting without a lookahead", () => {
       jsonResponse({ pair: [E, F], next_pair: null, count: 11, total: 20, remaining: 4, pinned_id: null })
     )
 
-    render(Prioritize, { props: baseProps({ nextPair: null }) })
+    render(Prioritize, { props: baseProps({ next_pair: null }) })
     await fireEvent.click(screen.getByText("Beta").closest(".comparison-card"))
 
     await waitFor(() => expect(screen.getByText("Epsilon")).toBeTruthy())

@@ -135,6 +135,6 @@
 
   <div class="column is-one-third">
     <div data-svelte-component="ItemSidebar"
-         data-props="<%= item_sidebar_props(project: @project, item: @item).to_json %>"></div>
+         data-props="<%= item_sidebar_props(project: @project, item: @item, parent_options: @parent_options).to_json %>"></div>
   </div>
 </div>

@@ -117,15 +117,7 @@ class ComparisonsController < ApplicationController
   #   in sync (nil when no valid pin is active)
   # @return [Hash] the JSON the Prioritize island consumes after each action
   def pair_payload(selection:, count:, pinned: nil)
-    {
-      pair: selection[:pair]&.map(&:comparison_payload),
-      next_pair: selection[:next_pair]&.map(&:comparison_payload),
-      count: count,
-      total: selection[:total],
-      remaining: selection[:remaining],
-      pinned_id: pinned&.id,
-      pinned_count: pinned && Comparison.counts_by_item(project: @project).fetch(pinned.id, 0)
-    }
+    PrioritizePayload.build(project: @project, selection: selection, count: count, pinned: pinned)
   end
 
   # The pair the client already has on screen, echoed back on a POST so the

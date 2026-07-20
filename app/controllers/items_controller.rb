@@ -7,8 +7,23 @@ class ItemsController < ApplicationController
     return redirect_to project_item_path(@project, @item), status: :moved_permanently if stale_project_slug?(params[:project_id])
 
     @children = @item.children.includes(:status, :project)
+    ActiveRecord::Associations::Preloader.new(
+      records: [ @item ],
+      associations: { outgoing_links: { target: :project }, incoming_links: { source: :project } }
+    ).call
     @links = @item.grouped_links
-    @link_targets = @project.items.where.not(id: @item.id).includes(:project).order(number: :desc)
+
+    # One slim scan of the project's items feeds both typeaheads (PROJ-80):
+    # link targets (everything but self, newest first) and parent options
+    # (minus descendants, which would cycle).
+    project_items = @project.items.where.not(id: @item.id)
+                            .select(:id, :number, :title, :project_id, :created_at)
+                            .includes(:project).order(number: :desc).to_a
+    descendant_ids = @item.descendant_ids.to_set
+    @link_targets = project_items
+    @parent_options = project_items.reject { |candidate| descendant_ids.include?(candidate.id) }
+                                   .sort_by(&:created_at).reverse
+
     @comments = @item.comments.includes(:user).with_rich_text_body.order(:created_at)
     @new_comment = @item.comments.new
   end

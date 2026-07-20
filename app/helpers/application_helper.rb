@@ -67,24 +67,17 @@ module ApplicationHelper
   # @return [Hash]
   def prioritize_props(project:, selection:, count:, pinned: nil)
     organization = project.organization
-    {
+    PrioritizePayload.build(project: project, selection: selection, count: count, pinned: pinned).merge(
       createUrl: project_comparisons_path(project),
       refreshUrl: prioritize_project_path(project, format: :json),
       prioritiesUrl: priorities_project_path(project),
-      pair: selection[:pair]&.map(&:comparison_payload),
-      nextPair: selection[:next_pair]&.map(&:comparison_payload),
-      total: selection[:total],
-      remaining: selection[:remaining],
-      count: count,
-      pinned: pinned&.comparison_payload,
-      pinnedCount: pinned ? Comparison.counts_by_item(project: project).fetch(pinned.id, 0) : 0,
       reviewCount: review_queue_count(project),
       reviewUrl: project_path(project, review: 1),
       itemTypes: item_type_options(project.organization),
       allTags: project.items.not_done.joins(:tags).distinct.order("tags.name").pluck("tags.name"),
       statuses: organization.statuses.where.not(category: "done").ordered.map { |status| { id: status.id, name: status.name } },
       doneStatusId: organization.statuses.where(category: "done").ordered.first&.id
-    }
+    )
   end
 
   # @param project [Project]
@@ -137,7 +130,7 @@ module ApplicationHelper
   # @param project [Project]
   # @param item [Item]
   # @return [Hash]
-  def item_sidebar_props(project:, item:)
+  def item_sidebar_props(project:, item:, parent_options: item.parent_candidates.reorder(created_at: :desc))
     organization = project.organization
     {
       item: item.detail_payload,
@@ -146,7 +139,7 @@ module ApplicationHelper
       itemTypes: item_type_options(project.organization),
       pointOptions: Item::POINT_OPTIONS,
       allTags: organization.tags.order(created_at: :desc).pluck(:name),
-      parentOptions: item.parent_candidates.reorder(created_at: :desc).map do |candidate|
+      parentOptions: parent_options.map do |candidate|
         { id: candidate.id, label: "#{candidate.key} — #{candidate.title}", url: project_item_path(project, candidate) }
       end
     }
