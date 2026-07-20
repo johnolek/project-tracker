@@ -60,6 +60,58 @@
     }
   }
 
+  // Touch/pen swipe-to-dismiss (PROJ-81): the toast tracks a horizontal drag
+  // and fades as it travels; releasing past a third of its width dismisses,
+  // anything less springs back. Mouse users keep the close button — a mouse
+  // drag stays available for selecting the toast's text.
+  function swipeDismiss(node, id) {
+    let pointerId = null
+    let startX = 0
+
+    function down(event) {
+      if (event.pointerType === "mouse" || pointerId !== null) return
+      pointerId = event.pointerId
+      startX = event.clientX
+      node.setPointerCapture(pointerId)
+    }
+
+    function move(event) {
+      if (event.pointerId !== pointerId) return
+      const dx = event.clientX - startX
+      node.style.transform = `translateX(${dx}px)`
+      node.style.opacity = String(Math.max(0.15, 1 - Math.abs(dx) / node.offsetWidth))
+    }
+
+    function settle(event, cancelled) {
+      if (event.pointerId !== pointerId) return
+      pointerId = null
+      const dx = event.clientX - startX
+      if (!cancelled && Math.abs(dx) > node.offsetWidth / 3) {
+        dismiss(id)
+      } else {
+        node.style.transform = ""
+        node.style.opacity = ""
+      }
+    }
+
+    const up = (event) => settle(event, false)
+    const cancel = (event) => settle(event, true)
+
+    node.addEventListener("pointerdown", down)
+    node.addEventListener("pointermove", move)
+    node.addEventListener("pointerup", up)
+    node.addEventListener("pointercancel", cancel)
+
+    return {
+      destroy() {
+        node.removeEventListener("pointerdown", down)
+        node.removeEventListener("pointermove", move)
+        node.removeEventListener("pointerup", up)
+        node.removeEventListener("pointercancel", cancel)
+      },
+    }
+  }
+
   // Other islands can raise a toast client-side by dispatching on document:
   // document.dispatchEvent(new CustomEvent("toast", { detail: { type, message } }))
   $effect(() => {
@@ -83,6 +135,7 @@
       out:fade={{ duration: 200 }}
       animate:flip={{ duration: flipDuration }}
       use:autodismiss={toast.id}
+      use:swipeDismiss={toast.id}
     >
       <button class="delete" aria-label="Dismiss notification" onclick={() => dismiss(toast.id)}></button>
       {toast.message}

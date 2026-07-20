@@ -964,16 +964,19 @@ $tag-colors: (
 }
 
 // Toasts: a fixed overlay stack so flash notifications never push page content
-// down the way the old in-flow .notification blocks did. Anchored top-right,
-// clear of the navbar on desktop; near full-width on mobile. z-index sits above
-// the navbar (Bulma's is 30). Colours come from Bulma's .notification.is-*
-// classes, which carry contrast-checked text in both themes. The container
-// ignores pointer events so its gaps never block the page; each toast opts back
-// in for hover-pause and the close button.
+// down the way the old in-flow .notification blocks did. Centered under the
+// navbar (PROJ-81 — the old top-right anchor collided with nav controls);
+// near full-width on mobile. z-index sits above the navbar (Bulma's is 30).
+// Colours come from Bulma's .notification.is-* classes, which carry
+// contrast-checked text in both themes. The container ignores pointer events
+// so its gaps never block the page; each toast opts back in for hover-pause,
+// the close button, and swipe-to-dismiss (pan-y leaves vertical scrolling
+// with the page while horizontal drags reach the swipe handler).
 .toast-stack {
   position: fixed;
   top: calc(var(--bulma-navbar-height, 3.25rem) + 1rem);
-  right: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 40;
   display: flex;
   flex-direction: column;
@@ -984,6 +987,7 @@ $tag-colors: (
 
   .toast {
     pointer-events: auto;
+    touch-action: pan-y;
     margin: 0;
     box-shadow: 0 2px 8px hsla(var(--bulma-scheme-h), var(--bulma-scheme-s), 10%, 0.18);
   }
@@ -992,6 +996,7 @@ $tag-colors: (
     left: 1rem;
     right: 1rem;
     width: auto;
+    transform: none;
   }
 }
 
