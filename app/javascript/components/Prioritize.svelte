@@ -1,7 +1,6 @@
 <script>
   import { fade } from "svelte/transition"
   import ItemFilters from "./ItemFilters.svelte"
-  import ItemCardBody from "./ItemCardBody.svelte"
 
   let {
     createUrl,
@@ -89,9 +88,10 @@
   let expanded = $state({})
   let overflowing = $state({})
 
-  // Cards collapse to key + title (PROJ-70) — judging by title is the fast
-  // path. This tracks which cards have their details (meta, notes, actions)
-  // open; reset with every new pair so each pair starts at a glanceable size.
+  // Cards show key + title + actions (PROJ-70) — judging by title is the fast
+  // path. Details toggles only the rendered rich-text notes; this tracks which
+  // cards have them open, reset with every new pair so each pair starts at a
+  // glanceable size.
   let detailsOpen = $state({})
 
   // The whole card records an outcome, but reading must stay safe: clicks on
@@ -441,7 +441,7 @@
   <div class="comparison-card-wrap">
     <div
       class="comparison-card"
-      class:is-collapsed={!open}
+      class:has-details={!!item.notes_html}
       role="button"
       tabindex="0"
       aria-disabled={busy}
@@ -457,30 +457,30 @@
         }
       }}
     >
-      {#if open}
-        <ItemCardBody {item} {itemTypes} />
-        {#if item.notes_html}
-          <div
-            class="content comparison-notes"
-            class:is-clamped={!expanded[item.id]}
-            use:trackOverflow={item.id}
+      <span class="comparison-card-key">{item.key}</span>
+      <span class="comparison-card-title">{item.title}</span>
+      {#if open && item.notes_html}
+        <div
+          class="content comparison-notes"
+          class:is-clamped={!expanded[item.id]}
+          use:trackOverflow={item.id}
+        >
+          {@html item.notes_html}
+        </div>
+        {#if overflowing[item.id] || expanded[item.id]}
+          <button
+            type="button"
+            class="comparison-notes-toggle"
+            onclick={(event) => {
+              event.stopPropagation()
+              expanded[item.id] = !expanded[item.id]
+            }}
           >
-            {@html item.notes_html}
-          </div>
-          {#if overflowing[item.id] || expanded[item.id]}
-            <button
-              type="button"
-              class="comparison-notes-toggle"
-              onclick={(event) => {
-                event.stopPropagation()
-                expanded[item.id] = !expanded[item.id]
-              }}
-            >
-              {expanded[item.id] ? "Show less" : "Show more"}
-            </button>
-          {/if}
+            {expanded[item.id] ? "Show less" : "Show more"}
+          </button>
         {/if}
-        <div class="comparison-card-actions">
+      {/if}
+      <div class="comparison-card-actions">
           <a
             class="comparison-edit"
             href={item.url}
@@ -535,20 +535,18 @@
             Flag for review
           </button>
         </div>
-      {:else}
-        <span class="comparison-card-key">{item.key}</span>
-        <span class="comparison-card-title">{item.title}</span>
-      {/if}
     </div>
-    <button
-      type="button"
-      class="comparison-details-toggle"
-      aria-expanded={open}
-      aria-label={open ? `Hide details for ${item.title}` : `Show details for ${item.title}`}
-      onclick={() => (detailsOpen[item.id] = !open)}
-    >
-      {open ? "Hide ▴" : "Details ▾"}
-    </button>
+    {#if item.notes_html}
+      <button
+        type="button"
+        class="comparison-details-toggle"
+        aria-expanded={open}
+        aria-label={open ? `Hide details for ${item.title}` : `Show details for ${item.title}`}
+        onclick={() => (detailsOpen[item.id] = !open)}
+      >
+        {open ? "Hide ▴" : "Details ▾"}
+      </button>
+    {/if}
   </div>
 {/snippet}
 

@@ -612,23 +612,19 @@ $tag-colors: (
     text-align: left;
     cursor: pointer;
 
-    // Reserve room in the top-right corner (the Details toggle) so the card's
-    // top row (type chip + key) clears it.
-    .board-card-top {
-      padding-right: 4.5rem;
-    }
-
     &:hover,
     &:focus-visible {
       border-color: var(--bulma-primary);
       background: var(--bulma-scheme-main-ter);
     }
 
-    // Collapsed (the default): just key + title, vertically centered, with
-    // right padding so the title never runs under the corner toggle.
-    &.is-collapsed {
-      justify-content: center;
-      padding-right: 5.5rem;
+    // When the item has notes, a Details toggle floats over the top-right
+    // corner; inset the key and title so they never run under it.
+    &.has-details {
+      .comparison-card-key,
+      .comparison-card-title {
+        padding-right: 4.5rem;
+      }
     }
   }
 
@@ -655,7 +651,7 @@ $tag-colors: (
   }
 
   // One quiet treatment for the card's small actions (Open, Pin, Mark
-  // complete, Flag for review — all in the expanded footer) and the corner
+  // complete, Flag for review — always visible in the footer) and the corner
   // Details toggle.
   .comparison-complete,
   .comparison-review,
