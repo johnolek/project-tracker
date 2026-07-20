@@ -159,11 +159,18 @@ module ApplicationHelper
   # skipped: the API keys settings view renders that token inline itself, and it
   # must never surface as a toast.
   #
+  # A flash value is usually the message string, but a controller can pass a
+  # Hash for richer toasts: message plus sticky (no auto-dismiss) and/or
+  # action ({ label:, href: } rendered as a link) — see items#create's
+  # "Add another" (PROJ-67).
+  #
   # @param flash [ActionDispatch::Flash::FlashHash]
   # @return [Hash]
   def toast_props(flash)
     toasts = flash.reject { |type, _message| type == "api_key_token" }
-                  .map { |type, message| { type: type, message: message } }
+                  .map do |type, value|
+      value.is_a?(Hash) ? { type: type, **value.symbolize_keys } : { type: type, message: value }
+    end
     { toasts: toasts }
   end
 

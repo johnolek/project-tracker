@@ -32,11 +32,19 @@ class ItemsController < ApplicationController
     @item = @project.items.new(status: preselected_status, parent: preselected_parent)
   end
 
+  # On success the notice is a sticky toast (PROJ-67): it stays up until
+  # dismissed, carrying an "Add another" link back to the form with the same
+  # status and parent preselected for rapid batch entry.
   def create
     @item = @project.items.new(item_params)
 
     if @item.save
-      redirect_to project_item_path(@project, @item), notice: "Item created."
+      flash[:notice] = {
+        message: "Item created.",
+        sticky: true,
+        action: { label: "Add another", href: new_project_item_path(@project, { status_id: @item.status_id, parent_id: @item.parent_id }.compact) }
+      }
+      redirect_to project_item_path(@project, @item)
     else
       render :new, status: :unprocessable_entity
     end

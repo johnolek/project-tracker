@@ -992,6 +992,15 @@ $tag-colors: (
     box-shadow: 0 2px 8px hsla(var(--bulma-scheme-h), var(--bulma-scheme-s), 10%, 0.18);
   }
 
+  // Action link inside a toast (PROJ-67 "Add another"). Bulma already gives
+  // notification links currentColor + underline, which keeps AA on the
+  // contrast-checked notification backgrounds.
+  .toast-action {
+    margin-left: 0.35rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
   @media (max-width: 768px) {
     left: 1rem;
     right: 1rem;

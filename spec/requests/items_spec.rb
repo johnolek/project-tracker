@@ -263,6 +263,21 @@ RSpec.describe "Item creation", type: :request do
 
     expect(Item.order(:created_at).last.status).to eq(organization.default_status)
   end
+
+  it "flashes a sticky Add another toast preserving status and parent (PROJ-67)" do
+    parent = create(:item, project: project)
+
+    post project_items_path(project),
+         params: { item: { title: "Ship it", item_type: "feature", status_id: in_progress.id, parent_id: parent.id } }
+    follow_redirect!
+
+    props = Nokogiri::HTML(response.body).at_css('[data-svelte-component="Toasts"]')["data-props"]
+    toast = JSON.parse(props).fetch("toasts").sole
+
+    expect(toast).to include("type" => "notice", "message" => "Item created.", "sticky" => true)
+    expect(toast.dig("action", "label")).to eq("Add another")
+    expect(toast.dig("action", "href")).to eq(new_project_item_path(project, parent_id: parent.id, status_id: in_progress.id))
+  end
 end
 
 RSpec.describe "Item review flag (PROJ-65)", type: :request do

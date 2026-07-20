@@ -28,7 +28,12 @@
 
   // Each toast auto-dismisses after DURATION; the timer pauses while the toast
   // is hovered or focused so it can be read (and its close button reached).
-  function autodismiss(node, id) {
+  // Sticky toasts (PROJ-67's "Add another") opt out entirely — they stay until
+  // dismissed by the close button or a swipe.
+  function autodismiss(node, toast) {
+    if (toast.sticky) return
+
+    const id = toast.id
     let remaining = DURATION
     let startedAt
     let timer
@@ -134,11 +139,14 @@
       in:fly={flyIn}
       out:fade={{ duration: 200 }}
       animate:flip={{ duration: flipDuration }}
-      use:autodismiss={toast.id}
+      use:autodismiss={toast}
       use:swipeDismiss={toast.id}
     >
       <button class="delete" aria-label="Dismiss notification" onclick={() => dismiss(toast.id)}></button>
       {toast.message}
+      {#if toast.action}
+        <a class="toast-action" href={toast.action.href}>{toast.action.label}</a>
+      {/if}
     </div>
   {/each}
 </div>
