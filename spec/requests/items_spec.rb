@@ -237,6 +237,21 @@ RSpec.describe "New item form", type: :request do
 
     expect(selected_status_id(response.body)).to eq(organization.default_status.id.to_s)
   end
+
+  it "mounts the ParentField typeahead island with the project's items, newest first (PROJ-68)" do
+    older = create(:item, project: project, title: "Older")
+    newer = create(:item, project: project, title: "Newer")
+
+    get new_project_item_path(project, parent_id: older.id)
+
+    props = Nokogiri::HTML(response.body).at_css('[data-svelte-component="ParentField"]')["data-props"]
+    parsed = JSON.parse(props)
+
+    expect(parsed["name"]).to eq("item[parent_id]")
+    expect(parsed["selectedId"]).to eq(older.id)
+    expect(parsed["options"].map { |option| option["value"] }).to eq([ newer.id, older.id ])
+    expect(parsed["options"].first["label"]).to eq("#{newer.key} — Newer")
+  end
 end
 
 RSpec.describe "Item creation", type: :request do

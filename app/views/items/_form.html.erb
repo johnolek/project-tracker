@@ -46,15 +46,11 @@
   </div>
 
   <div class="field">
-    <%= form.label :parent_id, "Parent", class: "label" %>
-    <div class="control">
-      <div class="select">
-        <%= form.select :parent_id,
-              item.parent_candidates.map { |candidate| [ "#{candidate.key} — #{candidate.title}", candidate.id ] },
-              { include_blank: "No parent" } %>
-      </div>
-    </div>
-    <p class="help">Groups this item under another; sub-items can nest to any depth.</p>
+    <span class="label">Parent</span>
+    <div class="control"
+         data-svelte-component="ParentField"
+         data-props="<%= parent_field_props(item).to_json %>"></div>
+    <p class="help">Groups this item under another; sub-items can nest to any depth. Click to browse this project's items, or type to search.</p>
   </div>
 
   <div class="field">

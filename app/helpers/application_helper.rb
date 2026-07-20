@@ -155,6 +155,20 @@ module ApplicationHelper
     targets.map { |target| { value: target.id, label: "#{target.key} — #{target.title}" } }
   end
 
+  # Props for the ParentField island on the classic item form (PROJ-68):
+  # the same typeahead options shape as the sidebar's parent picker, newest
+  # items first so recent work surfaces on focus without typing.
+  #
+  # @param item [Item]
+  # @return [Hash]
+  def parent_field_props(item)
+    {
+      name: "item[parent_id]",
+      selectedId: item.parent_id,
+      options: link_target_options(item.parent_candidates.reorder(number: :desc))
+    }
+  end
+
   # Server flash mapped to props for the Toasts island. The api_key_token key is
   # skipped: the API keys settings view renders that token inline itself, and it
   # must never surface as a toast.
