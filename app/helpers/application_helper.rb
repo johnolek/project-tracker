@@ -155,6 +155,28 @@ module ApplicationHelper
     targets.map { |target| { value: target.id, label: "#{target.key} — #{target.title}" } }
   end
 
+  # The signed-in user's scheme, falling back to the default for visitors.
+  #
+  # @return [ColorScheme::Scheme]
+  def current_color_scheme
+    ColorScheme.fetch(current_user&.color_scheme || ColorScheme::DEFAULT)
+  end
+
+  # Props for the ThemeSettings island (Settings → Appearance).
+  #
+  # @param user [User]
+  # @return [Hash]
+  def theme_settings_props(user)
+    {
+      updateUrl: settings_appearance_path,
+      colorScheme: user.color_scheme,
+      themeMode: user.theme_mode,
+      schemes: ColorScheme::BUILT_IN.map do |scheme|
+        { key: scheme.key, label: scheme.label, description: scheme.description, swatches: scheme.swatches }
+      end
+    }
+  end
+
   # Props for the ParentField island on the classic item form (PROJ-68):
   # the same typeahead options shape as the sidebar's parent picker, newest
   # items first so recent work surfaces on focus without typing.

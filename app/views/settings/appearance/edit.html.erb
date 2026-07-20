@@ -1,0 +1,5 @@
+<% content_for :title, "Appearance" %>
+<h1 class="title">Appearance</h1>
+<p class="subtitle is-6 has-text-weak">Pick a color scheme and light/dark mode. Changes apply immediately.</p>
+
+<div data-svelte-component="ThemeSettings" data-props="<%= theme_settings_props(@user).to_json %>"></div>

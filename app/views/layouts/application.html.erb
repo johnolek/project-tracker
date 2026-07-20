@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html>
+<%# Appearance (PROJ-32): the scheme attribute selects a CSS override block;
+    data-theme forces light/dark ("auto" matches no CSS, so the OS decides). %>
+<html data-color-scheme="<%= current_color_scheme.key %>" data-theme="<%= current_user&.theme_mode || "auto" %>">
   <head>
     <title><%= content_for(:title) || "Project Tracker" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -14,9 +16,9 @@
     <%# Installable PWA manifest (routes enabled in config/routes.rb). %>
     <%= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
 
-    <%# Terracotta browser UI in light, dark-scheme sand in dark, matching the theme. %>
-    <meta name="theme-color" content="#a1462b">
-    <meta name="theme-color" content="#1d1711" media="(prefers-color-scheme: dark)">
+    <%# Browser UI color per mode, matching the user's chosen scheme. %>
+    <meta name="theme-color" content="<%= current_color_scheme.theme_color_light %>">
+    <meta name="theme-color" content="<%= current_color_scheme.theme_color_dark %>" media="(prefers-color-scheme: dark)">
 
     <%# Green P locally, terracotta P in production, so tabs are unmistakable.
         SVG for modern browsers, favicon.ico as the legacy/auto-requested fallback,
@@ -65,6 +67,7 @@
                    aria-haspopup="true" aria-expanded="false"><%= current_user.username %></a>
                 <div class="navbar-dropdown is-right">
                   <%= link_to "Account", edit_settings_account_path, class: "navbar-item" %>
+                  <%= link_to "Appearance", edit_settings_appearance_path, class: "navbar-item" %>
                   <%= link_to "Statuses", settings_statuses_path, class: "navbar-item" %>
                   <%= link_to "Item types", settings_item_types_path, class: "navbar-item" %>
                   <%= link_to "Passkeys", settings_credentials_path, class: "navbar-item" %>

@@ -20,6 +20,10 @@ class User < ApplicationRecord
   validates :email, format: { with: URI::MailTo::EMAIL_REGEXP },
                     uniqueness: { case_sensitive: false }, allow_nil: true
 
+  THEME_MODES = %w[auto light dark].freeze
+  validates :color_scheme, inclusion: { in: ColorScheme::KEYS }
+  validates :theme_mode, inclusion: { in: THEME_MODES }
+
   # Signed, expiring token for the email magic-link sign-in (also the domain-
   # change / lost-passkey bridge). Bound to the current email so changing it
   # invalidates any outstanding links.

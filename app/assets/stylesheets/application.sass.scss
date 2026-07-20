@@ -16,6 +16,7 @@
 @use "rhino-editor/exports/styles/trix.css";
 
 @use "sass:list";
+@use "sass:map";
 
 // Bulma's light theme hardcodes a white page background; warm it to sand.
 // These must stay scoped to light contexts: an unscoped :root block sits after
@@ -54,6 +55,96 @@
 [data-theme="dark"],
 .theme-dark {
   --bulma-primary-l: 47%;
+}
+
+// Alternate built-in color schemes (PROJ-32), applied by data-color-scheme on
+// <html> from the user's Settings → Appearance choice. Southwest is the
+// compiled default above and emits no block. Bulma composes every color at
+// runtime from -h/-s/-l component variables, so retinting is a matter of
+// overriding the six semantic seeds (plus the scheme tint). Each scheme's
+// `light`/`dark` maps carry the per-mode lightness corrections its hues need
+// to hold WCAG AA — every value here was verified against the built CSS
+// composition (backgrounds at scheme-main 96%/93% light, 9%/11% dark; Bulma's
+// mode-specific on-scheme lifts) in both modes; re-verify if any value moves.
+// The keys/labels mirror ColorScheme::BUILT_IN in app/models/color_scheme.rb.
+$color-schemes: (
+  "mesa-verde": (
+    scheme: (140, 14%),
+    colors: (
+      "primary": (150deg, 45%, 30%),
+      "link": (165deg, 55%, 28%),
+      "info": (200deg, 50%, 32%),
+      "success": (95deg, 35%, 31%),
+      "warning": (44deg, 90%, 50%),
+      "danger": (5deg, 60%, 40%),
+    ),
+    light: ("primary-on-scheme-l": 29%, "link-on-scheme-l": 28%),
+    dark: ("primary-l": 36%, "info-on-scheme-l": 55%),
+  ),
+  "gulf": (
+    scheme: (210, 22%),
+    colors: (
+      "primary": (205deg, 60%, 38%),
+      "link": (215deg, 62%, 38%),
+      "info": (180deg, 55%, 28%),
+      "success": (150deg, 40%, 30%),
+      "warning": (42deg, 92%, 50%),
+      "danger": (355deg, 62%, 42%),
+    ),
+    light: (),
+    dark: ("primary-l": 43%),
+  ),
+  "adobe-dusk": (
+    scheme: (260, 10%),
+    colors: (
+      "primary": (262deg, 45%, 45%),
+      "link": (250deg, 55%, 45%),
+      "info": (210deg, 45%, 35%),
+      "success": (150deg, 35%, 31%),
+      "warning": (42deg, 92%, 50%),
+      "danger": (0deg, 60%, 42%),
+    ),
+    light: (),
+    dark: ("primary-l": 52%, "primary-on-scheme-l": 68%, "link-on-scheme-l": 68%, "info-on-scheme-l": 55%),
+  ),
+);
+
+@mixin scheme-vars($vars) {
+  @each $name, $value in $vars {
+    --bulma-#{$name}: #{$value};
+  }
+}
+
+@each $name, $scheme in $color-schemes {
+  [data-color-scheme="#{$name}"] {
+    --bulma-scheme-h: #{list.nth(map.get($scheme, scheme), 1)};
+    --bulma-scheme-s: #{list.nth(map.get($scheme, scheme), 2)};
+    @each $color, $hsl in map.get($scheme, colors) {
+      --bulma-#{$color}-h: #{list.nth($hsl, 1)};
+      --bulma-#{$color}-s: #{list.nth($hsl, 2)};
+      --bulma-#{$color}-l: #{list.nth($hsl, 3)};
+    }
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root[data-color-scheme="#{$name}"]:not([data-theme="dark"]):not(.theme-dark) {
+      @include scheme-vars(map.get($scheme, light));
+    }
+  }
+
+  [data-theme="light"][data-color-scheme="#{$name}"] {
+    @include scheme-vars(map.get($scheme, light));
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root[data-color-scheme="#{$name}"]:not([data-theme="light"]):not(.theme-light) {
+      @include scheme-vars(map.get($scheme, dark));
+    }
+  }
+
+  [data-theme="dark"][data-color-scheme="#{$name}"] {
+    @include scheme-vars(map.get($scheme, dark));
+  }
 }
 
 // Bulma has no scheme-aware muted-text helper; its grey helpers are fixed cool
@@ -1194,6 +1285,56 @@ $tag-colors: (
 .comment-body.item-editable {
   padding: 0.4rem 0.6rem;
   margin: -0.4rem -0.6rem;
+}
+
+// Scheme picker cards on Settings → Appearance (PROJ-32).
+.scheme-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+  gap: 0.75rem;
+}
+
+.scheme-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--bulma-border-weak);
+  border-radius: var(--bulma-radius);
+  background: var(--bulma-scheme-main-bis);
+  color: var(--bulma-text);
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--bulma-border);
+  }
+
+  &.is-selected {
+    border-color: var(--bulma-primary);
+    box-shadow: 0 0 0 1px var(--bulma-primary);
+  }
+
+  .scheme-card-swatches {
+    display: flex;
+    gap: 0.3rem;
+  }
+
+  .scheme-card-swatch {
+    width: 1.1rem;
+    height: 1.1rem;
+    border-radius: 50%;
+    border: 1px solid var(--bulma-border);
+  }
+
+  .scheme-card-label {
+    font-weight: 600;
+  }
+
+  .scheme-card-description {
+    font-size: 0.8rem;
+  }
 }
 
 // Human key (PROJ-12) sitting quietly above the item title.
