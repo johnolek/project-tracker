@@ -1070,7 +1070,9 @@ $tag-colors: (
 // than the notes block needs, so tighten it in this context.
 .item-detail {
   .item-notes {
-    margin-bottom: 2rem;
+    // 1.6rem + the editable affordance's 0.4rem bottom padding keeps the
+    // visual gap to the next section at 2rem.
+    margin-bottom: 1.6rem;
   }
 
   .comment-thread {
@@ -1122,6 +1124,16 @@ $tag-colors: (
     border-color: var(--bulma-border-weak);
     background: var(--bulma-scheme-main-bis);
   }
+}
+
+// Breathing room between the notes text and the hover border; the negative
+// margins pull the border outward so the text itself doesn't shift relative
+// to the headings around it. Bottom margin stays with .item-detail .item-notes.
+.item-notes.item-editable {
+  padding: 0.4rem 0.6rem;
+  margin-top: -0.4rem;
+  margin-left: -0.6rem;
+  margin-right: -0.6rem;
 }
 
 // Human key (PROJ-12) sitting quietly above the item title.
