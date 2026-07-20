@@ -89,6 +89,11 @@
   let expanded = $state({})
   let overflowing = $state({})
 
+  // Cards collapse to key + title (PROJ-70) — judging by title is the fast
+  // path. This tracks which cards have their details (meta, notes, actions)
+  // open; reset with every new pair so each pair starts at a glanceable size.
+  let detailsOpen = $state({})
+
   // The whole card records an outcome, but reading must stay safe: clicks on
   // links or the expand toggle, and click-throughs from selecting text, are
   // not votes.
@@ -150,6 +155,7 @@
     pair = newPair
     expanded = {}
     overflowing = {}
+    detailsOpen = {}
     pairKey += 1
   }
 
@@ -431,16 +437,18 @@
 
 {#snippet choice(item, outcome)}
   {@const isPinned = pinnedItem?.id === item.id}
+  {@const open = !!detailsOpen[item.id]}
   <div class="comparison-card-wrap">
     <div
       class="comparison-card"
+      class:is-collapsed={!open}
       role="button"
       tabindex="0"
       aria-disabled={busy}
       onclick={(event) => chooseCard(event, outcome)}
       onkeydown={(event) => {
         // Only the card itself votes on Enter/space; keydowns bubbling up from a
-        // focused child (the key link, the complete button, the notes toggle)
+        // focused child (the key link, an action button, the notes toggle)
         // must not fall through to a comparison outcome.
         if (event.target !== event.currentTarget) return
         if (event.key === "Enter" || event.key === " ") {
@@ -449,86 +457,98 @@
         }
       }}
     >
-      <ItemCardBody {item} {itemTypes} />
-      {#if item.notes_html}
-        <div
-          class="content comparison-notes"
-          class:is-clamped={!expanded[item.id]}
-          use:trackOverflow={item.id}
-        >
-          {@html item.notes_html}
-        </div>
-        {#if overflowing[item.id] || expanded[item.id]}
-          <button
-            type="button"
-            class="comparison-notes-toggle"
-            onclick={(event) => {
-              event.stopPropagation()
-              expanded[item.id] = !expanded[item.id]
-            }}
+      {#if open}
+        <ItemCardBody {item} {itemTypes} />
+        {#if item.notes_html}
+          <div
+            class="content comparison-notes"
+            class:is-clamped={!expanded[item.id]}
+            use:trackOverflow={item.id}
           >
-            {expanded[item.id] ? "Show less" : "Show more"}
-          </button>
+            {@html item.notes_html}
+          </div>
+          {#if overflowing[item.id] || expanded[item.id]}
+            <button
+              type="button"
+              class="comparison-notes-toggle"
+              onclick={(event) => {
+                event.stopPropagation()
+                expanded[item.id] = !expanded[item.id]
+              }}
+            >
+              {expanded[item.id] ? "Show less" : "Show more"}
+            </button>
+          {/if}
         {/if}
-      {/if}
-      <div class="comparison-card-actions">
-        {#if doneStatusId != null}
+        <div class="comparison-card-actions">
+          <a
+            class="comparison-edit"
+            href={item.url}
+            target="_blank"
+            rel="noopener"
+            title="Open this item (opens in a new tab)"
+            aria-label={`Open ${item.title}`}
+          >
+            Open
+          </a>
           <button
             type="button"
-            class="comparison-complete"
+            class="comparison-pin"
+            class:is-pinned={isPinned}
             disabled={locked}
-            title="Move this item straight to done"
-            aria-label={`Mark ${item.title} complete`}
+            aria-pressed={isPinned}
+            title={isPinned ? "Unpin this item" : "Pin this item to compare it against the rest"}
+            aria-label={isPinned ? `Unpin ${item.title}` : `Pin ${item.title}`}
             onclick={(event) => {
               event.stopPropagation()
-              markComplete(item)
+              isPinned ? unpin() : pin(item)
             }}
           >
-            Mark complete
+            {isPinned ? "Pinned" : "Pin"}
           </button>
-        {/if}
-        <button
-          type="button"
-          class="comparison-review"
-          disabled={locked}
-          title="Set this item aside for review — removes it from prioritizing"
-          aria-label={`Flag ${item.title} for review`}
-          onclick={(event) => {
-            event.stopPropagation()
-            openReview(item)
-          }}
-        >
-          Flag for review
-        </button>
-      </div>
+          {#if doneStatusId != null}
+            <button
+              type="button"
+              class="comparison-complete"
+              disabled={locked}
+              title="Move this item straight to done"
+              aria-label={`Mark ${item.title} complete`}
+              onclick={(event) => {
+                event.stopPropagation()
+                markComplete(item)
+              }}
+            >
+              Mark complete
+            </button>
+          {/if}
+          <button
+            type="button"
+            class="comparison-review"
+            disabled={locked}
+            title="Set this item aside for review — removes it from prioritizing"
+            aria-label={`Flag ${item.title} for review`}
+            onclick={(event) => {
+              event.stopPropagation()
+              openReview(item)
+            }}
+          >
+            Flag for review
+          </button>
+        </div>
+      {:else}
+        <span class="comparison-card-key">{item.key}</span>
+        <span class="comparison-card-title">{item.title}</span>
+      {/if}
     </div>
-    <div class="comparison-corner-actions">
-      <a
-        class="comparison-edit"
-        href={item.url}
-        target="_blank"
-        rel="noopener"
-        title="Open this item (opens in a new tab)"
-        aria-label={`Open ${item.title}`}
-      >
-        Open
-      </a>
-      <button
-        type="button"
-        class="comparison-pin"
-        class:is-pinned={isPinned}
-        disabled={locked}
-        aria-pressed={isPinned}
-        title={isPinned ? "Unpin this item" : "Pin this item to compare it against the rest"}
-        aria-label={isPinned ? `Unpin ${item.title}` : `Pin ${item.title}`}
-        onclick={(event) => {
-          event.stopPropagation()
-          isPinned ? unpin() : pin(item)
-        }}
-      >
-        {isPinned ? "Pinned" : "Pin"}
-      </button>
-    </div>
+    <button
+      type="button"
+      class="comparison-details-toggle"
+      aria-expanded={open}
+      aria-label={open ? `Hide details for ${item.title}` : `Show details for ${item.title}`}
+      onclick={() => (detailsOpen[item.id] = !open)}
+    >
+      {open ? "Hide ▴" : "Details ▾"}
+    </button>
   </div>
 {/snippet}
 

@@ -600,6 +600,10 @@ $tag-colors: (
     display: flex;
     flex-direction: column;
     flex: 1 1 auto;
+    // A shared floor keeps the two tap targets the same size pair after pair
+    // (PROJ-70): tall enough that titles up to ~3 lines don't change the card's
+    // size at all. Expanding a card grows it past this naturally.
+    min-height: 7.5rem;
     padding: 1rem 1.25rem;
     border: 1px solid var(--bulma-border-weak);
     border-radius: var(--bulma-radius);
@@ -608,10 +612,10 @@ $tag-colors: (
     text-align: left;
     cursor: pointer;
 
-    // Reserve room in the top-right corner (Open + Pin) so the card's top row
-    // (type chip + key) clears them.
+    // Reserve room in the top-right corner (the Details toggle) so the card's
+    // top row (type chip + key) clears it.
     .board-card-top {
-      padding-right: 6.5rem;
+      padding-right: 4.5rem;
     }
 
     &:hover,
@@ -619,6 +623,24 @@ $tag-colors: (
       border-color: var(--bulma-primary);
       background: var(--bulma-scheme-main-ter);
     }
+
+    // Collapsed (the default): just key + title, vertically centered, with
+    // right padding so the title never runs under the corner toggle.
+    &.is-collapsed {
+      justify-content: center;
+      padding-right: 5.5rem;
+    }
+  }
+
+  .comparison-card-key {
+    font-size: 0.72rem;
+    color: var(--bulma-text-weak);
+  }
+
+  .comparison-card-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    line-height: 1.35;
   }
 
   // Footer row for card actions, pinned to the bottom so the button lines up
@@ -632,11 +654,13 @@ $tag-colors: (
     padding-top: 0.75rem;
   }
 
-  // One quiet treatment for the card's small actions: retire-to-done and
-  // flag-for-review in the footer, Edit + Pin hovering over the top-right corner.
+  // One quiet treatment for the card's small actions (Open, Pin, Mark
+  // complete, Flag for review — all in the expanded footer) and the corner
+  // Details toggle.
   .comparison-complete,
   .comparison-review,
   .comparison-edit,
+  .comparison-details-toggle,
   .comparison-pin {
     padding: 0.15rem 0.6rem;
     font-size: 0.75rem;
@@ -660,13 +684,13 @@ $tag-colors: (
     }
   }
 
-  .comparison-corner-actions {
+  // The expand/collapse control floats over the card's top-right corner (a
+  // sibling of the vote button, so tapping it can never register a vote).
+  .comparison-details-toggle {
     position: absolute;
     top: 0.5rem;
     right: 0.5rem;
     z-index: 1;
-    display: flex;
-    gap: 0.375rem;
   }
 
   // Rendered rich-text notes: clamped with a fade-out mask until expanded.
