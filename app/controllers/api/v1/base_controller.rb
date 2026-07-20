@@ -2,6 +2,9 @@ module Api
   module V1
     class BaseController < ActionController::API
       include ActionController::HttpAuthentication::Token::ControllerMethods
+      # Populates ActiveStorage::Current.url_options from the request so the
+      # item serializer can render absolute blob URLs for note attachments.
+      include ActiveStorage::SetCurrent
 
       before_action :authenticate_api_key!
 

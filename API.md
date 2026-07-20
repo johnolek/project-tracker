@@ -65,6 +65,16 @@ envelope keyed by the collection name; only item indexes are paginated.
   "tags": ["backend", "urgent"],
   "notes_html": "<div class=\"trix-content\">\n  <p>Steps to reproduce...</p>\n</div>\n",
   "notes_text": "Steps to reproduce...",
+  "attachments": [
+    {
+      "filename": "screenshot.png",
+      "content_type": "image/png",
+      "byte_size": 14631,
+      "width": 718,
+      "height": 206,
+      "url": "https://projects.johnoleksowicz.com/rails/active_storage/blobs/redirect/eyJf.../screenshot.png"
+    }
+  ],
   "created_at": "2026-07-17T12:00:00.000Z",
   "updated_at": "2026-07-17T12:00:00.000Z"
 }
@@ -74,6 +84,7 @@ envelope keyed by the collection name; only item indexes are paginated.
 - `tags` — names sorted alphabetically.
 - `notes_html` — the rendered rich-text HTML (wrapped in a `trix-content` div); `""` when notes are blank.
 - `notes_text` — plain-text rendering of the notes; `""` when blank.
+- `attachments` — files embedded in the notes (Trix uploads such as pasted screenshots), in document order; `[]` when there are none. Each has `filename`, `content_type`, `byte_size`, `width`/`height` (pixels for analyzed images, else `null`), and `url`. The `url` is directly fetchable — the signed blob id in the path is the capability, so **no `Authorization` header is required** (and the underlying blob is public to anyone holding the URL). It first 302-redirects to the storage service, so follow redirects (`curl -L`).
 - `strength` / `points` — Bradley-Terry priority log-strength (float; comparisons are project-scoped, so strengths order items within a project; higher means higher priority) and estimation points (integer or null).
 - `source` — `"web"` (created from the web UI) or `"api"` (created through this API; every item created via `POST` is stamped `"api"`).
 - `ai_reviewed_at` — timestamp of the LLM's sign-off after revising a person-created item, or null. Set/cleared with the `ai_reviewed` boolean on update.

@@ -212,7 +212,7 @@ RSpec.describe "API v1 items", type: :request do
       expect(json_body.keys).to match_array(
         %w[id key number title item_type points strength source ai_reviewed_at provenance
            needs_review review_requested_at review_note
-           status project parent children links tags notes_html notes_text created_at updated_at]
+           status project parent children links tags notes_html notes_text attachments created_at updated_at]
       )
       expect(json_body).to include(
         "id" => item.id,
@@ -232,8 +232,38 @@ RSpec.describe "API v1 items", type: :request do
         "notes_text" => "Hello world"
       )
       expect(json_body["notes_html"]).to include("<strong>world</strong>")
+      expect(json_body["attachments"]).to eq([])
       expect(json_body["status"]).to include("name" => "New", "category" => "open", "position" => 1)
       expect(json_body["project"]).to eq("id" => project.id, "name" => "Tracker", "slug" => project.slug)
+    end
+
+    it "exposes images embedded in the notes as fetchable attachments" do
+      blob = ActiveStorage::Blob.create_and_upload!(
+        io: StringIO.new(File.binread(Rails.root.join("spec/fixtures/files/pixel.png"))),
+        filename: "pixel.png", content_type: "image/png"
+      )
+      item = create(:item, project: project, title: "Has image")
+      item.update!(notes: "<div>see</div>#{ActionText::Attachment.from_attachable(blob).to_html}")
+
+      get api_v1_item_path(item), headers: auth_headers
+
+      expect(response).to have_http_status(:ok)
+      expect(json_body["attachments"].size).to eq(1)
+      attachment = json_body["attachments"].first
+      expect(attachment).to include(
+        "filename" => "pixel.png",
+        "content_type" => "image/png",
+        "byte_size" => blob.byte_size
+      )
+      expect(attachment["url"]).to start_with("http").and include("/rails/active_storage/blobs/redirect/")
+
+      # The url is directly fetchable — no bearer token needed, the signed blob
+      # id in the path is the capability — and serves the original image bytes.
+      get URI.parse(attachment["url"]).request_uri
+      expect(response).to have_http_status(:redirect)
+      follow_redirect!
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to eq(File.binread(Rails.root.join("spec/fixtures/files/pixel.png")))
     end
   end
 
