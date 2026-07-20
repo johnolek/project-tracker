@@ -46,6 +46,7 @@ class Item < ApplicationRecord
   scope :not_needing_review, -> { where(review_requested_at: nil) }
 
   before_validation :assign_default_status, on: :create
+  before_validation :canonicalize_item_type
   before_create :assign_number
   before_save :apply_pending_tag_names
 
@@ -217,6 +218,17 @@ class Item < ApplicationRecord
   #   (task/enhancement), which is stored as its consolidated replacement
   def item_type=(value)
     super(LEGACY_ITEM_TYPES.fetch(value.to_s, value))
+  end
+
+  # Stores the configured type's exact casing (PROJ-77): validation matches
+  # case-insensitively, but the rename cascade, delete guard, and type filter
+  # all compare stored strings — "Bug" alongside "bug" would silently escape
+  # them and then fail every save once the type is deleted.
+  def canonicalize_item_type
+    return if item_type.blank?
+
+    configured = organization&.item_types&.detect { |type| type.name.casecmp?(item_type) }
+    self.item_type = configured.name if configured && configured.name != item_type
   end
 
   # @return [Organization, nil] the organization this item belongs to, reached

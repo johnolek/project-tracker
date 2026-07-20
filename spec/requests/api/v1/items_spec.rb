@@ -391,6 +391,16 @@ RSpec.describe "API v1 items", type: :request do
   end
 
   describe "PATCH /api/v1/items/:id" do
+    it "does not store a review_note on an unflagged item" do
+      item = create(:item, project: project)
+
+      patch api_v1_item_path(item), headers: auth_headers,
+            params: { item: { review_note: "stale note" } }
+
+      expect(response).to have_http_status(:ok)
+      expect(item.reload.review_note).to be_nil
+    end
+
     it "updates fields and moves status by name" do
       item = create(:item, project: project, title: "Before")
 

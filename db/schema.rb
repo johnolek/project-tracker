@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_19_160000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_20_210000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -333,6 +333,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_19_160000) do
     t.bigint "organization_id", null: false
     t.integer "position", null: false
     t.datetime "updated_at", null: false
+    t.index "organization_id, lower((name)::text)", name: "index_statuses_on_organization_and_lower_name", unique: true
     t.index ["organization_id"], name: "index_statuses_on_organization_id"
   end
 

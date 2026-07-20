@@ -43,11 +43,18 @@ RSpec.describe "API v1 statuses", type: :request do
       expect(json_body.keys).to match_array(%w[id name category position])
     end
 
-    it "honours an explicit position" do
-      post api_v1_statuses_path, params: { status: { name: "Triage", category: "open", position: 2 } }, headers: auth_headers
+    it "honours an explicit unused position" do
+      post api_v1_statuses_path, params: { status: { name: "Triage", category: "open", position: 42 } }, headers: auth_headers
 
       expect(response).to have_http_status(:created)
-      expect(json_body["position"]).to eq(2)
+      expect(json_body["position"]).to eq(42)
+    end
+
+    it "rejects a position already in use" do
+      post api_v1_statuses_path, params: { status: { name: "Triage", category: "open", position: 1 } }, headers: auth_headers
+
+      expect(response).to have_http_status(:unprocessable_entity)
+      expect(json_body["errors"]).to include("Position has already been taken")
     end
 
     it "returns validation errors for a blank name" do

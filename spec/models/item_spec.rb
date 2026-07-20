@@ -29,6 +29,35 @@ RSpec.describe Item, type: :model do
       expect(item).not_to be_valid
       expect(item.errors[:item_type]).to be_present
     end
+
+    it "canonicalizes stored casing to the configured type's name" do
+      item = create(:item, project: project, item_type: "BUG")
+
+      expect(item.reload.item_type).to eq("bug")
+    end
+  end
+
+  describe "item_type casing across the type lifecycle" do
+    let(:project) { create(:project) }
+    let(:organization) { project.organization }
+
+    it "rename cascade catches rows regardless of stored case" do
+      item = create(:item, project: project, item_type: "bug")
+      item.update_column(:item_type, "BUG")
+
+      organization.item_types.find_by(name: "bug").update!(name: "defect")
+
+      expect(item.reload.item_type).to eq("defect")
+    end
+
+    it "delete guard sees rows regardless of stored case" do
+      item = create(:item, project: project, item_type: "bug")
+      item.update_column(:item_type, "Bug")
+
+      type = organization.item_types.find_by(name: "bug")
+      expect(type.destroy).to be(false)
+      expect(type.errors[:base]).to be_present
+    end
   end
   it { is_expected.to validate_numericality_of(:points).only_integer.is_greater_than(0).allow_nil }
 

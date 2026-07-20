@@ -60,7 +60,9 @@ class ItemType < ApplicationRecord
   #
   # @return [ActiveRecord::Relation<Item>]
   def items_using
-    Item.joins(:project).where(projects: { organization_id: organization_id }, item_type: name)
+    Item.joins(:project)
+        .where(projects: { organization_id: organization_id })
+        .where("LOWER(items.item_type) = ?", name.downcase)
   end
 
   private
@@ -82,7 +84,8 @@ class ItemType < ApplicationRecord
 
     old_name, new_name = saved_change_to_name
     Item.joins(:project)
-        .where(projects: { organization_id: organization_id }, item_type: old_name)
+        .where(projects: { organization_id: organization_id })
+        .where("LOWER(items.item_type) = ?", old_name.downcase)
         .update_all(item_type: new_name)
   end
 

@@ -114,14 +114,17 @@ module Api
 
       # Applies the review flag (PROJ-65): review=true flags the item (removing
       # it from the prioritization pool), review=false clears it. review_note
-      # sets/updates the note on its own, and flagging via review=true carries any
-      # note sent alongside. A note without review=true still updates the note
-      # only when the item is already flagged.
+      # is applied only when flagging now or already flagged (PROJ-77) — a note
+      # on an unflagged item would be stored invisibly and resurrect stale on a
+      # later flag.
       #
       # @param item [Item]
       # @return [void]
       def apply_review(item:)
-        item.review_note = item_params[:review_note] if item_params.key?(:review_note)
+        flagging = item_params.key?(:review) && ActiveModel::Type::Boolean.new.cast(item_params[:review])
+        if item_params.key?(:review_note) && (flagging || item.review_requested_at.present?)
+          item.review_note = item_params[:review_note]
+        end
         return unless item_params.key?(:review)
 
         if ActiveModel::Type::Boolean.new.cast(item_params[:review])
@@ -206,7 +209,8 @@ module Api
         return items if params[:item_type].blank?
 
         requested = params[:item_type].to_s
-        items.where(item_type: Item::LEGACY_ITEM_TYPES.fetch(requested, requested))
+        requested = Item::LEGACY_ITEM_TYPES.fetch(requested, requested)
+        items.where("LOWER(items.item_type) = ?", requested.downcase)
       end
 
       def filter_tags(items)
