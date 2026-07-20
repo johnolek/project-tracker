@@ -76,6 +76,36 @@ RSpec.describe Comparison, type: :model do
       expect(item_b.reload.strength).to eq(0.0)
     end
 
+    it "refits once (not once per cascaded comparison) when an item is destroyed" do
+      item_c = create(:item, project: project)
+      user = create(:user)
+      create(:comparison, item_a: item_a, item_b: item_b, outcome: "a_wins", user: user)
+      create(:comparison, item_a: item_a, item_b: item_c, outcome: "a_wins", user: user)
+
+      expect(Item).to receive(:recompute_strengths).once.and_call_original
+
+      item_a.destroy!
+
+      expect(item_b.reload.strength).to eq(0.0)
+      expect(item_c.reload.strength).to eq(0.0)
+    end
+
+    it "does not refit at all when a whole project is destroyed" do
+      create(:comparison, item_a: item_a, item_b: item_b, outcome: "a_wins", user: create(:user))
+
+      expect(Item).not_to receive(:recompute_strengths)
+
+      project.destroy!
+    end
+
+    it "skips the refit when a destroyed item had no comparisons" do
+      plain = create(:item, project: project)
+
+      expect(Item).not_to receive(:recompute_strengths)
+
+      plain.destroy!
+    end
+
     it "persists strengths with one bulk strengths broadcast instead of per-item upserts" do
       item_a
       item_b

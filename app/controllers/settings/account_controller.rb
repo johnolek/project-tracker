@@ -11,7 +11,7 @@ module Settings
 
       if @user.update(account_params)
         if @user.saved_change_to_email? && @user.email.present?
-          EmailVerificationMailer.verify_email(@user).deliver_now
+          EmailVerificationMailer.verify_email(@user).deliver_later
           redirect_to edit_settings_account_path, notice: "Saved. Check #{@user.email} to verify the new address."
         else
           redirect_to edit_settings_account_path, notice: "Account updated."

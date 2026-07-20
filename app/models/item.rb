@@ -49,6 +49,14 @@ class Item < ApplicationRecord
   before_validation :canonicalize_item_type
   before_create :assign_number
   before_save :apply_pending_tag_names
+  # Cascaded comparison destroys skip their per-record refit (PROJ-78); one
+  # refit here re-ranks the remaining items. prepend: true captures the flag
+  # before dependent: :destroy wipes the comparisons. A project cascade skips
+  # even this: its comparisons only ever connected its own (deleted) items, so
+  # other projects' fits are unaffected.
+  before_destroy :remember_had_comparisons, prepend: true
+  after_destroy :recompute_strengths_after_cascade,
+                if: -> { @had_comparisons && !destroyed_by_association }
 
   after_create_commit { broadcast_board_change(action: "upsert") }
   after_update_commit { broadcast_board_change(action: "upsert") }
@@ -304,6 +312,16 @@ class Item < ApplicationRecord
   end
 
   private
+
+  def remember_had_comparisons
+    @had_comparisons = comparisons_as_item_a.exists? || comparisons_as_item_b.exists?
+    true
+  end
+
+  def recompute_strengths_after_cascade
+    organization = project&.organization
+    Item.recompute_strengths(organization: organization) if organization
+  end
 
   # Item types are now per-organization data (PROJ-47), so validity is inclusion
   # in the item's organization's configured type names rather than a constant.

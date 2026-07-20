@@ -11,7 +11,7 @@ class EmailVerificationsController < ApplicationController
   # POST /verify-email — (re)send the verification link to the current user.
   def create
     if current_user.email.present? && !current_user.email_verified?
-      EmailVerificationMailer.verify_email(current_user).deliver_now
+      EmailVerificationMailer.verify_email(current_user).deliver_later
       redirect_to edit_settings_account_path, notice: "Verification email sent to #{current_user.email}."
     else
       redirect_to edit_settings_account_path

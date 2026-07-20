@@ -24,6 +24,10 @@ Rails.application.configure do
   # clears it between examples so counters can't leak across tests.
   config.cache_store = :memory_store
 
+  # Mail goes through deliver_later (PROJ-78); inline execution keeps the
+  # existing ActionMailer::Base.deliveries assertions working unchanged.
+  config.active_job.queue_adapter = :inline
+
   # Render exception templates for rescuable exceptions and raise for other exceptions.
   config.action_dispatch.show_exceptions = :rescuable
 

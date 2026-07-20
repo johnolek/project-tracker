@@ -21,7 +21,7 @@ class RegistrationsController < ApplicationController
     )
 
     if @user.save
-      EmailVerificationMailer.verify_email(@user).deliver_now
+      EmailVerificationMailer.verify_email(@user).deliver_later
       redirect_to login_path, notice: "Account created. Check #{@user.email} for a link to sign in and finish setting up."
     else
       render :new, status: :unprocessable_entity
@@ -85,7 +85,7 @@ class RegistrationsController < ApplicationController
       nickname: params[:nickname].presence
     )
     user.save!
-    EmailVerificationMailer.verify_email(user).deliver_now
+    EmailVerificationMailer.verify_email(user).deliver_later
 
     sign_in(user)
     render json: { redirect_url: root_path }

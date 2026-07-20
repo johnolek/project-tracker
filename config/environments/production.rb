@@ -53,7 +53,10 @@ Rails.application.configure do
 
   # Don't raise on delivery failures (a missing SMTP config shouldn't 500 a
   # sign-in request); mail simply won't send until SMTP env vars are set.
-  config.action_mailer.raise_delivery_errors = false
+  # Deliveries run in Solid Queue jobs (deliver_later, PROJ-78): raising on
+  # failure makes the job retry and leaves a visible failed-job record instead
+  # of a silently dropped message. No user request ever sees the raise.
+  config.action_mailer.raise_delivery_errors = true
 
   # Host for links in emails (the magic-link sign-in URL). Prefer MAIL_HOST,
   # else derive from the WebAuthn origin the app is already deployed under.

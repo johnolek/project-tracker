@@ -11,7 +11,10 @@ class Comparison < ApplicationRecord
   validate :pair_not_already_compared
 
   after_create :recompute_strengths
-  after_destroy :recompute_strengths
+  # When an item (or its project) is destroyed, its comparisons cascade one by
+  # one — refitting per comparison would run O(comparisons) full org fits
+  # (PROJ-78). The owning Item runs a single refit afterwards instead.
+  after_destroy :recompute_strengths, unless: :destroyed_by_association
 
   # All comparisons whose items belong to the given organization. Filtering on
   # item_a alone is sufficient: the same-project validation guarantees both
