@@ -87,8 +87,11 @@ module Api
                                      :review, :review_note, :tags, tags: [])
       end
 
+      # notes arrive as HTML and are sanitized on write to the tags the rhino
+      # editor round-trips (PROJ-72), like API comment bodies.
       def item_attributes
         attributes = item_params.slice(:title, :notes, :item_type, :points).to_h
+        attributes[:notes] = RhinoHtml.sanitize(attributes[:notes]) if attributes.key?(:notes)
         attributes[:tag_names] = item_params[:tags] if item_params.key?(:tags)
         attributes
       end

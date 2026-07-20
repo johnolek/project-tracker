@@ -40,8 +40,10 @@ USAGE = <<~TEXT
                                       carries the link_id used by unlink).
     unlink LINK_ID                    Remove a relationship
     comments ID                       List an item's comments
-    comment ID --body TEXT [--no-branch]
-                                      Add a comment. When run inside a git repo
+    comment ID --body HTML [--no-branch]
+                                      Add a comment (HTML, web-editor tags
+                                      only; plain-text newlines collapse).
+                                      When run inside a git repo
                                       on a resolvable branch, a final line
                                       "— branch: <name>" is appended to the body;
                                       pass --no-branch to skip it.
@@ -82,7 +84,9 @@ def parse_flags(argv)
     flag = argv.shift
     abort "Expected --flag, got #{flag.inspect}\n\n#{USAGE}" unless flag.start_with?("--")
     value = argv.shift or abort "Missing value for #{flag}"
-    flags[flag.delete_prefix("--").tr("-", "_")] = value
+    # ARGV takes the locale encoding (BINARY under a C locale); multibyte
+    # values must be tagged UTF-8 or string interpolation and JSON break.
+    flags[flag.delete_prefix("--").tr("-", "_")] = value.dup.force_encoding(Encoding::UTF_8)
   end
   flags["item_type"] = flags.delete("type") if flags.key?("type")
   flags
@@ -104,7 +108,7 @@ skip_branch = !argv.delete("--no-branch").nil?
 flags = parse_flags(argv)
 
 if command == "comment" && !skip_branch && (branch = current_git_branch) && flags["body"]
-  flags["body"] = "#{flags["body"]}\n\n— branch: #{branch}"
+  flags["body"] = "#{flags["body"]}<p>— branch: #{branch}</p>"
 end
 
 base_url, token = credentials

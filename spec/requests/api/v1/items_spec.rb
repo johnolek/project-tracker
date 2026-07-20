@@ -295,6 +295,21 @@ RSpec.describe "API v1 items", type: :request do
       expect(item.tag_names).to match_array(%w[api Urgent])
     end
 
+    it "sanitizes notes to rhino-supported tags on write" do
+      post api_v1_project_items_path(project), headers: auth_headers, params: {
+        item: {
+          title: "HTML notes",
+          notes: "<ol><li>do the <em>first</em> thing</li></ol><table><tr><td>dropped</td></tr></table>"
+        }
+      }
+
+      expect(response).to have_http_status(:created)
+      expect(json_body["notes_html"]).to include("<em>first</em>")
+      expect(json_body["notes_html"]).to include("<ol>")
+      expect(json_body["notes_html"]).not_to include("<table")
+      expect(json_body["notes_text"]).to include("do the first thing")
+    end
+
     it "stamps API-created items as ai_created" do
       post api_v1_project_items_path(project), headers: auth_headers,
            params: { item: { title: "Machine made" } }

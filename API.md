@@ -176,7 +176,7 @@ curl "http://localhost:3000/api/v1/items?tags=api,bug&tags_match=all" \
 Fields (all optional except `title`):
 
 - `title` — required string
-- `notes` — HTML string, stored as rich text
+- `notes` — HTML string, stored as rich text. Sanitized on write to the tags the web editor supports: `p div br h1 blockquote pre code strong em b i del s strike a ul ol li` (`href` is the only attribute kept). Other tags are stripped but their text is kept. Plain text passes through as-is, so use block tags or `<br>` for line breaks.
 - `item_type` — defaults to `feature` (legacy `task`/`enhancement` are accepted and stored as `feature`)
 - `points` — positive integer or null
 - `status` — status **name**, case-insensitive, resolved within the organization. Omitted → the organization's default (first open) status. Unknown name → 422 `{ "error": "Unknown status: <name>" }`.
@@ -190,7 +190,7 @@ curl -X POST http://localhost:3000/api/v1/projects/7/items \
   -d '{
     "item": {
       "title": "Rate-limit the login endpoint",
-      "notes": "<p>Five attempts per minute, then <strong>backoff</strong>.</p>",
+      "notes": "<p>Five attempts per minute, then <strong>backoff</strong>.</p><ul><li>return <code>429</code> with <code>Retry-After</code></li><li>log the offending IP</li></ul>",
       "item_type": "feature",
       "points": 3,
       "status": "in progress",
@@ -273,11 +273,13 @@ curl http://localhost:3000/api/v1/items/42/comments \
 #                      "user": { "id": 3, "username": "john" }, "created_at": "..." } ] }
 
 # Create (201) — authored by the key's user, stamped source: "api".
-# body is plain text in; it is stored as rich text (HTML comes back in body_html).
+# body is HTML, sanitized on write to the same web-editor tag set as item
+# notes (see Items → Create); use block tags or <br> for line breaks, since
+# plain-text newlines collapse. The stored HTML comes back in body_html.
 curl -X POST http://localhost:3000/api/v1/items/42/comments \
   -H "Authorization: Bearer pt_YOUR_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{ "comment": { "body": "Reproduced on staging; fix in progress." } }'
+  -d '{ "comment": { "body": "<p>Reproduced on staging.</p><ol><li><code>POST /sessions</code> with a stale token</li><li>observe the <strong>500</strong></li></ol>" } }'
 ```
 
 ## Statuses

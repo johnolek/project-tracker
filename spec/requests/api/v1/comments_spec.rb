@@ -61,6 +61,35 @@ RSpec.describe "API v1 comments", type: :request do
       expect(last.body.to_plain_text).to eq("Progress: done")
     end
 
+    it "stores an HTML body built from rhino-supported tags" do
+      body = '<h1>Findings</h1><ul><li><strong>bold</strong> point</li><li>has <code>inline code</code></li></ul>' \
+             '<pre><code>puts :hi</code></pre><p>See <a href="https://example.com">the docs</a>.</p>'
+
+      post api_v1_item_comments_path(item), params: { comment: { body: body } }, headers: auth_headers
+
+      expect(response).to have_http_status(:created)
+      html = json_body["body_html"]
+      expect(html).to include("Findings</h1>")
+      expect(html).to include("<strong>bold</strong>")
+      expect(html).to include("<pre><code>puts :hi</code></pre>")
+      expect(html).to include('href="https://example.com"')
+      expect(json_body["body_text"]).to include("Findings")
+    end
+
+    it "strips tags rhino cannot round-trip, keeping their text" do
+      post api_v1_item_comments_path(item),
+           params: { comment: { body: '<table><tr><td>cell</td></tr></table><p onclick="x">kept</p><script>alert(1)</script>' } },
+           headers: auth_headers
+
+      expect(response).to have_http_status(:created)
+      html = json_body["body_html"]
+      expect(html).to include("cell")
+      expect(html).not_to include("<table")
+      expect(html).to include("<p>kept</p>")
+      expect(html).not_to include("onclick")
+      expect(html).not_to include("alert(1)")
+    end
+
     it "422s on a blank body" do
       post api_v1_item_comments_path(item), params: { comment: { body: "" } }, headers: auth_headers
 
