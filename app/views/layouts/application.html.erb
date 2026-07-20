@@ -69,7 +69,9 @@
                   <%= link_to "Item types", settings_item_types_path, class: "navbar-item" %>
                   <%= link_to "Passkeys", settings_credentials_path, class: "navbar-item" %>
                   <%= link_to "API keys", settings_api_keys_path, class: "navbar-item" %>
-                  <%= link_to "Admin", edit_settings_admin_path, class: "navbar-item" %>
+                  <% if current_user.admin? %>
+                    <%= link_to "Admin", edit_settings_admin_path, class: "navbar-item" %>
+                  <% end %>
                   <hr class="navbar-divider">
                   <%= button_to "Sign out", logout_path, method: :delete, class: "navbar-item",
                         form: { data: { turbo: false } } %>
@@ -93,7 +95,7 @@
         <%# A failed outbound email is a real problem (magic links are the
             passkey recovery path), so it gets a persistent banner, not a log
             line (PROJ-84). %>
-        <% if signed_in? && (failed_email_count = FailedEmail.count) > 0 %>
+        <% if signed_in? && current_user.admin? && (failed_email_count = FailedEmail.count) > 0 %>
           <div class="notification is-danger">
             <%= pluralize(failed_email_count, "email") %> failed to send.
             <%= link_to "Review and retry in Admin settings", edit_settings_admin_path, class: "has-text-weight-semibold" %>

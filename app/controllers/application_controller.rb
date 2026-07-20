@@ -24,6 +24,10 @@ class ApplicationController < ActionController::Base
     redirect_to login_path, alert: "Please sign in to continue." unless signed_in?
   end
 
+  def require_admin
+    redirect_to root_path, alert: "That page is for the instance admin." unless current_user&.admin?
+  end
+
   # Resolves a project by slug ("PROJ") or, for legacy URLs, numeric id. Slugs
   # always start with a letter, so an all-digits param is unambiguously an id.
   #

@@ -60,6 +60,25 @@ RSpec.describe "Signup lockdown and rate limits", type: :request do
       expect(response).to redirect_to(login_path)
       expect(AppSetting.instance.allow_signups).to be_nil
     end
+
+    it "is admin-only: the first account is admin, later accounts are not" do
+      create(:user)
+      register_passkey(username: "latecomer")
+
+      expect(User.find_by(username: "latecomer").admin?).to be(false)
+
+      get edit_settings_admin_path
+      expect(response).to redirect_to(root_path)
+
+      patch settings_admin_path, params: { app_setting: { allow_signups: "true" } }
+      expect(AppSetting.instance.allow_signups).to be_nil
+    end
+
+    it "grants admin to the very first account automatically" do
+      post signup_path, params: { username: "founder", email: "founder@example.com" }
+
+      expect(User.find_by(username: "founder").admin?).to be(true)
+    end
   end
 
   describe "rate limiting" do

@@ -1,8 +1,11 @@
 module Settings
-  # Instance-wide switches (the AppSetting singleton). Single-user app: any
-  # signed-in account is the admin.
+  # Instance-wide switches (the AppSetting singleton) and failed-delivery
+  # triage. Admin-only: the first account on the instance is the admin
+  # (users.admin), so a guest account created while signups are open can't
+  # reach instance-level controls.
   class AdminController < ApplicationController
     before_action :require_login
+    before_action :require_admin
 
     def edit
       @setting = AppSetting.instance

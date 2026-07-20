@@ -9,6 +9,11 @@ class User < ApplicationRecord
 
   normalizes :email, with: ->(email) { email.strip.downcase.presence }
 
+  # The very first account on a fresh instance is its owner: admin without any
+  # console step. Later accounts (if signups are ever opened) are not — the
+  # Settings -> Admin page is admin-only.
+  before_create { self.admin = true if User.none? }
+
   validates :username, presence: true, uniqueness: true
   validates :webauthn_id, presence: true, uniqueness: true
   validates :email, presence: true, on: :create
