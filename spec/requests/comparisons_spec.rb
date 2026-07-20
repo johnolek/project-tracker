@@ -469,6 +469,51 @@ RSpec.describe "Comparisons", type: :request do
       end
     end
 
+    describe "the set-aside hint props (PROJ-65)" do
+      it "exposes the flagged count and the filtered-board url to the island" do
+        create(:item, project: project, title: "Open one")
+        create(:item, project: project, title: "Open two")
+        create(:item, project: project, title: "Aside").flag_for_review!
+
+        get prioritize_project_path(project)
+
+        props = mounted_props(response.body)
+        expect(props["reviewCount"]).to eq(1)
+        expect(props["reviewUrl"]).to eq(project_path(project, review: 1))
+      end
+    end
+
+    describe "excluding items flagged for review (PROJ-65)" do
+      it "keeps a flagged item out of the pair and the progress count" do
+        keep = create(:item, project: project, title: "Keep me")
+        create(:item, project: project, title: "Also keep")
+        flagged = create(:item, project: project, title: "Set aside")
+        flagged.flag_for_review!(note: "may already be done")
+
+        get prioritize_project_path(project, format: :json)
+
+        payload = response.parsed_body
+        ids = payload["pair"].map { |item| item["id"] }
+        expect(ids).not_to include(flagged.id)
+        expect(ids).to all(be_in([ keep.id, Item.find_by(title: "Also keep").id ]))
+        # Two eligible items => exactly one pair; the flagged item never counts.
+        expect(payload["total"]).to eq(1)
+      end
+
+      it "ignores a pin that has been flagged for review" do
+        create(:item, project: project, title: "Open one")
+        create(:item, project: project, title: "Open two")
+        pinned = create(:item, project: project, title: "Flagged anchor")
+        pinned.flag_for_review!
+
+        get prioritize_project_path(project, format: :json), params: { pinned_item_id: pinned.id }
+
+        payload = response.parsed_body
+        expect(payload["pinned_id"]).to be_nil
+        expect(payload["pair"].map { |item| item["id"] }).not_to include(pinned.id)
+      end
+    end
+
     describe "covering every pair (no repeats)" do
       it "hands out each unordered pair once, then reports completion" do
         a = create(:item, project: project, title: "A")

@@ -46,6 +46,7 @@ module Api
       def update
         @item.assign_attributes(item_attributes)
         apply_ai_reviewed(item: @item)
+        apply_review(item: @item)
         return unless assign_status(item: @item)
         return unless assign_parent(item: @item)
 
@@ -82,7 +83,8 @@ module Api
       end
 
       def item_params
-        params.require(:item).permit(:title, :notes, :item_type, :points, :status, :parent, :tags, :ai_reviewed, tags: [])
+        params.require(:item).permit(:title, :notes, :item_type, :points, :status, :parent, :ai_reviewed,
+                                     :review, :review_note, :tags, tags: [])
       end
 
       def item_attributes
@@ -104,6 +106,26 @@ module Api
           item.ai_reviewed_at ||= Time.current
         else
           item.ai_reviewed_at = nil
+        end
+      end
+
+      # Applies the review flag (PROJ-65): review=true flags the item (removing
+      # it from the prioritization pool), review=false clears it. review_note
+      # sets/updates the note on its own, and flagging via review=true carries any
+      # note sent alongside. A note without review=true still updates the note
+      # only when the item is already flagged.
+      #
+      # @param item [Item]
+      # @return [void]
+      def apply_review(item:)
+        item.review_note = item_params[:review_note] if item_params.key?(:review_note)
+        return unless item_params.key?(:review)
+
+        if ActiveModel::Type::Boolean.new.cast(item_params[:review])
+          item.review_requested_at ||= Time.current
+        else
+          item.review_requested_at = nil
+          item.review_note = nil
         end
       end
 
@@ -156,6 +178,7 @@ module Api
         items = filter_points(items)
         items = filter_source(items)
         items = filter_ai_reviewed(items)
+        items = filter_review(items)
         items = filter_parent(items)
         filter_title(items)
       end
@@ -224,6 +247,18 @@ module Api
           items.where.not(ai_reviewed_at: nil)
         else
           items.where(ai_reviewed_at: nil)
+        end
+      end
+
+      # needs_review=true keeps only flagged items (the review queue);
+      # needs_review=false keeps only unflagged ones.
+      def filter_review(items)
+        return items if params[:needs_review].blank?
+
+        if ActiveModel::Type::Boolean.new.cast(params[:needs_review])
+          items.where.not(review_requested_at: nil)
+        else
+          items.where(review_requested_at: nil)
         end
       end
 

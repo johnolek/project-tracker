@@ -29,6 +29,13 @@
   </div>
 </div>
 
+<% if @item.needs_review? %>
+  <div data-svelte-component="ReviewBanner"
+       data-props="<%= { note: @item.review_note,
+                         timeAgo: time_ago_in_words(@item.review_requested_at),
+                         reviewUrl: review_project_item_path(@project, @item) }.to_json %>"></div>
+<% end %>
+
 <div class="columns item-detail">
   <div class="column">
     <div data-svelte-component="ItemEditor"

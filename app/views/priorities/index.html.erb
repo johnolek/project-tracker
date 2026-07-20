@@ -26,7 +26,12 @@
         <% @items.each_with_index do |item, index| %>
           <tr>
             <td><%= index + 1 %></td>
-            <td><%= link_to item.title, project_item_path(@project, item) %></td>
+            <td>
+              <%= link_to item.title, project_item_path(@project, item) %>
+              <% if item.needs_review? %>
+                <span class="tag is-warning is-small" title="<%= item.review_note.presence || "Flagged for review" %>">review</span>
+              <% end %>
+            </td>
             <td><%= item_type_tag(item) %></td>
             <td><%= item.points %></td>
             <td><%= format("%+.1f", item.strength) %></td>

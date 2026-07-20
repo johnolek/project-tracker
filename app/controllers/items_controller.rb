@@ -1,7 +1,7 @@
 class ItemsController < ApplicationController
   before_action :require_login
   before_action :set_project
-  before_action :set_item, only: %i[show update destroy move]
+  before_action :set_item, only: %i[show update destroy move review unreview]
 
   def show
     return redirect_to project_item_path(@project, @item), status: :moved_permanently if stale_project_slug?(params[:project_id])
@@ -53,6 +53,28 @@ class ItemsController < ApplicationController
     status = @project.organization.statuses.find(params.require(:status_id))
     @item.update!(status: status)
     head :no_content
+  end
+
+  # Flags the item for review (PROJ-65), removing it from the prioritization
+  # pool. The optional note explains what to look at; blank is fine. Prioritizing
+  # posts here and reads the item back to advance to a fresh pair.
+  def review
+    @item.flag_for_review!(note: params[:review_note])
+
+    respond_to do |format|
+      format.json { render json: @item.detail_payload }
+      format.html { redirect_back fallback_location: project_item_path(@project, @item), notice: "Flagged for review." }
+    end
+  end
+
+  # Clears the review flag, returning the item to the pool.
+  def unreview
+    @item.clear_review!
+
+    respond_to do |format|
+      format.json { render json: @item.detail_payload }
+      format.html { redirect_back fallback_location: project_path(@project, review: 1), notice: "Review cleared." }
+    end
   end
 
   private

@@ -50,6 +50,9 @@ envelope keyed by the collection name; only item indexes are paginated.
   "source": "web",
   "ai_reviewed_at": null,
   "provenance": "user_created",
+  "needs_review": false,
+  "review_requested_at": null,
+  "review_note": null,
   "status": { "id": 1, "name": "New", "category": "open", "position": 1 },
   "project": { "id": 7, "name": "Tracker", "slug": "TRAC" },
   "parent": { "id": 40, "key": "TRAC-10", "title": "Login hardening" },
@@ -75,6 +78,7 @@ envelope keyed by the collection name; only item indexes are paginated.
 - `source` — `"web"` (created from the web UI) or `"api"` (created through this API; every item created via `POST` is stamped `"api"`).
 - `ai_reviewed_at` — timestamp of the LLM's sign-off after revising a person-created item, or null. Set/cleared with the `ai_reviewed` boolean on update.
 - `provenance` — derived display state: `"ai_created"` (source is api), `"ai_reviewed"` (web-created with `ai_reviewed_at` set), else `"user_created"`.
+- `needs_review` / `review_requested_at` / `review_note` — the review flag (set aside during prioritizing): whether it's flagged, when, and an optional free-text reason. A flagged item is excluded from the comparison pool until cleared. Set/cleared with the `review` boolean on update, and `review_note` sets the reason.
 - `parent` / `children` — the item's place in the parent tree, as compact `{ id, key, title }` references (`parent` is `null` for root items; `children` are direct sub-items by ascending number). Parents are same-project only and may nest to any depth; set with the `parent` field on create/update.
 - `links` — typed relationships to other items, bucketed by how they read from this item: `blocks` (this item blocks the listed ones), `blocked_by`, `relates_to` (symmetric). Each entry is the compact reference plus the `link_id` that deletes the link. Links may cross projects within the organization; manage them with the link endpoints below.
 
@@ -143,6 +147,7 @@ All filters combine (AND) and are available on both routes:
 | `points_lt` / `points_lte` / `points_gt` / `points_gte` | Points comparisons (items with null points never match) |
 | `source` | `web` or `api` — where the item was created |
 | `ai_reviewed` | `true` — only items an LLM has signed off; anything else — only items without a sign-off |
+| `needs_review` | `true` — only items flagged for review (the review queue); `false` — only unflagged items |
 | `parent` | Direct sub-items of the given item (id or key, e.g. `parent=TRAC-10`; unknown → 404). `parent=none` — root items only. |
 | `q` | Case-insensitive substring match on title |
 | `sort` | `created_at` (default), `points`, `strength`, `title` |
@@ -208,7 +213,9 @@ curl http://localhost:3000/api/v1/items/TRAC-12 \
 
 # PATCH accepts the same fields as create, plus `ai_reviewed` (boolean):
 # true stamps ai_reviewed_at (idempotent — the first sign-off time is kept),
-# false clears it. `tags` REPLACES the full tag set
+# false clears it. `review` (boolean) flags/clears the review flag — true removes
+# the item from the prioritization pool, false returns it — and `review_note`
+# sets the reason. `tags` REPLACES the full tag set
 # (send [] to clear); omit the key to leave tags untouched.
 curl -X PATCH http://localhost:3000/api/v1/items/42 \
   -H "Authorization: Bearer pt_YOUR_TOKEN" \

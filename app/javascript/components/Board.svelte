@@ -17,6 +17,10 @@
   let minPoints = $state(null)
   let maxPoints = $state(null)
   let selectedTags = $state([])
+  // The review queue is this board filtered to flagged items (PROJ-65).
+  // ?review=1 deep-links into that state (islands remount per Turbo visit, so
+  // reading the URL here follows navigation).
+  let reviewOnly = $state(new URLSearchParams(window.location.search).get("review") === "1")
   let sort = $state(readSort())
   // Where dragged cards were dropped, in drop order: [{ id, statusId, index }].
   // A dropped card holds that spot instead of snapping to its sorted position.
@@ -38,6 +42,10 @@
   // Distinct tags across every board item, derived from state so the dropdown
   // tracks live cable upserts/removals without extra wiring.
   const allTags = $derived([...new Set(items.flatMap((item) => item.tags))].sort())
+
+  // Flagged-item total for the needs-review toggle badge; derived from item
+  // state, so cable upserts (flag/resolve anywhere) keep it current.
+  const reviewCount = $derived(items.filter((item) => item.needs_review).length)
 
   const columns = $derived(
     statuses.map((status) => ({
@@ -66,6 +74,7 @@
       !item.title.toLowerCase().includes(normalizedQuery) &&
       !item.key.toLowerCase().includes(normalizedQuery)
     ) return false
+    if (reviewOnly && !item.needs_review) return false
     if (itemType && item.item_type !== itemType) return false
     // Unpointed items are excluded once a minimum is set (an item with no
     // estimate can't be shown to clear a floor) but pass under any maximum (a
@@ -105,6 +114,7 @@
     minPoints = null
     maxPoints = null
     selectedTags = []
+    reviewOnly = false
   }
 
   function readSort() {
@@ -264,6 +274,9 @@
     bind:minPoints
     bind:maxPoints
     bind:selectedTags
+    bind:reviewOnly
+    showReview
+    {reviewCount}
     {itemTypes}
     {allTags}
     showQuery

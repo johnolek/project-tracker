@@ -13,6 +13,11 @@
     selectedTags = $bindable([]),
     selectedStatusIds = $bindable([]),
     query = $bindable(""),
+    // Needs-review filter, board-only (prioritize excludes flagged items
+    // entirely, so it has nothing to toggle). reviewCount feeds the badge.
+    reviewOnly = $bindable(false),
+    showReview = false,
+    reviewCount = 0,
     itemTypes = [],
     allTags = [],
     statuses,
@@ -32,6 +37,7 @@
   const hasStatusFilter = $derived(!!statuses && statuses.length > 1)
   const anyFilterActive = $derived(
     (showQuery && query.trim() !== "") ||
+      (showReview && reviewOnly) ||
       itemType !== "" ||
       minBound != null ||
       maxBound != null ||
@@ -184,10 +190,40 @@
   </div>
 {/if}
 
+{#if showReview}
+  <button
+    type="button"
+    class="button is-small"
+    class:is-warning={reviewOnly}
+    aria-pressed={reviewOnly}
+    title="Show only items flagged for review"
+    onclick={() => {
+      reviewOnly = !reviewOnly
+      onchange()
+    }}
+  >
+    Needs review{reviewCount ? ` (${reviewCount})` : ""}
+  </button>
+{/if}
+
 {@render children?.()}
 
 {#if anyFilterActive}
   <div class="filter-active-filters">
+    {#if showReview && reviewOnly}
+      <span class="tag is-small is-warning filter-chip">
+        Needs review
+        <button
+          type="button"
+          class="delete is-small"
+          aria-label="Remove the needs-review filter"
+          onclick={() => {
+            reviewOnly = false
+            onchange()
+          }}
+        ></button>
+      </span>
+    {/if}
     {#each selectedTags as tag (tag)}
       <span class="tag is-small is-primary filter-chip">
         {tag}

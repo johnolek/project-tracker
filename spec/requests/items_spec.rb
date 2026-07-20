@@ -264,3 +264,117 @@ RSpec.describe "Item creation", type: :request do
     expect(Item.order(:created_at).last.status).to eq(organization.default_status)
   end
 end
+
+RSpec.describe "Item review flag (PROJ-65)", type: :request do
+  before { register_passkey(username: "owner") }
+
+  let(:organization) { User.find_by(username: "owner").default_organization }
+  let(:project) { organization.projects.create!(name: "Board") }
+
+  describe "PATCH review" do
+    it "flags the item with a note and echoes the detail payload as JSON" do
+      item = create(:item, project: project, title: "Fuzzy")
+
+      patch review_project_item_path(project, item), params: { review_note: "needs more details" }, as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body).to include("needs_review" => true, "review_note" => "needs more details")
+      expect(item.reload).to be_needs_review
+    end
+
+    it "allows a blank note" do
+      item = create(:item, project: project)
+
+      patch review_project_item_path(project, item), params: {}, as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(item.reload).to be_needs_review
+      expect(item.review_note).to be_nil
+    end
+  end
+
+  describe "DELETE review (unreview)" do
+    it "clears the flag and note" do
+      item = create(:item, project: project)
+      item.flag_for_review!(note: "later")
+
+      delete review_project_item_path(project, item), as: :json
+
+      expect(response).to have_http_status(:ok)
+      expect(item.reload).not_to be_needs_review
+      expect(item.review_note).to be_nil
+    end
+  end
+
+  describe "the item detail page" do
+    it "mounts the ReviewBanner island with the note when flagged" do
+      item = create(:item, project: project, title: "Fuzzy")
+      item.flag_for_review!(note: "needs more details")
+
+      get project_item_path(project, item)
+
+      island = Nokogiri::HTML(response.body).at_css('[data-svelte-component="ReviewBanner"]')
+      props = JSON.parse(island["data-props"])
+      expect(props["note"]).to eq("needs more details")
+      expect(props["reviewUrl"]).to eq(review_project_item_path(project, item))
+    end
+
+    it "mounts no review banner when the item is not flagged" do
+      item = create(:item, project: project, title: "Clear")
+
+      get project_item_path(project, item)
+
+      expect(Nokogiri::HTML(response.body).at_css('[data-svelte-component="ReviewBanner"]')).to be_nil
+    end
+  end
+
+  # The review queue is the board filtered to flagged items (?review=1, read by
+  # the Board island); the server's job is shipping the flag + note in its props.
+  describe "the board's review data" do
+    it "ships needs_review and review_note in the Board island props" do
+      flagged = create(:item, project: project, title: "Fuzzy")
+      flagged.flag_for_review!(note: "ambiguous title")
+      create(:item, project: project, title: "Plain")
+
+      get project_path(project)
+
+      island = Nokogiri::HTML(response.body).at_css('[data-svelte-component="Board"]')
+      board_items = JSON.parse(island["data-props"])["items"]
+      expect(board_items.find { |item| item["id"] == flagged.id })
+        .to include("needs_review" => true, "review_note" => "ambiguous title")
+      expect(board_items.find { |item| item["title"] == "Plain" })
+        .to include("needs_review" => false, "review_note" => nil)
+    end
+  end
+
+  describe "editing the note (PATCH review on an already-flagged item)" do
+    it "updates the note while keeping the original flag time" do
+      item = create(:item, project: project)
+      item.flag_for_review!(note: "first thought")
+      original_time = item.reload.review_requested_at
+
+      travel 1.hour do
+        patch review_project_item_path(project, item), params: { review_note: "sharper thought" }, as: :json
+      end
+
+      expect(response).to have_http_status(:ok)
+      expect(item.reload.review_note).to eq("sharper thought")
+      expect(item.review_requested_at).to eq(original_time)
+    end
+  end
+
+  describe "the priorities list" do
+    it "marks flagged items with a review chip" do
+      flagged = create(:item, project: project, title: "Fuzzy ranked")
+      flagged.flag_for_review!(note: "may already be done")
+      create(:item, project: project, title: "Plain ranked")
+
+      get priorities_project_path(project)
+
+      row = Nokogiri::HTML(response.body).css("tr").find { |tr| tr.text.include?("Fuzzy ranked") }
+      expect(row.text).to include("review")
+      plain_row = Nokogiri::HTML(response.body).css("tr").find { |tr| tr.text.include?("Plain ranked") }
+      expect(plain_row.text).not_to include("review")
+    end
+  end
+end

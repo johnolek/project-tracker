@@ -39,6 +39,12 @@ class Item < ApplicationRecord
 
   scope :not_done, -> { joins(:status).where.not(statuses: { category: "done" }) }
 
+  # Items flagged for review (PROJ-65) are set aside during prioritizing: they
+  # leave the comparison pool until the flag is cleared, and gather in the
+  # review queue. review_requested_at doubles as the flag and the "since when".
+  scope :needs_review, -> { where.not(review_requested_at: nil) }
+  scope :not_needing_review, -> { where(review_requested_at: nil) }
+
   before_validation :assign_default_status, on: :create
   before_create :assign_number
   before_save :apply_pending_tag_names
@@ -104,6 +110,8 @@ class Item < ApplicationRecord
       strength: strength,
       status_id: status_id,
       created_at: created_at.to_i,
+      needs_review: needs_review?,
+      review_note: review_note,
       tags: tags.sort_by(&:name).map(&:name),
       url: Rails.application.routes.url_helpers.project_item_path(project, self),
       move_url: Rails.application.routes.url_helpers.move_project_item_path(project, self)
@@ -121,6 +129,7 @@ class Item < ApplicationRecord
       notes_trix: notes.body&.to_trix_html.to_s,
       provenance: provenance,
       ai_reviewed_at: ai_reviewed_at&.to_i,
+      review_requested_at: review_requested_at&.to_i,
       updated_at: updated_at.to_i,
       parent_id: parent_id
     )
@@ -199,7 +208,8 @@ class Item < ApplicationRecord
       tags: tags.sort_by(&:name).map(&:name),
       notes_html: notes.present? ? notes.to_s : "",
       url: Rails.application.routes.url_helpers.project_item_path(project, self),
-      move_url: Rails.application.routes.url_helpers.move_project_item_path(project, self)
+      move_url: Rails.application.routes.url_helpers.move_project_item_path(project, self),
+      review_url: Rails.application.routes.url_helpers.review_project_item_path(project, self)
     }
   end
 
@@ -227,6 +237,28 @@ class Item < ApplicationRecord
   #   (machine-created) rather than the web UI
   def from_api?
     source == "api"
+  end
+
+  # @return [Boolean] whether the item is currently flagged for review
+  def needs_review?
+    review_requested_at.present?
+  end
+
+  # Flags the item for review with an optional note (blank is allowed — the flag
+  # itself is the signal). Idempotent on the timestamp: editing the note on an
+  # already-flagged item keeps the original flag time (mirroring ai_reviewed_at).
+  #
+  # @param note [String, nil]
+  # @return [void]
+  def flag_for_review!(note: nil)
+    update!(review_requested_at: review_requested_at || Time.current, review_note: note.presence)
+  end
+
+  # Clears the review flag and any note, returning the item to the pool.
+  #
+  # @return [void]
+  def clear_review!
+    update!(review_requested_at: nil, review_note: nil)
   end
 
   # @return [String] the provenance state shown in the UI and API:

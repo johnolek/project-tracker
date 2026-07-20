@@ -136,6 +136,49 @@ RSpec.describe Item, type: :model do
     end
   end
 
+  describe "review flag" do
+    let(:project) { create(:project) }
+    let!(:flagged) { create(:item, project: project) }
+    let!(:plain) { create(:item, project: project) }
+
+    before { flagged.flag_for_review!(note: "ambiguous title") }
+
+    it "flags with a note and reports needs_review?" do
+      expect(flagged).to be_needs_review
+      expect(flagged.review_requested_at).to be_present
+      expect(flagged.review_note).to eq("ambiguous title")
+    end
+
+    it "treats a blank note as no note" do
+      plain.flag_for_review!(note: "   ")
+      expect(plain).to be_needs_review
+      expect(plain.review_note).to be_nil
+    end
+
+    it "keeps the original flag time when re-flagging to edit the note" do
+      original_time = flagged.reload.review_requested_at
+
+      travel 2.hours do
+        flagged.flag_for_review!(note: "sharper reason")
+      end
+
+      expect(flagged.review_note).to eq("sharper reason")
+      expect(flagged.review_requested_at).to eq(original_time)
+    end
+
+    it "scopes flagged and unflagged items" do
+      expect(project.items.needs_review).to contain_exactly(flagged)
+      expect(project.items.not_needing_review).to contain_exactly(plain)
+    end
+
+    it "clears the flag and the note" do
+      flagged.clear_review!
+      expect(flagged).not_to be_needs_review
+      expect(flagged.review_note).to be_nil
+      expect(project.items.needs_review).to be_empty
+    end
+  end
+
   describe "#provenance" do
     it "derives from source and the AI sign-off timestamp" do
       expect(Item.new(source: "api").provenance).to eq("ai_created")

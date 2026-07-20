@@ -70,6 +70,16 @@ RSpec.describe "API v1 items", type: :request do
       expect(item_ids).to match_array([ crash.id, docs.id, dark_mode.id, polish.id ])
     end
 
+    it "filters by needs_review in both directions" do
+      crash.flag_for_review!(note: "ambiguous")
+
+      get api_v1_items_path, params: { needs_review: "true" }, headers: auth_headers
+      expect(item_ids).to eq([ crash.id ])
+
+      get api_v1_items_path, params: { needs_review: "false" }, headers: auth_headers
+      expect(item_ids).to match_array([ docs.id, dark_mode.id, polish.id ])
+    end
+
     it "filters by tags with ANY match by default, case-insensitively and without duplicates" do
       get api_v1_items_path, params: { tags: "URGENT,backend" }, headers: auth_headers
 
@@ -201,6 +211,7 @@ RSpec.describe "API v1 items", type: :request do
       expect(response).to have_http_status(:ok)
       expect(json_body.keys).to match_array(
         %w[id key number title item_type points strength source ai_reviewed_at provenance
+           needs_review review_requested_at review_note
            status project parent children links tags notes_html notes_text created_at updated_at]
       )
       expect(json_body).to include(
@@ -214,6 +225,9 @@ RSpec.describe "API v1 items", type: :request do
         "source" => "web",
         "ai_reviewed_at" => nil,
         "provenance" => "user_created",
+        "needs_review" => false,
+        "review_requested_at" => nil,
+        "review_note" => nil,
         "tags" => %w[alpha beta],
         "notes_text" => "Hello world"
       )
@@ -383,6 +397,29 @@ RSpec.describe "API v1 items", type: :request do
       patch api_v1_item_path(item), headers: auth_headers, params: { item: { title: "Renamed" } }
 
       expect(item.reload.ai_reviewed_at).to be_present
+    end
+
+    it "flags for review with a note and clears on review=false" do
+      item = create(:item, project: project, title: "Fuzzy")
+
+      patch api_v1_item_path(item), headers: auth_headers,
+            params: { item: { review: true, review_note: "may already be done" } }
+      expect(json_body).to include("needs_review" => true, "review_note" => "may already be done")
+      expect(item.reload).to be_needs_review
+
+      patch api_v1_item_path(item), headers: auth_headers, params: { item: { review: false } }
+      expect(json_body).to include("needs_review" => false, "review_note" => nil)
+      expect(item.reload).not_to be_needs_review
+    end
+
+    it "keeps the review flag untouched when the key is absent" do
+      item = create(:item, project: project)
+      item.flag_for_review!(note: "hold")
+
+      patch api_v1_item_path(item), headers: auth_headers, params: { item: { title: "Renamed" } }
+
+      expect(item.reload).to be_needs_review
+      expect(item.review_note).to eq("hold")
     end
 
     it "422s on an unknown status name without changing the item" do

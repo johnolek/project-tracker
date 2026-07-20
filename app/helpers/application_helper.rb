@@ -78,11 +78,29 @@ module ApplicationHelper
       count: count,
       pinned: pinned&.comparison_payload,
       pinnedCount: pinned ? Comparison.counts_by_item(project: project).fetch(pinned.id, 0) : 0,
+      reviewCount: review_queue_count(project),
+      reviewUrl: project_path(project, review: 1),
       itemTypes: item_type_options(project.organization),
       allTags: project.items.not_done.joins(:tags).distinct.order("tags.name").pluck("tags.name"),
       statuses: organization.statuses.where.not(category: "done").ordered.map { |status| { id: status.id, name: status.name } },
       doneStatusId: organization.statuses.where(category: "done").ordered.first&.id
     }
+  end
+
+  # @param project [Project]
+  # @return [Integer] how many of the project's items are flagged for review
+  def review_queue_count(project)
+    project.items.needs_review.count
+  end
+
+  # Props for the ReviewQueueLink island (the badge stays live while
+  # prioritizing). The queue is the board filtered to flagged items, so the
+  # link deep-links there via ?review=1 (which the Board island reads on mount).
+  #
+  # @param project [Project]
+  # @return [Hash]
+  def review_queue_props(project)
+    { url: project_path(project, review: 1), count: review_queue_count(project) }
   end
 
   # Props for the ItemEditor island (inline title + notes editing).

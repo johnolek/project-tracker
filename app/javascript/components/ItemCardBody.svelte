@@ -42,6 +42,12 @@
   <span class="board-card-key">{item.key}</span>
 </span>
 
+{#if item.needs_review}
+  <span class="board-card-review" title="Flagged for review">
+    Needs review{item.review_note ? `: ${item.review_note}` : ""}
+  </span>
+{/if}
+
 <span class="board-card-title">{item.title}</span>
 
 <div class="board-card-meta">

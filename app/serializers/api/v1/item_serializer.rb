@@ -22,6 +22,9 @@ module Api
           source: item.source,
           ai_reviewed_at: item.ai_reviewed_at,
           provenance: item.provenance,
+          needs_review: item.needs_review?,
+          review_requested_at: item.review_requested_at,
+          review_note: item.review_note,
           status: StatusSerializer.render(item.status),
           project: {
             id: item.project.id,

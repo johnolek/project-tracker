@@ -30,7 +30,11 @@ Rails.application.routes.draw do
       get :priorities, to: "priorities#index"
     end
     resources :items, except: :edit do
-      patch :move, on: :member
+      member do
+        patch :move
+        patch :review
+        delete :review, action: :unreview, as: nil
+      end
       resources :comments, only: :create
       resources :links, only: %i[create destroy]
     end

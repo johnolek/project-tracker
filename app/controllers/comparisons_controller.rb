@@ -51,7 +51,7 @@ class ComparisonsController < ApplicationController
   def pinned_item
     return nil if params[:pinned_item_id].blank?
 
-    @project.items.not_done.find_by(id: params[:pinned_item_id])
+    @project.items.not_done.not_needing_review.find_by(id: params[:pinned_item_id])
   end
 
   # Candidate-pool filters, read identically from GET query params (new) and the
@@ -165,7 +165,7 @@ class ComparisonsController < ApplicationController
   # @param exclude [Array<Array(Integer, Integer)>] id pairs to skip when picking
   # @return [Hash{Symbol => Object}] { pair:, next_pair:, total:, remaining: }
   def selection(pinned: nil, exclude: [])
-    items = @project.items.not_done.includes(:status, :tags).select { |item| matches_filters?(item) }
+    items = @project.items.not_done.not_needing_review.includes(:status, :tags).select { |item| matches_filters?(item) }
     compared = Comparison.compared_pairs(project: @project)
     counts = Comparison.counts_by_item(project: @project)
     skip = exclude.map { |first, second| pair_key(first, second) }.to_set

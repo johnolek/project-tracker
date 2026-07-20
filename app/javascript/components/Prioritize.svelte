@@ -14,6 +14,8 @@
     remaining: initialRemaining,
     pinned: initialPinned,
     pinnedCount: initialPinnedCount,
+    reviewCount: initialReviewCount,
+    reviewUrl,
     itemTypes,
     allTags,
     statuses,
@@ -342,7 +344,90 @@
     toast("notice", `Marked "${item.title}" complete.`)
     await refreshPair()
   }
+
+  // Quick-fill reasons for the review modal — one tap flags with that reason.
+  const REVIEW_PRESETS = [ "Ambiguous title", "Needs more details", "May already be done" ]
+
+  // How many of the project's items are set aside for review — explains a
+  // thinned-out pool in the empty/completion states, with a link to the board
+  // filtered to flagged items.
+  // svelte-ignore state_referenced_locally -- islands remount per visit; props seed state once
+  let reviewCount = $state(initialReviewCount ?? 0)
+
+  // The item whose review modal is open (null = closed), the note being typed,
+  // and whether a review POST is in flight.
+  let reviewing = $state(null)
+  let reviewNote = $state("")
+  let reviewBusy = $state(false)
+
+  function openReview(item) {
+    if (locked) return
+    reviewing = item
+    reviewNote = ""
+  }
+
+  function closeReview() {
+    if (reviewBusy) return
+    reviewing = null
+    reviewNote = ""
+  }
+
+  // Flags the shown item for review (PROJ-65) with an optional note, which drops
+  // it from the pool, then draws a fresh pair. Presets pass their text straight
+  // in for a one-tap flag; the note field passes whatever was typed (blank ok).
+  async function submitReview(note) {
+    if (!reviewing || reviewBusy) return
+    reviewBusy = true
+    const item = reviewing
+
+    const response = await fetch(item.review_url, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]')?.content,
+      },
+      body: JSON.stringify({ review_note: (note ?? "").trim() }),
+    }).catch(() => null)
+
+    reviewBusy = false
+
+    if (!response?.ok) {
+      toast("alert", `Couldn't flag "${item.title}" for review.`)
+      return
+    }
+
+    reviewing = null
+    reviewNote = ""
+
+    if (pinnedItem?.id === item.id) {
+      pinnedItem = null
+      pinnedCount = 0
+    }
+
+    // Bump the "Review queue" badge (a ReviewQueueLink island) and the local
+    // set-aside count live.
+    reviewCount += 1
+    document.dispatchEvent(new CustomEvent("review:flagged"))
+    toast("notice", `Flagged "${item.title}" for review.`)
+    await refreshPair()
+  }
 </script>
+
+<svelte:window
+  onkeydown={(event) => {
+    if (event.key === "Escape" && reviewing) closeReview()
+  }}
+/>
+
+{#snippet reviewHint()}
+  {#if reviewCount > 0}
+    <p class="has-text-weak mt-3">
+      {reviewCount} {reviewCount === 1 ? "item is" : "items are"} set aside for review —
+      <a href={reviewUrl}>review {reviewCount === 1 ? "it" : "them"}</a>.
+    </p>
+  {/if}
+{/snippet}
 
 {#snippet choice(item, outcome)}
   {@const isPinned = pinnedItem?.id === item.id}
@@ -386,8 +471,8 @@
           </button>
         {/if}
       {/if}
-      {#if doneStatusId != null}
-        <div class="comparison-card-actions">
+      <div class="comparison-card-actions">
+        {#if doneStatusId != null}
           <button
             type="button"
             class="comparison-complete"
@@ -401,8 +486,21 @@
           >
             Mark complete
           </button>
-        </div>
-      {/if}
+        {/if}
+        <button
+          type="button"
+          class="comparison-review"
+          disabled={locked}
+          title="Set this item aside for review — removes it from prioritizing"
+          aria-label={`Flag ${item.title} for review`}
+          onclick={(event) => {
+            event.stopPropagation()
+            openReview(item)
+          }}
+        >
+          Flag for review
+        </button>
+      </div>
     </div>
     <div class="comparison-corner-actions">
       <a
@@ -506,6 +604,7 @@
         <button type="button" class="button" onclick={clearFilters}>Clear filters</button>
       {/if}
     </div>
+    {@render reviewHint()}
   </div>
 {:else if anyFilterActive}
   <div class="notification is-info is-light">
@@ -517,5 +616,47 @@
 {:else}
   <div class="notification is-info is-light">
     <p>You need at least two open items in this project to prioritize. Add or reopen some items, then come back.</p>
+    {@render reviewHint()}
+  </div>
+{/if}
+
+{#if reviewing}
+  <div
+    class="review-modal-overlay"
+    role="presentation"
+    onclick={closeReview}
+    transition:fade={{ duration: 120 }}
+  >
+    <!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_static_element_interactions -- backdrop-stop only; the dialog's own controls carry the keyboard path -->
+    <div class="review-modal" role="dialog" tabindex="-1" aria-modal="true" aria-label="Flag item for review" onclick={(event) => event.stopPropagation()}>
+      <p class="review-modal-eyebrow">Flag for review</p>
+      <p class="review-modal-item">{reviewing.title}</p>
+
+      <p class="review-modal-label">Quick reasons — one tap</p>
+      <div class="review-presets">
+        {#each REVIEW_PRESETS as preset}
+          <button type="button" class="review-preset" disabled={reviewBusy} onclick={() => submitReview(preset)}>
+            {preset}
+          </button>
+        {/each}
+      </div>
+
+      <label class="review-modal-label" for="review-note">Or add a note (optional)</label>
+      <textarea
+        id="review-note"
+        class="textarea"
+        rows="3"
+        placeholder="What needs a look?"
+        bind:value={reviewNote}
+        disabled={reviewBusy}
+      ></textarea>
+
+      <div class="review-modal-actions">
+        <button type="button" class="button" disabled={reviewBusy} onclick={closeReview}>Cancel</button>
+        <button type="button" class="button is-primary" disabled={reviewBusy} onclick={() => submitReview(reviewNote)}>
+          Flag for review
+        </button>
+      </div>
+    </div>
   </div>
 {/if}

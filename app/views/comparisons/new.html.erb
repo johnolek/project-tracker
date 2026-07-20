@@ -6,7 +6,13 @@
       <p class="subtitle is-6 has-text-weak"><%= link_to @project.name, project_path(@project) %></p>
     </div>
   </div>
-  <div class="level-right"><%= link_to "View priorities", priorities_project_path(@project), class: "button" %></div>
+  <div class="level-right">
+    <div class="buttons">
+      <span class="review-queue-mount" data-svelte-component="ReviewQueueLink"
+            data-props="<%= review_queue_props(@project).to_json %>"></span>
+      <%= link_to "View priorities", priorities_project_path(@project), class: "button" %>
+    </div>
+  </div>
 </div>
 
 <%# The island owns every state — an active pair, the completion celebration,

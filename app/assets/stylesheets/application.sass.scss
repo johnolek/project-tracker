@@ -625,14 +625,17 @@ $tag-colors: (
   // across a pair of unequal-height cards.
   .comparison-card-actions {
     display: flex;
+    flex-wrap: wrap;
     justify-content: flex-end;
+    gap: 0.375rem;
     margin-top: auto;
     padding-top: 0.75rem;
   }
 
-  // One quiet treatment for the card's small actions: retire-to-done in the
-  // footer, Edit + Pin hovering over the top-right corner.
+  // One quiet treatment for the card's small actions: retire-to-done and
+  // flag-for-review in the footer, Edit + Pin hovering over the top-right corner.
   .comparison-complete,
+  .comparison-review,
   .comparison-edit,
   .comparison-pin {
     padding: 0.15rem 0.6rem;
@@ -727,6 +730,182 @@ $tag-colors: (
     font-weight: 600;
     color: var(--bulma-text);
   }
+}
+
+// Review modal (PROJ-65): a centered sheet over a scrim for flagging an item
+// out of the pool. Mobile-first — near full-width, bottom-biased so the reasons
+// sit under the thumb; capped and centered on wider screens.
+.review-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 1rem;
+  background: hsla(var(--bulma-scheme-h), var(--bulma-scheme-s), 8%, 0.55);
+
+  @media (min-width: 769px) {
+    align-items: center;
+  }
+}
+
+.review-modal {
+  width: 100%;
+  max-width: 30rem;
+  padding: 1.25rem;
+  border: 1px solid var(--bulma-border-weak);
+  border-radius: var(--bulma-radius-large);
+  background: var(--bulma-scheme-main);
+  box-shadow: 0 8px 30px hsla(var(--bulma-scheme-h), var(--bulma-scheme-s), 8%, 0.35);
+
+  .review-modal-eyebrow {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--bulma-text-weak);
+  }
+
+  .review-modal-item {
+    margin-top: 0.15rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--bulma-text);
+  }
+
+  .review-modal-label {
+    display: block;
+    margin: 1rem 0 0.4rem;
+    font-size: 0.8rem;
+    color: var(--bulma-text-weak);
+  }
+
+  .review-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .review-preset {
+    padding: 0.4rem 0.75rem;
+    border: 1px solid var(--bulma-border);
+    border-radius: var(--bulma-radius);
+    background: var(--bulma-scheme-main-bis);
+    color: var(--bulma-text);
+    font-size: 0.85rem;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--bulma-primary);
+      background: var(--bulma-scheme-main-ter);
+    }
+
+    &:disabled {
+      cursor: default;
+      opacity: 0.6;
+    }
+  }
+
+  .review-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1.25rem;
+  }
+}
+
+// The ReviewQueueLink island mounts into a wrapper; contents lets its inner
+// .button sit directly in the surrounding Bulma .buttons group.
+.review-queue-mount {
+  display: contents;
+}
+
+// Item-detail banner (ReviewBanner island) shown while an item is flagged for
+// review: the note is click-to-edit (plain textarea, no rich text) and Resolve
+// clears the flag.
+.review-banner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--bulma-border-weak);
+  border-left: 3px solid var(--bulma-warning);
+  border-radius: var(--bulma-radius);
+  background: var(--bulma-scheme-main-bis);
+
+  .review-banner-body {
+    flex: 1 1 16rem;
+    min-width: 0;
+  }
+
+  .review-banner-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--bulma-text-weak);
+  }
+
+  // The note itself is the edit affordance: a text-styled button with a
+  // dashed underline hinting it's editable.
+  .review-banner-note {
+    display: block;
+    width: 100%;
+    margin: 0.15rem 0 0;
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--bulma-text);
+    font: inherit;
+    text-align: left;
+    white-space: pre-wrap;
+    cursor: pointer;
+    text-decoration: underline dashed var(--bulma-border);
+    text-underline-offset: 0.2em;
+
+    &:hover,
+    &:focus-visible {
+      text-decoration-color: var(--bulma-text-weak);
+    }
+  }
+
+  .review-banner-edit {
+    margin-top: 0.35rem;
+  }
+
+  .review-banner-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+
+  .review-banner-resolve {
+    flex-shrink: 0;
+  }
+}
+
+// Review line on a flagged card: "Needs review: <note>" above the title,
+// clamped so a long note can't swallow the card. Warning colors are Bulma's
+// contrast-checked pair in both themes.
+.board-card-review {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  margin: 0.35rem 0 0.1rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--bulma-radius-small);
+  background: var(--bulma-warning);
+  color: var(--bulma-warning-invert);
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.4;
 }
 
 // Toasts: a fixed overlay stack so flash notifications never push page content
