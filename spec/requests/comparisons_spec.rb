@@ -347,6 +347,17 @@ RSpec.describe "Comparisons", type: :request do
         expect(ids).to match_array([ both.id, also_both.id ])
       end
 
+      it "drops items carrying any excluded tag (PROJ-69)" do
+        plain = create(:item, project: project, title: "Plain")
+        backend = create(:item, project: project, title: "Backend", tag_names: [ "backend" ])
+        create(:item, project: project, title: "UI work", tag_names: [ "ui", "backend" ])
+
+        get prioritize_project_path(project, format: :json), params: { exclude_tags: [ "ui" ] }
+
+        ids = response.parsed_body["pair"].map { |item| item["id"] }
+        expect(ids).to match_array([ plain.id, backend.id ])
+      end
+
       it "restricts the pool to the requested statuses" do
         in_progress = organization.statuses.find_by(name: "In Progress")
         first = create(:item, project: project, title: "In progress A", status: in_progress)

@@ -233,6 +233,14 @@ rhino-editor {
     margin-left: 0.35rem;
     font-size: 0.7rem;
   }
+
+  // Excluded state in the tag dropdown's off → include → exclude cycle
+  // (PROJ-69). danger-on-scheme is Bulma's AA-checked danger text for both
+  // light and dark schemes.
+  .dropdown-item.is-excluded {
+    color: var(--bulma-danger-on-scheme);
+    text-decoration: line-through;
+  }
 }
 
 .filter-active-filters {

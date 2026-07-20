@@ -58,6 +58,7 @@
   let minPoints = $state(null)
   let maxPoints = $state(null)
   let selectedTags = $state([])
+  let excludedTags = $state([])
   let selectedStatusIds = $state([])
 
   const minBound = $derived(toBound(minPoints))
@@ -67,6 +68,7 @@
       minBound != null ||
       maxBound != null ||
       selectedTags.length > 0 ||
+      excludedTags.length > 0 ||
       selectedStatusIds.length > 0
   )
 
@@ -128,6 +130,7 @@
     if (minBound != null) params.min_points = minBound
     if (maxBound != null) params.max_points = maxBound
     if (selectedTags.length) params.tags = selectedTags
+    if (excludedTags.length) params.exclude_tags = excludedTags
     if (selectedStatusIds.length) params.status_ids = selectedStatusIds
     return params
   }
@@ -139,6 +142,7 @@
     if (minBound != null) url.searchParams.set("min_points", minBound)
     if (maxBound != null) url.searchParams.set("max_points", maxBound)
     for (const tag of selectedTags) url.searchParams.append("tags[]", tag)
+    for (const tag of excludedTags) url.searchParams.append("exclude_tags[]", tag)
     for (const id of selectedStatusIds) url.searchParams.append("status_ids[]", id)
     return url.toString()
   }
@@ -148,6 +152,7 @@
     minPoints = null
     maxPoints = null
     selectedTags = []
+    excludedTags = []
     selectedStatusIds = []
     refreshPair()
   }
@@ -558,6 +563,7 @@
     bind:minPoints
     bind:maxPoints
     bind:selectedTags
+    bind:excludedTags
     bind:selectedStatusIds
     {itemTypes}
     {allTags}

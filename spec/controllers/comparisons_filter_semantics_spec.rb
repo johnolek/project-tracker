@@ -18,7 +18,8 @@ RSpec.describe ComparisonsController, type: :controller do
         item_type: filters["item_type"],
         min_points: filters["min_points"],
         max_points: filters["max_points"],
-        tags: filters["tags"] || []
+        tags: filters["tags"] || [],
+        exclude_tags: filters["exclude_tags"] || []
       )
       allow(controller).to receive_messages(
         requested_status_ids: [],

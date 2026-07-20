@@ -66,14 +66,16 @@ class ComparisonsController < ApplicationController
       min_points: points_bound(params[:min_points]),
       max_points: points_bound(params[:max_points]),
       tags: Array(params[:tags]).filter_map { |name| name.to_s.strip.presence },
+      exclude_tags: Array(params[:exclude_tags]).filter_map { |name| name.to_s.strip.presence },
       status_ids: requested_status_ids
     }
   end
 
   # Mirrors Board.svelte's matchesFilters so both filtering surfaces share
   # semantics: item type is exact; a minimum floor excludes unpointed items
-  # while a maximum ceiling passes them; multi-selected tags AND together; and a
-  # status multi-select restricts the pool (empty means the whole not_done set).
+  # while a maximum ceiling passes them; multi-selected tags AND together;
+  # carrying any excluded tag rejects (PROJ-69); and a status multi-select
+  # restricts the pool (empty means the whole not_done set).
   #
   # @param item [Item]
   # @return [Boolean]
@@ -82,6 +84,7 @@ class ComparisonsController < ApplicationController
     return false if filters[:min_points] && (item.points.nil? || item.points < filters[:min_points])
     return false if filters[:max_points] && item.points && item.points > filters[:max_points]
     return false if filters[:tags].any? && (filters[:tags] - item.tags.map(&:name)).any?
+    return false if filters[:exclude_tags].any? && (filters[:exclude_tags] & item.tags.map(&:name)).any?
     return false if filters[:status_ids].any? && !filters[:status_ids].include?(item.status_id)
 
     true

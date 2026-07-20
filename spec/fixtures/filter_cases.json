@@ -1,5 +1,5 @@
 {
-  "comment": "Shared filter-semantics cases (PROJ-79). Exercised by BOTH spec/javascript/item_filters.test.js (matchesFilters in app/javascript/item_filters.js) and the Ruby spec of ComparisonsController#matches_filters? so the two implementations cannot drift silently. Covers the mirrored core: item_type, min/max points (including the unpointed-item rules), and tag AND-matching.",
+  "comment": "Shared filter-semantics cases (PROJ-79). Exercised by BOTH spec/javascript/item_filters.test.js (matchesFilters in app/javascript/item_filters.js) and the Ruby spec of ComparisonsController#matches_filters? so the two implementations cannot drift silently. Covers the mirrored core: item_type, min/max points (including the unpointed-item rules), tag AND-matching, and tag exclusion (PROJ-69: any excluded tag present rejects).",
   "cases": [
     { "name": "no filters passes everything",
       "item": { "item_type": "bug", "points": null, "tags": [] },
@@ -45,6 +45,15 @@
       "filters": { "item_type": "bug", "min_points": 2, "max_points": 5, "tags": ["api"] }, "expected": true },
     { "name": "one failing criterion rejects despite the rest passing",
       "item": { "item_type": "bug", "points": 3, "tags": ["api"] },
-      "filters": { "item_type": "bug", "min_points": 2, "tags": ["ui"] }, "expected": false }
+      "filters": { "item_type": "bug", "min_points": 2, "tags": ["ui"] }, "expected": false },
+    { "name": "excluded tag rejects an item carrying it",
+      "item": { "item_type": "bug", "points": 1, "tags": ["ui"] },
+      "filters": { "exclude_tags": ["ui"] }, "expected": false },
+    { "name": "excluded tag passes an item without it",
+      "item": { "item_type": "bug", "points": 1, "tags": ["api"] },
+      "filters": { "exclude_tags": ["ui"] }, "expected": true },
+    { "name": "include and exclude compose with AND",
+      "item": { "item_type": "bug", "points": 1, "tags": ["api", "ui"] },
+      "filters": { "tags": ["api"], "exclude_tags": ["ui"] }, "expected": false }
   ]
 }

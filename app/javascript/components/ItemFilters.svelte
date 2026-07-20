@@ -11,6 +11,7 @@
     minPoints = $bindable(null),
     maxPoints = $bindable(null),
     selectedTags = $bindable([]),
+    excludedTags = $bindable([]),
     selectedStatusIds = $bindable([]),
     query = $bindable(""),
     // Needs-review filter, board-only (prioritize excludes flagged items
@@ -42,6 +43,7 @@
       minBound != null ||
       maxBound != null ||
       selectedTags.length > 0 ||
+      excludedTags.length > 0 ||
       selectedStatusIds.length > 0
   )
 
@@ -57,6 +59,25 @@
     selectedTags = selectedTags.includes(tag)
       ? selectedTags.filter((candidate) => candidate !== tag)
       : [...selectedTags, tag]
+    onchange()
+  }
+
+  // Dropdown clicks walk each tag through off → include → exclude → off
+  // (PROJ-69); a tag is never in both lists.
+  function cycleTag(tag) {
+    if (selectedTags.includes(tag)) {
+      selectedTags = selectedTags.filter((candidate) => candidate !== tag)
+      excludedTags = [...excludedTags, tag]
+    } else if (excludedTags.includes(tag)) {
+      excludedTags = excludedTags.filter((candidate) => candidate !== tag)
+    } else {
+      selectedTags = [...selectedTags, tag]
+    }
+    onchange()
+  }
+
+  function removeExcludedTag(tag) {
+    excludedTags = excludedTags.filter((candidate) => candidate !== tag)
     onchange()
   }
 
@@ -134,7 +155,7 @@
         aria-expanded={tagMenuOpen}
         onclick={() => (tagMenuOpen = !tagMenuOpen)}
       >
-        <span>Tags{selectedTags.length ? ` (${selectedTags.length})` : ""}</span>
+        <span>Tags{selectedTags.length + excludedTags.length ? ` (${selectedTags.length + excludedTags.length})` : ""}</span>
         <span class="filter-caret" aria-hidden="true">▾</span>
       </button>
     </div>
@@ -145,11 +166,13 @@
             type="button"
             class="dropdown-item"
             class:is-active={selectedTags.includes(tag)}
+            class:is-excluded={excludedTags.includes(tag)}
             role="menuitemcheckbox"
-            aria-checked={selectedTags.includes(tag)}
-            onclick={() => toggleTag(tag)}
+            aria-checked={excludedTags.includes(tag) ? "mixed" : selectedTags.includes(tag)}
+            title="Click cycles: show with tag → hide with tag → off"
+            onclick={() => cycleTag(tag)}
           >
-            {selectedTags.includes(tag) ? "✓ " : ""}{tag}
+            {selectedTags.includes(tag) ? "✓ " : excludedTags.includes(tag) ? "✕ " : ""}{tag}
           </button>
         {/each}
       </div>
@@ -232,6 +255,17 @@
           class="delete is-small"
           aria-label={`Remove ${tag} tag filter`}
           onclick={() => toggleTag(tag)}
+        ></button>
+      </span>
+    {/each}
+    {#each excludedTags as tag (tag)}
+      <span class="tag is-small is-danger filter-chip">
+        not {tag}
+        <button
+          type="button"
+          class="delete is-small"
+          aria-label={`Remove the not-${tag} tag filter`}
+          onclick={() => removeExcludedTag(tag)}
         ></button>
       </span>
     {/each}

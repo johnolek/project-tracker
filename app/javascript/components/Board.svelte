@@ -18,6 +18,7 @@
   let minPoints = $state(null)
   let maxPoints = $state(null)
   let selectedTags = $state([])
+  let excludedTags = $state([])
   // The review queue is this board filtered to flagged items (PROJ-65).
   // ?review=1 deep-links into that state (islands remount per Turbo visit, so
   // reading the URL here follows navigation).
@@ -78,10 +79,14 @@
       minPoints: minBound,
       maxPoints: maxBound,
       tags: selectedTags,
+      excludeTags: excludedTags,
     })
   }
 
+  // A card-tag click means "show me this tag": it lifts any exclusion and
+  // toggles the include filter as before.
   function toggleTag(tag) {
+    excludedTags = excludedTags.filter((candidate) => candidate !== tag)
     selectedTags = selectedTags.includes(tag)
       ? selectedTags.filter((candidate) => candidate !== tag)
       : [...selectedTags, tag]
@@ -109,6 +114,7 @@
     minPoints = null
     maxPoints = null
     selectedTags = []
+    excludedTags = []
     reviewOnly = false
   }
 
@@ -269,6 +275,7 @@
     bind:minPoints
     bind:maxPoints
     bind:selectedTags
+    bind:excludedTags
     bind:reviewOnly
     showReview
     {reviewCount}

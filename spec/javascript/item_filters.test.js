@@ -13,6 +13,7 @@ describe("matchesFilters (shared cases)", () => {
         minPoints: testCase.filters.min_points ?? null,
         maxPoints: testCase.filters.max_points ?? null,
         tags: testCase.filters.tags ?? [],
+        excludeTags: testCase.filters.exclude_tags ?? [],
       }
       expect(matchesFilters(item, filters)).toBe(testCase.expected)
     })

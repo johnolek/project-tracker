@@ -7,7 +7,7 @@
 // Bounds handling: unpointed items are excluded once a minimum is set (an item
 // with no estimate can't be shown to clear a floor) but pass under any maximum
 // (a ceiling shouldn't hide work simply because it lacks an estimate).
-export default function matchesFilters(item, { query = "", reviewOnly = false, itemType = "", minPoints = null, maxPoints = null, tags = [] }) {
+export default function matchesFilters(item, { query = "", reviewOnly = false, itemType = "", minPoints = null, maxPoints = null, tags = [], excludeTags = [] }) {
   const normalizedQuery = query.trim().toLowerCase()
   if (
     normalizedQuery &&
@@ -19,5 +19,6 @@ export default function matchesFilters(item, { query = "", reviewOnly = false, i
   if (minPoints != null && (item.points == null || item.points < minPoints)) return false
   if (maxPoints != null && item.points != null && item.points > maxPoints) return false
   if (tags.length && !tags.every((tag) => item.tags.includes(tag))) return false
+  if (excludeTags.length && excludeTags.some((tag) => item.tags.includes(tag))) return false
   return true
 }
