@@ -43,7 +43,10 @@ Rails.application.routes.draw do
 
   namespace :settings do
     resource :account, only: %i[edit update], controller: "account"
-    resource :admin, only: %i[edit update], controller: "admin"
+    resource :admin, only: %i[edit update], controller: "admin" do
+      post "failed_emails/:failed_execution_id/retry", action: :retry_email, as: :retry_failed_email
+      delete "failed_emails/:failed_execution_id", action: :discard_email, as: :failed_email
+    end
     resources :api_keys, only: %i[index create destroy]
     resources :statuses, only: %i[index create update destroy] do
       patch :move, on: :member

@@ -26,4 +26,32 @@
       </div>
     <% end %>
   </div>
+
+  <div class="box">
+    <h2 class="title is-5">Email deliveries</h2>
+    <% if @failed_emails.any? %>
+      <table class="table is-fullwidth">
+        <thead>
+          <tr><th>Mail</th><th>Error</th><th>Failed</th><th></th></tr>
+        </thead>
+        <tbody>
+          <% @failed_emails.each do |failed| %>
+            <tr>
+              <td><code><%= failed.mailer %>#<%= failed.action %></code></td>
+              <td class="failed-email-error"><%= failed.message %></td>
+              <td><%= time_ago_in_words(failed.failed_at) %> ago</td>
+              <td>
+                <%= button_to "Retry", retry_failed_email_settings_admin_path(failed_execution_id: failed.failed_execution_id),
+                      method: :post, class: "button is-small", form: { class: "is-inline" } %>
+                <%= button_to "Dismiss", failed_email_settings_admin_path(failed_execution_id: failed.failed_execution_id),
+                      method: :delete, class: "button is-small is-light", form: { class: "is-inline" } %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p class="has-text-weak">No failed deliveries.</p>
+    <% end %>
+  </div>
 </div>

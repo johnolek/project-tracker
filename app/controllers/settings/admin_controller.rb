@@ -6,12 +6,23 @@ module Settings
 
     def edit
       @setting = AppSetting.instance
+      @failed_emails = FailedEmail.all
     end
 
     def update
       @setting = AppSetting.instance
       @setting.update!(allow_signups: parse_tristate(params.dig(:app_setting, :allow_signups)))
       redirect_to edit_settings_admin_path, notice: "Settings saved."
+    end
+
+    def retry_email
+      FailedEmail.retry(params[:failed_execution_id])
+      redirect_to edit_settings_admin_path, notice: "Delivery re-enqueued."
+    end
+
+    def discard_email
+      FailedEmail.discard(params[:failed_execution_id])
+      redirect_to edit_settings_admin_path, notice: "Failure dismissed."
     end
 
     private

@@ -90,6 +90,15 @@
 
     <main class="section">
       <div class="container">
+        <%# A failed outbound email is a real problem (magic links are the
+            passkey recovery path), so it gets a persistent banner, not a log
+            line (PROJ-84). %>
+        <% if signed_in? && (failed_email_count = FailedEmail.count) > 0 %>
+          <div class="notification is-danger">
+            <%= pluralize(failed_email_count, "email") %> failed to send.
+            <%= link_to "Review and retry in Admin settings", edit_settings_admin_path, class: "has-text-weight-semibold" %>
+          </div>
+        <% end %>
         <% if signed_in? && current_user.email.blank? %>
           <div class="notification is-warning">
             Add a recovery email so you can always get back in — even without your passkey.
