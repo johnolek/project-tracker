@@ -6,6 +6,7 @@ import { mount, unmount } from "svelte"
 import Board from "./components/Board.svelte"
 import CommentEditor from "./components/CommentEditor.svelte"
 import CopyButton from "./components/CopyButton.svelte"
+import FeedbackWidget from "./components/FeedbackWidget.svelte"
 import ItemEditor from "./components/ItemEditor.svelte"
 import ItemLinkField from "./components/ItemLinkField.svelte"
 import ItemSidebar from "./components/ItemSidebar.svelte"
@@ -15,7 +16,7 @@ import ReviewQueueLink from "./components/ReviewQueueLink.svelte"
 import ThemeSettings from "./components/ThemeSettings.svelte"
 import Toasts from "./components/Toasts.svelte"
 
-const registry = { Board, CommentEditor, CopyButton, ItemEditor, ItemLinkField, ItemSidebar, Prioritize, ReviewBanner, ReviewQueueLink, ThemeSettings, Toasts }
+const registry = { Board, CommentEditor, CopyButton, FeedbackWidget, ItemEditor, ItemLinkField, ItemSidebar, Prioritize, ReviewBanner, ReviewQueueLink, ThemeSettings, Toasts }
 const active = new Map()
 
 function mountIslands() {

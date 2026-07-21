@@ -60,6 +60,14 @@ RSpec.describe "API v1 items", type: :request do
       expect(item_ids).to eq([ machine.id ])
     end
 
+    it "filters by source=embed" do
+      widget = create(:item, project: project, title: "From the widget", source: "embed")
+
+      get api_v1_items_path, params: { source: "embed" }, headers: auth_headers
+
+      expect(item_ids).to eq([ widget.id ])
+    end
+
     it "filters by ai_reviewed in both directions" do
       signed_off = create(:item, project: project, title: "Signed off", ai_reviewed_at: 1.hour.ago)
 
@@ -228,7 +236,7 @@ RSpec.describe "API v1 items", type: :request do
       expect(json_body.keys).to match_array(
         %w[id key number title item_type points strength source ai_reviewed_at provenance
            needs_review review_requested_at review_note
-           status project parent children links tags notes_html notes_text attachments created_at updated_at]
+           status project parent children links tags metadata notes_html notes_text attachments created_at updated_at]
       )
       expect(json_body).to include(
         "id" => item.id,
@@ -245,6 +253,7 @@ RSpec.describe "API v1 items", type: :request do
         "review_requested_at" => nil,
         "review_note" => nil,
         "tags" => %w[alpha beta],
+        "metadata" => {},
         "notes_text" => "Hello world"
       )
       expect(json_body["notes_html"]).to include("<strong>world</strong>")
@@ -319,6 +328,15 @@ RSpec.describe "API v1 items", type: :request do
   end
 
   describe "POST /api/v1/projects/:project_id/items" do
+    it "stores a metadata object on create" do
+      post api_v1_project_items_path(project), headers: auth_headers, params: {
+        item: { title: "With context", metadata: { "page_url" => "https://example.com", "viewport" => "1440x900" } }
+      }
+
+      expect(response).to have_http_status(:created)
+      expect(json_body["metadata"]).to eq("page_url" => "https://example.com", "viewport" => "1440x900")
+    end
+
     it "creates an item with tags and a status resolved by name" do
       post api_v1_project_items_path(project), headers: auth_headers, params: {
         item: {
@@ -444,6 +462,27 @@ RSpec.describe "API v1 items", type: :request do
       patch api_v1_item_path(item), headers: auth_headers, params: { item: { title: "Renamed" } }
 
       expect(item.reload.tag_names).to eq(%w[keeper])
+    end
+
+    it "shallow-merges a metadata patch and deletes keys sent as null" do
+      item = create(:item, project: project)
+      item.update!(metadata: { "page_url" => "https://example.com", "keep" => "yes" })
+
+      patch api_v1_item_path(item), headers: auth_headers,
+            params: { item: { metadata: { "page_url" => "https://example.com/new", "keep" => nil, "added" => "1" } } }
+
+      expect(response).to have_http_status(:ok)
+      expect(item.reload.metadata).to eq("page_url" => "https://example.com/new", "added" => "1")
+      expect(json_body["metadata"]).to eq("page_url" => "https://example.com/new", "added" => "1")
+    end
+
+    it "leaves metadata untouched when the key is absent" do
+      item = create(:item, project: project)
+      item.update!(metadata: { "keep" => "yes" })
+
+      patch api_v1_item_path(item), headers: auth_headers, params: { item: { title: "Renamed" } }
+
+      expect(item.reload.metadata).to eq("keep" => "yes")
     end
 
     it "stamps ai_reviewed_at once, keeps the first sign-off time, and clears on false" do

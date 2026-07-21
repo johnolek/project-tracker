@@ -39,6 +39,7 @@ module Api
             pairs.map { |link, other| reference(other).merge(link_id: link.id) }
           end,
           tags: item.tags.map(&:name).sort,
+          metadata: item.metadata,
           notes_html: item.notes.to_s,
           notes_text: item.notes.to_plain_text,
           attachments: attachments(item),

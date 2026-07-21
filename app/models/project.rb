@@ -5,6 +5,7 @@ class Project < ApplicationRecord
   belongs_to :organization
   has_many :items, dependent: :destroy
   has_many :slug_aliases, class_name: "ProjectSlugAlias", dependent: :destroy
+  has_many :embed_domains, dependent: :destroy
 
   normalizes :slug, with: ->(slug) { slug.strip.upcase }
 

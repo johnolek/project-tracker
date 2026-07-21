@@ -7,7 +7,7 @@ const minify = process.argv.includes("--minify")
 // css: "injected" keeps component styles out of the build output so the
 // sass pipeline stays the sole writer of app/assets/builds/application.css.
 const options = {
-  entryPoints: ["app/javascript/application.js"],
+  entryPoints: ["app/javascript/application.js", "app/javascript/embed.js"],
   bundle: true,
   format: "esm",
   sourcemap: true,

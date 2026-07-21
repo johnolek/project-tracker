@@ -4,9 +4,10 @@ class Item < ApplicationRecord
   # retired names, which are folded into their replacement on assignment.
   LEGACY_ITEM_TYPES = { "task" => "feature", "enhancement" => "feature" }.freeze
 
-  # Where the item was created, mirroring Comment::SOURCES: "web" is a person
-  # in a browser session, "api" is Claude/an LLM driving the JSON API.
-  SOURCES = %w[web api].freeze
+  # Where the item was created: "web" is a person in a browser session, "api"
+  # is Claude/an LLM driving the JSON API, "embed" is the embeddable feedback
+  # widget (PROJ-89) submitting from an allowlisted host.
+  SOURCES = %w[web api embed].freeze
 
   # Estimates offered by the UI (fibonacci up to 13). Not a validation: the API
   # may still write other positive integers, and such values keep rendering.
@@ -261,6 +262,19 @@ class Item < ApplicationRecord
   #   (machine-created) rather than the web UI
   def from_api?
     source == "api"
+  end
+
+  # Shallow-merges a patch into the free-form metadata jsonb (PROJ-89): string
+  # keys overwrite, and a nil value deletes that key. A no-op for a nil patch,
+  # so callers can pass the raw (possibly absent) request value.
+  #
+  # @param patch [Hash, nil] keys to set, with nil to delete
+  # @return [void]
+  def apply_metadata_patch(patch)
+    return unless patch.is_a?(Hash)
+
+    merged = metadata.merge(patch.stringify_keys)
+    self.metadata = merged.reject { |_key, value| value.nil? }
   end
 
   # @return [Boolean] whether the item is currently flagged for review

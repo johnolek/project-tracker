@@ -1,0 +1,61 @@
+// Embeddable feedback widget loader (PROJ-89). A host page includes this with
+// a single async <script src=".../embed.js"> tag. It injects a fixed iframe
+// pointing at the tracker's /embed/frame, kept invisible until the frame
+// reports a size — so a non-allowlisted host (frame 404s, never posts) shows
+// nothing at all. All framing/sizing is driven by postMessage; the loader
+// forwards fresh page context so the form can attach the current URL/viewport.
+(function () {
+  var script = document.currentScript;
+  if (!script) return;
+
+  var trackerOrigin = new URL(script.src).origin;
+  var frameSrc = trackerOrigin + "<%= embed_frame_path %>?origin=" +
+    encodeURIComponent(location.origin);
+
+  var iframe = document.createElement("iframe");
+  iframe.src = frameSrc;
+  iframe.title = "Feedback";
+  iframe.setAttribute("allow", "display-capture");
+  iframe.style.cssText = [
+    "position:fixed",
+    "bottom:16px",
+    "right:16px",
+    "width:0",
+    "height:0",
+    "border:0",
+    "z-index:2147483647",
+    "background:transparent",
+    "color-scheme:normal",
+    "overflow:hidden"
+  ].join(";");
+
+  function sendContext() {
+    if (!iframe.contentWindow) return;
+    iframe.contentWindow.postMessage({
+      type: "pt-embed:context",
+      url: location.href,
+      viewport: { width: window.innerWidth, height: window.innerHeight }
+    }, trackerOrigin);
+  }
+
+  iframe.addEventListener("load", sendContext);
+  window.addEventListener("resize", sendContext);
+
+  window.addEventListener("message", function (event) {
+    if (event.origin !== trackerOrigin) return;
+    var data = event.data || {};
+    if (data.type !== "pt-embed:size") return;
+    iframe.style.width = Math.max(0, data.width) + "px";
+    iframe.style.height = Math.max(0, data.height) + "px";
+  });
+
+  function inject() {
+    document.body.appendChild(iframe);
+  }
+
+  if (document.body) {
+    inject();
+  } else {
+    document.addEventListener("DOMContentLoaded", inject);
+  }
+})();

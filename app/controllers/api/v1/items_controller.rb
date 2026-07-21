@@ -36,6 +36,7 @@ module Api
       def create
         project = find_organization_project(params[:project_id])
         item = project.items.new(item_attributes.merge(source: "api"))
+        item.apply_metadata_patch(metadata_patch)
         return unless assign_status(item: item)
         return unless assign_parent(item: item)
 
@@ -45,6 +46,7 @@ module Api
 
       def update
         @item.assign_attributes(item_attributes)
+        @item.apply_metadata_patch(metadata_patch)
         apply_ai_reviewed(item: @item)
         apply_review(item: @item)
         return unless assign_status(item: @item)
@@ -86,6 +88,19 @@ module Api
       def item_params
         params.require(:item).permit(:title, :notes, :item_type, :points, :status, :parent, :ai_reviewed,
                                      :review, :review_note, :tags, tags: [])
+      end
+
+      # The free-form metadata patch (PROJ-89): arbitrary keys are stored as-is
+      # (shallow-merged by the model), so the whole nested hash is taken raw
+      # rather than filtered through strong-params keys. nil returned when the
+      # key is absent, so metadata is left untouched.
+      #
+      # @return [Hash, nil]
+      def metadata_patch
+        raw = params.fetch(:item, {})[:metadata]
+        return nil if raw.blank?
+
+        raw.respond_to?(:to_unsafe_h) ? raw.to_unsafe_h : raw.to_h
       end
 
       # notes arrive as HTML and are sanitized on write to the tags the rhino

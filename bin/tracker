@@ -31,7 +31,9 @@ USAGE = <<~TEXT
     item ID                           Show one item
     create-item PROJECT_ID --title T [--notes HTML] [--type T]
           [--points N] [--tags a,b] [--status NAME] [--parent KEY|ID]
-    update-item ID [same flags as create-item; --parent none clears]
+          [--metadata '<json>']
+    update-item ID [same flags as create-item; --parent none clears;
+          --metadata '<json>' shallow-merges (null value deletes a key)]
     delete-item ID
     advance ID                        Move item to the next status
     link ID --kind K --target REF     Relate two items. K: blocks, blocked_by,
@@ -93,6 +95,15 @@ def parse_flags(argv)
     flags[flag.delete_prefix("--").tr("-", "_")] = value.dup.force_encoding(Encoding::UTF_8)
   end
   flags["item_type"] = flags.delete("type") if flags.key?("type")
+  # --metadata takes a JSON object, sent as a nested object the API shallow-
+  # merges (a null value deletes that key), not a JSON string.
+  if flags.key?("metadata")
+    begin
+      flags["metadata"] = JSON.parse(flags["metadata"])
+    rescue JSON::ParserError => error
+      abort "--metadata must be valid JSON: #{error.message}"
+    end
+  end
   flags
 end
 

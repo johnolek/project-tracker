@@ -1610,3 +1610,187 @@ $tag-colors: (
     font-size: 16px;
   }
 }
+
+// PROJ-89: item metadata definition list on the item page. Compact key/value
+// rows; keys sit in the weak text color, values wrap.
+.item-metadata {
+  margin-top: 1.5rem;
+}
+
+.item-metadata-list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 1rem;
+  align-items: baseline;
+
+  dt {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--bulma-text-weak);
+  }
+
+  dd {
+    font-size: 0.9rem;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+}
+
+// PROJ-89: embeddable feedback widget, rendered inside the /embed/frame iframe.
+// The frame body is transparent so only the widget shows through; the loader
+// sizes the iframe to the widget's measured box (a little padding leaves room
+// for the shadow so it isn't clipped by the iframe edge).
+.embed-frame-body {
+  margin: 0;
+  background: transparent;
+}
+
+.feedback-widget {
+  padding: 12px;
+  box-sizing: border-box;
+  font-family: var(--bulma-body-family, sans-serif);
+}
+
+.feedback-tab {
+  display: inline-block;
+  border: 0;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: var(--bulma-primary);
+  color: var(--bulma-primary-invert);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.feedback-panel {
+  width: 320px;
+  max-width: 90vw;
+  background: var(--bulma-scheme-main);
+  color: var(--bulma-text);
+  border: 1px solid var(--bulma-border);
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+}
+
+.feedback-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.9rem;
+  background: var(--bulma-scheme-main-bis);
+  border-bottom: 1px solid var(--bulma-border-weak);
+}
+
+.feedback-panel-title {
+  font-weight: 600;
+}
+
+.feedback-close {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--bulma-text-weak);
+
+  &:hover {
+    color: var(--bulma-text);
+  }
+}
+
+.feedback-form,
+.feedback-success {
+  padding: 0.9rem;
+}
+
+.feedback-field {
+  margin-bottom: 0.75rem;
+}
+
+.feedback-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+  color: var(--bulma-text-weak);
+}
+
+.feedback-toggle {
+  display: inline-flex;
+  border: 1px solid var(--bulma-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.feedback-toggle-option {
+  border: 0;
+  cursor: pointer;
+  padding: 0.35rem 1rem;
+  font-size: 0.85rem;
+  background: var(--bulma-scheme-main);
+  color: var(--bulma-text);
+
+  & + & {
+    border-left: 1px solid var(--bulma-border);
+  }
+
+  &.is-active {
+    background: var(--bulma-primary);
+    color: var(--bulma-primary-invert);
+  }
+}
+
+.feedback-shot-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.feedback-attach {
+  cursor: pointer;
+}
+
+.feedback-thumb {
+  position: relative;
+  display: inline-block;
+  border: 1px solid var(--bulma-border);
+  border-radius: 6px;
+  overflow: hidden;
+
+  img {
+    display: block;
+    max-width: 100%;
+    max-height: 140px;
+  }
+}
+
+.feedback-thumb-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  border: 0;
+  cursor: pointer;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  font-size: 1rem;
+  line-height: 1;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+}
+
+.feedback-actions {
+  margin-top: 0.5rem;
+}
+
+.feedback-error {
+  color: var(--bulma-danger);
+  font-size: 0.85rem;
+  margin-bottom: 0.6rem;
+}
+
+.feedback-success-line {
+  margin-bottom: 0.75rem;
+}

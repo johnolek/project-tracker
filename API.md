@@ -63,6 +63,7 @@ envelope keyed by the collection name; only item indexes are paginated.
     "relates_to": []
   },
   "tags": ["backend", "urgent"],
+  "metadata": { "page_url": "https://chesshair.com/board", "viewport": "1440x900" },
   "notes_html": "<div class=\"trix-content\">\n  <p>Steps to reproduce...</p>\n</div>\n",
   "notes_text": "Steps to reproduce...",
   "attachments": [
@@ -86,7 +87,8 @@ envelope keyed by the collection name; only item indexes are paginated.
 - `notes_text` — plain-text rendering of the notes; `""` when blank.
 - `attachments` — files embedded in the notes (Trix uploads such as pasted screenshots), in document order; `[]` when there are none. Each has `filename`, `content_type`, `byte_size`, `width`/`height` (pixels for analyzed images, else `null`), and `url`. The `url` is directly fetchable — the signed blob id in the path is the capability, so **no `Authorization` header is required** (and the underlying blob is public to anyone holding the URL). It first 302-redirects to the storage service, so follow redirects (`curl -L`).
 - `strength` / `points` — Bradley-Terry priority log-strength (float; comparisons are project-scoped, so strengths order items within a project; higher means higher priority) and estimation points (integer or null).
-- `source` — `"web"` (created from the web UI) or `"api"` (created through this API; every item created via `POST` is stamped `"api"`).
+- `source` — `"web"` (created from the web UI), `"api"` (created through this API; every item created via `POST` is stamped `"api"`), or `"embed"` (created by the embeddable feedback widget on an allowlisted host).
+- `metadata` — a free-form JSON object of arbitrary keys (`{}` when empty). General-purpose structured data attached to the item; the feedback widget stores `page_url`, `viewport`, and `user_agent` here. Set on create and shallow-merged on update (see below).
 - `ai_reviewed_at` — timestamp of the LLM's sign-off after revising a person-created item, or null. Set/cleared with the `ai_reviewed` boolean on update.
 - `provenance` — derived display state: `"ai_created"` (source is api), `"ai_reviewed"` (web-created with `ai_reviewed_at` set), else `"user_created"`.
 - `needs_review` / `review_requested_at` / `review_note` — the review flag (set aside during prioritizing): whether it's flagged, when, and an optional free-text reason. A flagged item is excluded from the comparison pool until cleared. Set/cleared with the `review` boolean on update, and `review_note` sets the reason.
@@ -156,7 +158,7 @@ All filters combine (AND) and are available on both routes:
 | `tags_match` | `all` — item must have every listed tag |
 | `points` | Exact points value |
 | `points_lt` / `points_lte` / `points_gt` / `points_gte` | Points comparisons (items with null points never match) |
-| `source` | `web` or `api` — where the item was created |
+| `source` | `web`, `api`, or `embed` — where the item was created |
 | `ai_reviewed` | `true` — only items an LLM has signed off; anything else — only items without a sign-off |
 | `needs_review` | `true` — only items flagged for review (the review queue); `false` — only unflagged items |
 | `parent` | Direct sub-items of the given item (id or key, e.g. `parent=TRAC-10`; unknown → 404). `parent=none` — root items only. |
@@ -193,6 +195,7 @@ Fields (all optional except `title`):
 - `status` — status **name**, case-insensitive, resolved within the organization. Omitted → the organization's default (first open) status. Unknown name → 422 `{ "error": "Unknown status: <name>" }`.
 - `parent` — item id or key to group this item under (`"none"` or `""` clears it on update). Unresolvable reference → 422 `{ "error": "Unknown parent: <ref>" }`; a parent in another project or one of the item's own sub-items → 422 with a validation error.
 - `tags` — array of names **or** one comma-separated string; unknown tags are created automatically
+- `metadata` — a JSON object of arbitrary keys stored as-is. On create it seeds the item's metadata. On update it is **shallow-merged** into the existing metadata: listed keys overwrite, a `null` value deletes that key, and unlisted keys are left untouched. Omit the key to leave metadata alone.
 
 ```bash
 curl -X POST http://localhost:3000/api/v1/projects/7/items \
@@ -227,7 +230,8 @@ curl http://localhost:3000/api/v1/items/TRAC-12 \
 # false clears it. `review` (boolean) flags/clears the review flag — true removes
 # the item from the prioritization pool, false returns it — and `review_note`
 # sets the reason. `tags` REPLACES the full tag set
-# (send [] to clear); omit the key to leave tags untouched.
+# (send [] to clear); omit the key to leave tags untouched. `metadata`
+# shallow-merges (a null value deletes that key); omit to leave it untouched.
 curl -X PATCH http://localhost:3000/api/v1/items/42 \
   -H "Authorization: Bearer pt_YOUR_TOKEN" \
   -H "Content-Type: application/json" \

@@ -12,6 +12,34 @@ module ApplicationHelper
     tag.span(item.item_type, class: "item-type-tag", style: style)
   end
 
+  # Renders an item's free-form metadata (PROJ-89) as a compact definition
+  # list. Keys are humanized; values that parse as http(s) URLs become links,
+  # everything else renders as escaped text.
+  #
+  # @param metadata [Hash]
+  # @return [ActiveSupport::SafeBuffer]
+  def item_metadata_list(metadata)
+    tag.dl class: "item-metadata-list" do
+      safe_join(metadata.map do |key, value|
+        concat(tag.dt(key.to_s.humanize))
+        concat(tag.dd(metadata_value(value)))
+        "".html_safe
+      end)
+    end
+  end
+
+  # @param value [Object] a metadata value
+  # @return [ActiveSupport::SafeBuffer] a link when the value looks like an
+  #   http(s) URL, otherwise the escaped text
+  def metadata_value(value)
+    text = value.to_s
+    if text.match?(%r{\Ahttps?://}i)
+      link_to(text, text, target: "_blank", rel: "noopener nofollow")
+    else
+      text
+    end
+  end
+
   # Readable foreground for a hex background (delegates to ItemType so ERB and
   # the JSON props share one luminance rule).
   #

@@ -1,0 +1,76 @@
+<% content_for :title, "Embeds" %>
+<h1 class="title">Embeds</h1>
+<p class="subtitle is-6 has-text-weak">
+  Host → project mappings for the embeddable feedback widget. A host page adds
+  <code>&lt;script src="<%= embed_loader_url %>" async&gt;&lt;/script&gt;</code>;
+  submissions from an allowlisted host create items in its mapped project.
+</p>
+
+<%= form_with model: @embed_domain, url: settings_embeds_path do |form| %>
+  <% if form.object.errors.any? %>
+    <div class="notification is-danger is-light">
+      <ul>
+        <% form.object.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field is-grouped is-align-items-flex-end">
+    <div class="control">
+      <%= form.label :host, class: "label" %>
+      <%= form.text_field :host, class: "input", placeholder: "chesshair.com or localhost:5173" %>
+    </div>
+    <div class="control">
+      <%= form.label :project_id, "Project", class: "label" %>
+      <div class="select">
+        <%= form.collection_select :project_id, current_organization.projects.order(:name), :id, :name,
+              { prompt: "Select a project" } %>
+      </div>
+    </div>
+    <div class="control">
+      <%= form.submit "Add embed", class: "button is-primary" %>
+    </div>
+  </div>
+<% end %>
+
+<% if @embed_domains.any? %>
+  <table class="table is-fullwidth">
+    <thead>
+      <tr>
+        <th>Host</th>
+        <th>Project</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @embed_domains.each do |embed_domain| %>
+        <tr>
+          <td class="is-vcentered"><code><%= embed_domain.host %></code></td>
+          <td>
+            <%= form_with model: embed_domain, url: settings_embed_path(embed_domain), method: :patch,
+                  class: "field has-addons mb-0" do |form| %>
+              <div class="control">
+                <div class="select is-small">
+                  <%= form.collection_select :project_id, current_organization.projects.order(:name), :id, :name,
+                        {}, { "aria-label": "Project" } %>
+                </div>
+              </div>
+              <div class="control">
+                <%= form.submit "Save", class: "button is-small" %>
+              </div>
+            <% end %>
+          </td>
+          <td class="has-text-right">
+            <%= button_to "Delete", settings_embed_path(embed_domain), method: :delete,
+                  class: "button is-danger is-light is-small",
+                  form: { data: { turbo_confirm: "Delete the embed for \"#{embed_domain.host}\"?" } } %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p class="has-text-weak">No embeds yet.</p>
+<% end %>

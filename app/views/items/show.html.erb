@@ -54,6 +54,13 @@
     <div data-svelte-component="ItemEditor"
          data-props="<%= item_editor_props(project: @project, item: @item).to_json %>"></div>
 
+    <% if @item.metadata.present? %>
+      <section class="item-metadata">
+        <h2 class="title is-5">Details</h2>
+        <%= item_metadata_list(@item.metadata) %>
+      </section>
+    <% end %>
+
     <% if @children.any? %>
       <section class="sub-items">
         <h2 class="title is-5">Sub-items</h2>

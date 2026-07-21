@@ -23,6 +23,7 @@ class Organization < ApplicationRecord
   has_many :item_types, dependent: :destroy
   has_many :tags, dependent: :destroy
   has_many :api_keys, dependent: :destroy
+  has_many :embed_domains, dependent: :destroy
 
   validates :name, presence: true
 

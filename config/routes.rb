@@ -24,6 +24,13 @@ Rails.application.routes.draw do
 
   get "search", to: "search#show", as: :search
 
+  # Embeddable feedback widget (PROJ-89). All three endpoints are identity-free
+  # (no session, no CSRF, no CORS): the loader script, the framed submission
+  # form, and its multipart submit target.
+  get "embed.js", to: "embed#loader", as: :embed_loader, defaults: { format: "js" }
+  get "embed/frame", to: "embed#frame", as: :embed_frame
+  post "embed/items", to: "embed#create", as: :embed_items
+
   resources :projects do
     member do
       get :prioritize, to: "comparisons#new"
@@ -56,6 +63,7 @@ Rails.application.routes.draw do
     resources :item_types, only: %i[index create update destroy] do
       patch :move, on: :member
     end
+    resources :embeds, only: %i[index create update destroy], controller: "embeds"
     resources :credentials, only: %i[index create destroy] do
       post :options, on: :collection
     end

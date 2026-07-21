@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<%# Minimal standalone layout for the embedded feedback frame (PROJ-89): no app
+    chrome, transparent background, its own lightweight JS bundle. Reuses the
+    app stylesheet so the widget inherits the Southwest theme. %>
+<html data-theme="auto">
+  <head>
+    <title>Feedback</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= stylesheet_link_tag :app %>
+    <%= javascript_include_tag "embed", type: "module" %>
+  </head>
+  <body class="embed-frame-body">
+    <%= yield %>
+  </body>
+</html>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_21_002234) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_21_010001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -108,6 +108,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_002234) do
     t.index ["user_id"], name: "index_credentials_on_user_id"
   end
 
+  create_table "embed_domains", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "host", null: false
+    t.bigint "organization_id", null: false
+    t.bigint "project_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["host"], name: "index_embed_domains_on_host", unique: true
+    t.index ["organization_id"], name: "index_embed_domains_on_organization_id"
+    t.index ["project_id"], name: "index_embed_domains_on_project_id"
+  end
+
   create_table "item_links", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "kind", null: false
@@ -145,6 +156,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_002234) do
     t.datetime "created_at", null: false
     t.boolean "draft", default: false, null: false
     t.string "item_type", default: "feature", null: false
+    t.jsonb "metadata", default: {}, null: false
     t.integer "number", null: false
     t.bigint "parent_id"
     t.integer "points"
@@ -381,6 +393,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_21_002234) do
   add_foreign_key "comparisons", "items", column: "item_b_id"
   add_foreign_key "comparisons", "users"
   add_foreign_key "credentials", "users"
+  add_foreign_key "embed_domains", "organizations"
+  add_foreign_key "embed_domains", "projects"
   add_foreign_key "item_links", "items", column: "source_id"
   add_foreign_key "item_links", "items", column: "target_id"
   add_foreign_key "item_tags", "items"
