@@ -1435,7 +1435,8 @@ $tag-colors: (
   }
 }
 
-// Create/Discard bar shown on a draft's item page (PROJ-86).
+// Create/Discard bar shown on a draft's item page (PROJ-86): a slim strip,
+// not a billboard — "Draft" plus the two actions.
 .draft-bar {
   display: flex;
   align-items: center;
@@ -1443,6 +1444,7 @@ $tag-colors: (
   flex-wrap: wrap;
   gap: 0.75rem;
   margin-top: 1rem;
+  padding: 0.5rem 0.9rem;
 
   .draft-bar-actions {
     margin-bottom: 0;

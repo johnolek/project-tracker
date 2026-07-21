@@ -246,13 +246,15 @@ RSpec.describe "Draft items — create-in-place (PROJ-86)", type: :request do
   end
 
   describe "the draft item page" do
-    it "shows the Create/Discard bar and hides the published-item actions" do
+    it "shows Create/Discard top and bottom, hiding published-item actions and comments" do
       draft = create(:item, project: project, draft: true, title: "")
 
       get project_item_path(project, draft)
 
-      expect(response.body).to include("draft-bar")
-      expect(response.body).to include(publish_project_item_path(project, draft))
+      document = Nokogiri::HTML(response.body)
+      expect(document.at_css(".draft-bar")).to be_present
+      expect(document.css(%(form[action="#{publish_project_item_path(project, draft)}"])).size).to eq(2)
+      expect(document.at_css(".comment-thread")).to be_nil
       expect(response.body).not_to include("Prioritize this")
       expect(response.body).not_to include("Add sub-item")
     end

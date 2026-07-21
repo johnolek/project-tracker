@@ -1,0 +1,6 @@
+<%# Create/Discard pair for a draft (PROJ-86), rendered in the top bar and
+    again at the bottom of the page. %>
+<%= button_to "Create item", publish_project_item_path(@project, @item), method: :patch,
+      class: "button is-primary is-small", form: { class: "mb-0" } %>
+<%= button_to "Discard", project_item_path(@project, @item), method: :delete,
+      class: "button is-small", form: { class: "mb-0", data: { turbo_confirm: "Discard this draft?" } } %>

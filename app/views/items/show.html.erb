@@ -33,17 +33,11 @@
 
 <% if @item.draft? %>
   <%# Create-in-place (PROJ-86): this page IS the new-item form. The draft is
-      invisible everywhere until published from this bar. %>
+      invisible everywhere until published. %>
   <div class="notification is-warning draft-bar">
-    <span class="draft-bar-label">
-      <strong>Draft</strong> — fill in a title (and whatever else), then create it.
-      It stays off the board and out of prioritizing until then.
-    </span>
+    <strong>Draft</strong>
     <span class="buttons draft-bar-actions">
-      <%= button_to "Create item", publish_project_item_path(@project, @item), method: :patch,
-            class: "button is-primary is-small", form: { class: "mb-0" } %>
-      <%= button_to "Discard", project_item_path(@project, @item), method: :delete,
-            class: "button is-small", form: { class: "mb-0", data: { turbo_confirm: "Discard this draft?" } } %>
+      <%= render "draft_actions" %>
     </span>
   </div>
 <% end %>
@@ -108,6 +102,7 @@
       <% end %>
     </section>
 
+    <% unless @item.draft? %>
     <section class="comment-thread">
       <h2 class="title is-4">Comments</h2>
 
@@ -150,6 +145,13 @@
         </div>
       <% end %>
     </section>
+    <% end %>
+
+    <% if @item.draft? %>
+      <div class="buttons mt-5">
+        <%= render "draft_actions" %>
+      </div>
+    <% end %>
   </div>
 
   <div class="column is-one-third">
