@@ -108,7 +108,8 @@ module ApplicationHelper
       item: item.detail_payload,
       updateUrl: project_item_path(project, item),
       blobUrlTemplate: rails_service_blob_url(":signed_id", ":filename"),
-      directUploadUrl: rails_direct_uploads_url
+      directUploadUrl: rails_direct_uploads_url,
+      draft: item.draft?
     }
   end
 
