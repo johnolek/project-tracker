@@ -66,6 +66,7 @@ RSpec.describe "Item moves", type: :request do
       editor_props = JSON.parse(editor["data-props"])
       expect(editor_props["item"]["title"]).to eq(item.title)
       expect(editor_props["updateUrl"]).to eq(project_item_path(project, item))
+      expect(editor_props["draft"]).to be(false)
 
       sidebar = document.at_css('[data-svelte-component="ItemSidebar"]')
       expect(sidebar).to be_present
@@ -257,6 +258,15 @@ RSpec.describe "Draft items — create-in-place (PROJ-86)", type: :request do
       expect(document.at_css(".comment-thread")).to be_nil
       expect(response.body).not_to include("Prioritize this")
       expect(response.body).not_to include("Add sub-item")
+    end
+
+    it "flags the ItemEditor as a draft so it lands in the focused title editor" do
+      draft = create(:item, project: project, draft: true, title: "")
+
+      get project_item_path(project, draft)
+
+      editor = Nokogiri::HTML(response.body).at_css('[data-svelte-component="ItemEditor"]')
+      expect(JSON.parse(editor["data-props"])["draft"]).to be(true)
     end
   end
 

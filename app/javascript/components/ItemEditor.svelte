@@ -3,12 +3,16 @@
   import focusRhino from "../focus_rhino"
   import hasTextSelection from "../text_selection"
 
-  let { item: initialItem, updateUrl, blobUrlTemplate, directUploadUrl } = $props()
+  let { item: initialItem, updateUrl, blobUrlTemplate, directUploadUrl, draft = false } = $props()
 
   // svelte-ignore state_referenced_locally -- islands remount per visit; props seed state once
   let item = $state(initialItem)
-  let editingTitle = $state(false)
-  let titleDraft = $state("")
+  // A fresh draft lands directly in the title editor with focus (PROJ-90) —
+  // no click needed to start typing. Published items stay click-to-edit.
+  // svelte-ignore state_referenced_locally -- seeds initial editing state once
+  let editingTitle = $state(draft)
+  // svelte-ignore state_referenced_locally -- seeds the title draft once for drafts
+  let titleDraft = $state(draft ? initialItem.title : "")
   let editingNotes = $state(false)
   let saving = $state(false)
 
