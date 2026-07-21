@@ -118,18 +118,21 @@
     <div class="item-meta-row">
       <dt>Points</dt>
       <dd>
-        <div class="select is-small is-fullwidth">
-          <select
-            aria-label="Change points"
-            disabled={saving}
-            value={item.points == null ? "" : String(item.points)}
-            onchange={(event) => save({ points: event.target.value === "" ? null : Number(event.target.value) })}
-          >
-            <option value="">No estimate</option>
-            {#each offeredPoints as option (option)}
-              <option value={String(option)}>{option}</option>
-            {/each}
-          </select>
+        <!-- One-tap estimate (PROJ-87): a segmented radio row instead of a
+             select; tapping the active value clears back to no estimate. -->
+        <div class="buttons has-addons points-buttons" role="radiogroup" aria-label="Points estimate">
+          {#each offeredPoints as option (option)}
+            <button
+              type="button"
+              class="button is-small"
+              class:is-primary={item.points === option}
+              role="radio"
+              aria-checked={item.points === option}
+              disabled={saving}
+              title={item.points === option ? "Tap again to clear the estimate" : `Estimate ${option} ${option === 1 ? "point" : "points"}`}
+              onclick={() => save({ points: item.points === option ? null : option })}
+            >{option}</button>
+          {/each}
         </div>
       </dd>
     </div>

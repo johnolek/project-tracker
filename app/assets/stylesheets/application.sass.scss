@@ -1379,6 +1379,19 @@ $tag-colors: (
   }
 }
 
+// One-tap points row in the item sidebar (PROJ-87). has-addons keeps the
+// segmented look; wrapping stays available for narrow sidebars carrying a
+// legacy non-fibonacci value as an extra segment.
+.points-buttons {
+  margin-bottom: 0;
+  flex-wrap: wrap;
+
+  .button {
+    margin-bottom: 0;
+    min-width: 2.4em;
+  }
+}
+
 // Human key (PROJ-12) sitting quietly above the item title.
 // Copy-key button sits just to the right of the breadcrumb on the item page.
 .breadcrumb-copy {
