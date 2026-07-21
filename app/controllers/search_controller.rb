@@ -25,7 +25,7 @@ class SearchController < ApplicationController
   #   substring, newest first. The key match lets a pasted or typed reference
   #   (full or partial, e.g. "PROJ-4") find its item directly.
   def matching_items
-    Item.joins(:project)
+    Item.published.joins(:project)
         .where(projects: { organization_id: current_organization.id })
         .where(
           "items.title ILIKE :pattern OR (projects.slug || '-' || items.number::text) ILIKE :pattern",

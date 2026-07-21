@@ -201,6 +201,22 @@ RSpec.describe "API v1 items", type: :request do
     end
   end
 
+  describe "web drafts (PROJ-86)" do
+    it "are invisible to the API — listings, id lookup, and key lookup" do
+      published = create(:item, project: project, title: "Real")
+      draft = create(:item, project: project, draft: true, title: "Half-formed")
+
+      get api_v1_items_path, headers: auth_headers
+      expect(item_ids).to contain_exactly(published.id)
+
+      get api_v1_item_path(draft), headers: auth_headers
+      expect(response).to have_http_status(:not_found)
+
+      get api_v1_item_path("#{project.slug}-#{draft.number}"), headers: auth_headers
+      expect(response).to have_http_status(:not_found)
+    end
+  end
+
   describe "GET /api/v1/items/:id" do
     it "returns the full item shape" do
       item = create(:item, project: project, title: "Shaped", points: 2, tag_names: %w[beta alpha],

@@ -92,7 +92,7 @@ RSpec.describe "Item moves", type: :request do
       document = Nokogiri::HTML(response.body)
       sub_items = document.at_css(".sub-items")
       expect(sub_items.text).to include(leaf.key, "Leaf task")
-      expect(response.body).to include(new_project_item_path(project, parent_id: middle.id))
+      expect(response.body).to include(project_items_path(project, parent_id: middle.id))
 
       sidebar_props = JSON.parse(document.at_css('[data-svelte-component="ItemSidebar"]')["data-props"])
       expect(sidebar_props["item"]["parent_id"]).to eq(root.id)
@@ -204,94 +204,132 @@ RSpec.describe "Item moves", type: :request do
   end
 end
 
-RSpec.describe "New item form", type: :request do
+RSpec.describe "Draft items — create-in-place (PROJ-86)", type: :request do
   before { register_passkey(username: "owner") }
 
   let(:organization) { User.find_by(username: "owner").default_organization }
   let(:project) { organization.projects.create!(name: "Board") }
   let(:in_progress) { organization.statuses.find_by!(category: "in_progress") }
 
-  def selected_status_id(body)
-    Nokogiri::HTML(body).at_css('select[name="item[status_id]"] option[selected]')&.attr("value")
+  describe "POST create" do
+    it "births a titleless draft and lands on its item page" do
+      expect {
+        post project_items_path(project)
+      }.to change(Item, :count).by(1)
+
+      item = Item.order(:created_at).last
+      expect(response).to redirect_to(project_item_path(project, item))
+      expect(item).to be_draft
+      expect(item.title).to eq("")
+      expect(item.status).to eq(organization.default_status)
+    end
+
+    it "honors status_id from the board's add button, ignoring a foreign status" do
+      post project_items_path(project, status_id: in_progress.id)
+      expect(Item.order(:created_at).last.status).to eq(in_progress)
+
+      foreign_status = create(:status, category: "open")
+      post project_items_path(project, status_id: foreign_status.id)
+      expect(Item.order(:created_at).last.status).to eq(organization.default_status)
+    end
+
+    it "honors parent_id from Add sub-item, ignoring a draft parent" do
+      parent = create(:item, project: project)
+      draft_parent = create(:item, project: project, draft: true)
+
+      post project_items_path(project, parent_id: parent.id)
+      expect(Item.order(:created_at).last.parent).to eq(parent)
+
+      post project_items_path(project, parent_id: draft_parent.id)
+      expect(Item.order(:created_at).last.parent).to be_nil
+    end
   end
 
-  it "preselects the status named by status_id when it belongs to the org" do
-    get new_project_item_path(project, status_id: in_progress.id)
+  describe "the draft item page" do
+    it "shows the Create/Discard bar and hides the published-item actions" do
+      draft = create(:item, project: project, draft: true, title: "")
 
-    expect(response).to have_http_status(:ok)
-    expect(selected_status_id(response.body)).to eq(in_progress.id.to_s)
+      get project_item_path(project, draft)
+
+      expect(response.body).to include("draft-bar")
+      expect(response.body).to include(publish_project_item_path(project, draft))
+      expect(response.body).not_to include("Prioritize this")
+      expect(response.body).not_to include("Add sub-item")
+    end
   end
 
-  it "falls back to the default status for a status_id from another org" do
-    foreign_status = create(:status, category: "open")
+  describe "PATCH publish" do
+    it "publishes a titled draft and flashes the sticky Add another toast as a POST link" do
+      parent = create(:item, project: project)
+      draft = create(:item, project: project, draft: true, title: "Ship it", status: in_progress, parent: parent)
 
-    get new_project_item_path(project, status_id: foreign_status.id)
+      patch publish_project_item_path(project, draft)
+      follow_redirect!
 
-    expect(response).to have_http_status(:ok)
-    expect(selected_status_id(response.body)).to eq(organization.default_status.id.to_s)
-    expect(response.body).not_to include(%(value="#{foreign_status.id}"))
+      expect(draft.reload).not_to be_draft
+
+      props = Nokogiri::HTML(response.body).at_css('[data-svelte-component="Toasts"]')["data-props"]
+      toast = JSON.parse(props).fetch("toasts").sole
+      expect(toast).to include("type" => "notice", "message" => "#{draft.key} created.", "sticky" => true)
+      expect(toast.dig("action", "label")).to eq("Add another")
+      expect(toast.dig("action", "method")).to eq("post")
+      expect(toast.dig("action", "href")).to eq(project_items_path(project, parent_id: parent.id, status_id: in_progress.id))
+    end
+
+    it "refuses to publish a titleless draft" do
+      draft = create(:item, project: project, draft: true, title: "")
+
+      patch publish_project_item_path(project, draft)
+
+      expect(response).to redirect_to(project_item_path(project, draft))
+      expect(flash[:alert]).to include("Title can't be blank")
+      expect(draft.reload).to be_draft
+    end
   end
 
-  it "falls back to the default status when no status_id is given" do
-    get new_project_item_path(project)
+  describe "draft invisibility" do
+    let!(:published) { create(:item, project: project, title: "Real work") }
+    let!(:draft) { create(:item, project: project, draft: true, title: "Half-formed") }
 
-    expect(selected_status_id(response.body)).to eq(organization.default_status.id.to_s)
-  end
+    it "keeps drafts off the board props" do
+      get project_path(project)
 
-  it "mounts the ParentField typeahead island with the project's items, newest first (PROJ-68)" do
-    older = create(:item, project: project, title: "Older")
-    newer = create(:item, project: project, title: "Newer")
+      props = JSON.parse(Nokogiri::HTML(response.body).at_css('[data-svelte-component="Board"]')["data-props"])
+      expect(props["items"].map { |item| item["id"] }).to contain_exactly(published.id)
+    end
 
-    get new_project_item_path(project, parent_id: older.id)
+    it "keeps drafts out of the prioritize pool" do
+      create(:item, project: project, title: "Also real")
 
-    props = Nokogiri::HTML(response.body).at_css('[data-svelte-component="ParentField"]')["data-props"]
-    parsed = JSON.parse(props)
+      get prioritize_project_path(project, format: :json)
 
-    expect(parsed["name"]).to eq("item[parent_id]")
-    expect(parsed["selectedId"]).to eq(older.id)
-    expect(parsed["options"].map { |option| option["value"] }).to eq([ newer.id, older.id ])
-    expect(parsed["options"].first["label"]).to eq("#{newer.key} — Newer")
-  end
-end
+      ids = response.parsed_body["pair"].map { |item| item["id"] }
+      expect(ids).not_to include(draft.id)
+    end
 
-RSpec.describe "Item creation", type: :request do
-  before { register_passkey(username: "owner") }
+    it "keeps drafts out of the priorities ranking" do
+      get priorities_project_path(project)
 
-  let(:organization) { User.find_by(username: "owner").default_organization }
-  let(:project) { organization.projects.create!(name: "Board") }
-  let(:in_progress) { organization.statuses.find_by!(category: "in_progress") }
+      expect(response.body).to include("Real work")
+      expect(response.body).not_to include("Half-formed")
+    end
 
-  it "creates the item in the status passed through item params" do
-    expect {
-      post project_items_path(project),
-           params: { item: { title: "Ship it", item_type: "feature", status_id: in_progress.id } }
-    }.to change(Item, :count).by(1)
+    it "keeps drafts out of search" do
+      get search_path(q: "Half-formed")
 
-    item = Item.order(:created_at).last
-    expect(response).to redirect_to(project_item_path(project, item))
-    expect(item.status).to eq(in_progress)
-    expect(item.provenance).to eq("user_created")
-  end
+      expect(response.body).not_to include(draft.key)
+    end
 
-  it "uses the org default status when item params omit status_id" do
-    post project_items_path(project), params: { item: { title: "Later", item_type: "feature" } }
+    it "keeps drafts out of sub-item lists and picker options on the item page" do
+      draft.update!(parent: published)
 
-    expect(Item.order(:created_at).last.status).to eq(organization.default_status)
-  end
+      get project_item_path(project, published)
 
-  it "flashes a sticky Add another toast preserving status and parent (PROJ-67)" do
-    parent = create(:item, project: project)
-
-    post project_items_path(project),
-         params: { item: { title: "Ship it", item_type: "feature", status_id: in_progress.id, parent_id: parent.id } }
-    follow_redirect!
-
-    props = Nokogiri::HTML(response.body).at_css('[data-svelte-component="Toasts"]')["data-props"]
-    toast = JSON.parse(props).fetch("toasts").sole
-
-    expect(toast).to include("type" => "notice", "message" => "Item created.", "sticky" => true)
-    expect(toast.dig("action", "label")).to eq("Add another")
-    expect(toast.dig("action", "href")).to eq(new_project_item_path(project, parent_id: parent.id, status_id: in_progress.id))
+      document = Nokogiri::HTML(response.body)
+      expect(document.at_css(".sub-items")).to be_nil
+      sidebar_props = JSON.parse(document.at_css('[data-svelte-component="ItemSidebar"]')["data-props"])
+      expect(sidebar_props["parentOptions"]).to be_empty
+    end
   end
 end
 

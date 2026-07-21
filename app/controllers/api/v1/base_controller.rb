@@ -56,9 +56,9 @@ module Api
       def find_organization_item(param)
         if (key = param.to_s.match(/\A([A-Za-z][A-Za-z0-9]{0,9})-(\d+)\z/))
           project = resolve_project_by_slug(key[1]) || raise(ActiveRecord::RecordNotFound)
-          project.items.find_by!(number: key[2].to_i)
+          project.items.published.find_by!(number: key[2].to_i)
         else
-          Item.joins(:project).where(projects: { organization_id: current_organization.id }).find(param)
+          Item.published.joins(:project).where(projects: { organization_id: current_organization.id }).find(param)
         end
       end
 

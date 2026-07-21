@@ -9,7 +9,8 @@
 </div>
 
 <div class="buttons mb-4">
-  <%= link_to "New item", new_project_item_path(@project), class: "button is-primary" %>
+  <%# Creates a draft and lands on its item page (PROJ-86). %>
+  <%= button_to "New item", project_items_path(@project), class: "button is-primary", form: { class: "mb-0" } %>
   <%= link_to "Prioritize", prioritize_project_path(@project), class: "button" %>
   <%= link_to "Priorities", priorities_project_path(@project), class: "button" %>
 </div>

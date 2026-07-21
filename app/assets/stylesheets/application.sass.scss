@@ -1420,13 +1420,33 @@ $tag-colors: (
 }
 
 // The title renders as a real button (keyboard-accessible without role
-// shimming) that inherits the heading's look.
+// shimming) that inherits the heading's look. A draft's empty title shows a
+// muted placeholder instead of a zero-width click target.
 .item-title-trigger {
   padding: 0 0.25rem;
   background: none;
   color: inherit;
   font: inherit;
   text-align: left;
+
+  &.is-empty {
+    color: var(--bulma-text-weak);
+    font-weight: 400;
+  }
+}
+
+// Create/Discard bar shown on a draft's item page (PROJ-86).
+.draft-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+
+  .draft-bar-actions {
+    margin-bottom: 0;
+  }
 }
 
 // Tag typeahead: suggestions drop over the content below the input.

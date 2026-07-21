@@ -17,17 +17,36 @@
   </div>
   <div class="level-right">
     <div class="buttons">
-      <% if @item.status.category != "done" %>
-        <%= link_to "Prioritize this", prioritize_project_path(@project, pinned_item_id: @item.id),
-              class: "button is-small", title: "Compare this item against the rest of the project" %>
+      <% unless @item.draft? %>
+        <% if @item.status.category != "done" %>
+          <%= link_to "Prioritize this", prioritize_project_path(@project, pinned_item_id: @item.id),
+                class: "button is-small", title: "Compare this item against the rest of the project" %>
+        <% end %>
+        <%= button_to "Add sub-item", project_items_path(@project, parent_id: @item.id), class: "button is-small" %>
+        <%= button_to "Delete", project_item_path(@project, @item), method: :delete,
+              class: "button is-small is-danger is-outlined",
+              form: { data: { turbo_confirm: "Delete this item?" } } %>
       <% end %>
-      <%= link_to "Add sub-item", new_project_item_path(@project, parent_id: @item.id), class: "button is-small" %>
-      <%= button_to "Delete", project_item_path(@project, @item), method: :delete,
-            class: "button is-small is-danger is-outlined",
-            form: { data: { turbo_confirm: "Delete this item?" } } %>
     </div>
   </div>
 </div>
+
+<% if @item.draft? %>
+  <%# Create-in-place (PROJ-86): this page IS the new-item form. The draft is
+      invisible everywhere until published from this bar. %>
+  <div class="notification is-warning draft-bar">
+    <span class="draft-bar-label">
+      <strong>Draft</strong> — fill in a title (and whatever else), then create it.
+      It stays off the board and out of prioritizing until then.
+    </span>
+    <span class="buttons draft-bar-actions">
+      <%= button_to "Create item", publish_project_item_path(@project, @item), method: :patch,
+            class: "button is-primary is-small", form: { class: "mb-0" } %>
+      <%= button_to "Discard", project_item_path(@project, @item), method: :delete,
+            class: "button is-small", form: { class: "mb-0", data: { turbo_confirm: "Discard this draft?" } } %>
+    </span>
+  </div>
+<% end %>
 
 <% if @item.needs_review? %>
   <div data-svelte-component="ReviewBanner"

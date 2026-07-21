@@ -29,7 +29,9 @@ class Item < ApplicationRecord
   has_many :item_tags, dependent: :destroy
   has_many :tags, through: :item_tags
 
-  validates :title, presence: true
+  # Drafts (PROJ-86) may sit titleless while being filled in on the item page;
+  # publishing (draft -> false) demands a title like any real item.
+  validates :title, presence: true, unless: :draft?
   validates :strength, presence: true, numericality: true
   validates :source, inclusion: { in: SOURCES }
   validates :points, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
@@ -38,6 +40,13 @@ class Item < ApplicationRecord
   validate :parent_not_circular
 
   scope :not_done, -> { joins(:status).where.not(statuses: { category: "done" }) }
+
+  # Everything a user or the API should normally see. Drafts (PROJ-86) are
+  # items mid-creation on the item page: they already hold a key and accept
+  # every kind of edit, but stay invisible — board, prioritizing, priorities,
+  # search, API, and candidate pickers all read through this scope — until
+  # published from their Create bar.
+  scope :published, -> { where(draft: false) }
 
   # Items flagged for review (PROJ-65) are set aside during prioritizing: they
   # leave the comparison pool until the flag is cleared, and gather in the
@@ -57,9 +66,12 @@ class Item < ApplicationRecord
   after_destroy :recompute_strengths_after_cascade,
                 if: -> { @had_comparisons && !destroyed_by_association }
 
-  after_create_commit { broadcast_board_change(action: "upsert") }
-  after_update_commit { broadcast_board_change(action: "upsert") }
-  after_destroy_commit { broadcast_board_change(action: "remove") }
+  # Drafts never reach the board: no upserts while draft (publishing flips
+  # draft off, so that update commit is the item's first broadcast) and no
+  # remove for a discarded draft the board never saw.
+  after_create_commit { broadcast_board_change(action: "upsert") unless draft? }
+  after_update_commit { broadcast_board_change(action: "upsert") unless draft? }
+  after_destroy_commit { broadcast_board_change(action: "remove") unless draft? }
 
   # Refits Bradley-Terry log-strengths for every item in the organization from
   # all of its comparisons and persists them, writing with update_column so the
@@ -190,11 +202,11 @@ class Item < ApplicationRecord
   end
 
   # Same-project items eligible to become this item's parent: everything except
-  # the item itself and its descendants (either would create a cycle).
+  # drafts, the item itself, and its descendants (a cycle either way).
   #
   # @return [ActiveRecord::Relation<Item>]
   def parent_candidates
-    scope = project.items.includes(:project).order(:number)
+    scope = project.items.published.includes(:project).order(:number)
     return scope if new_record?
 
     scope.where.not(id: [ id, *descendant_ids ])

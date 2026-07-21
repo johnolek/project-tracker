@@ -29,9 +29,10 @@ Rails.application.routes.draw do
       get :prioritize, to: "comparisons#new"
       get :priorities, to: "priorities#index"
     end
-    resources :items, except: :edit do
+    resources :items, except: %i[edit new] do
       member do
         patch :move
+        patch :publish
         patch :review
         delete :review, action: :unreview, as: nil
       end

@@ -87,9 +87,10 @@
     <button
       type="button"
       class="item-editable item-title-trigger"
+      class:is-empty={!item.title}
       title="Click to edit the title"
       onclick={beginTitle}
-    >{item.title}</button>
+    >{item.title || "Add a title…"}</button>
   </h1>
 {/if}
 

@@ -9,14 +9,13 @@ import CopyButton from "./components/CopyButton.svelte"
 import ItemEditor from "./components/ItemEditor.svelte"
 import ItemLinkField from "./components/ItemLinkField.svelte"
 import ItemSidebar from "./components/ItemSidebar.svelte"
-import ParentField from "./components/ParentField.svelte"
 import Prioritize from "./components/Prioritize.svelte"
 import ReviewBanner from "./components/ReviewBanner.svelte"
 import ReviewQueueLink from "./components/ReviewQueueLink.svelte"
 import ThemeSettings from "./components/ThemeSettings.svelte"
 import Toasts from "./components/Toasts.svelte"
 
-const registry = { Board, CommentEditor, CopyButton, ItemEditor, ItemLinkField, ItemSidebar, ParentField, Prioritize, ReviewBanner, ReviewQueueLink, ThemeSettings, Toasts }
+const registry = { Board, CommentEditor, CopyButton, ItemEditor, ItemLinkField, ItemSidebar, Prioritize, ReviewBanner, ReviewQueueLink, ThemeSettings, Toasts }
 const active = new Map()
 
 function mountIslands() {

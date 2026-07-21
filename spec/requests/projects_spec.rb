@@ -67,14 +67,15 @@ RSpec.describe "Projects", type: :request do
       end.to change(organization.projects, :count).by(-1)
     end
 
-    it "creates an item under a project defaulting to the first open status" do
+    it "creates a draft item under a project defaulting to the first open status" do
       project = organization.projects.create!(name: "App")
 
       expect do
-        post project_items_path(project), params: { item: { title: "Fix bug", item_type: "bug" } }
+        post project_items_path(project)
       end.to change(project.items, :count).by(1)
 
       item = project.items.last
+      expect(item).to be_draft
       expect(item.status).to eq(organization.default_status)
     end
   end

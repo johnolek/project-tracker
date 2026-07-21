@@ -52,10 +52,12 @@ module ApplicationHelper
       projectId: project.id,
       storageKey: dom_id(project, :board_sort),
       statuses: project.organization.statuses.ordered.map do |status|
-        { id: status.id, name: status.name, new_item_url: new_project_item_path(project, status_id: status.id) }
+        # POSTing here creates a draft in this status (PROJ-86); the island
+        # renders it as a data-turbo-method=post link.
+        { id: status.id, name: status.name, create_item_url: project_items_path(project, status_id: status.id) }
       end,
       itemTypes: item_type_options(project.organization),
-      items: project.items.includes(:tags).map(&:board_payload)
+      items: project.items.published.includes(:tags).map(&:board_payload)
     }
   end
 
@@ -74,7 +76,7 @@ module ApplicationHelper
       reviewCount: review_queue_count(project),
       reviewUrl: project_path(project, review: 1),
       itemTypes: item_type_options(project.organization),
-      allTags: project.items.not_done.joins(:tags).distinct.order("tags.name").pluck("tags.name"),
+      allTags: project.items.published.not_done.joins(:tags).distinct.order("tags.name").pluck("tags.name"),
       statuses: organization.statuses.where.not(category: "done").ordered.map { |status| { id: status.id, name: status.name } },
       doneStatusId: organization.statuses.where(category: "done").ordered.first&.id
     )
@@ -199,20 +201,6 @@ module ApplicationHelper
       schemes: ColorScheme::BUILT_IN.map do |scheme|
         { key: scheme.key, label: scheme.label, description: scheme.description, swatches: scheme.swatches }
       end
-    }
-  end
-
-  # Props for the ParentField island on the classic item form (PROJ-68):
-  # the same typeahead options shape as the sidebar's parent picker, newest
-  # items first so recent work surfaces on focus without typing.
-  #
-  # @param item [Item]
-  # @return [Hash]
-  def parent_field_props(item)
-    {
-      name: "item[parent_id]",
-      selectedId: item.parent_id,
-      options: link_target_options(item.parent_candidates.reorder(number: :desc))
     }
   end
 

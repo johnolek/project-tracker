@@ -1,12 +1,12 @@
 class ItemsController < ApplicationController
   before_action :require_login
   before_action :set_project
-  before_action :set_item, only: %i[show update destroy move review unreview]
+  before_action :set_item, only: %i[show update destroy move publish review unreview]
 
   def show
     return redirect_to project_item_path(@project, @item), status: :moved_permanently if stale_project_slug?(params[:project_id])
 
-    @children = @item.children.includes(:status, :project)
+    @children = @item.children.published.includes(:status, :project)
     ActiveRecord::Associations::Preloader.new(
       records: [ @item ],
       associations: { outgoing_links: { target: :project }, incoming_links: { source: :project } }
@@ -15,8 +15,8 @@ class ItemsController < ApplicationController
 
     # One slim scan of the project's items feeds both typeaheads (PROJ-80):
     # link targets (everything but self, newest first) and parent options
-    # (minus descendants, which would cycle).
-    project_items = @project.items.where.not(id: @item.id)
+    # (minus descendants, which would cycle). Drafts are nobody's target.
+    project_items = @project.items.published.where.not(id: @item.id)
                             .select(:id, :number, :title, :project_id, :created_at)
                             .includes(:project).order(number: :desc).to_a
     descendant_ids = @item.descendant_ids.to_set
@@ -28,25 +28,38 @@ class ItemsController < ApplicationController
     @new_comment = @item.comments.new
   end
 
-  def new
-    @item = @project.items.new(status: preselected_status, parent: preselected_parent)
+  # "New item" is create-in-place (PROJ-86): POSTing here births a draft —
+  # a real row with a key, invisible everywhere until published — and lands on
+  # the standard item page, whose editing machinery IS the create form. The
+  # board's per-column + passes status_id; "Add sub-item" passes parent_id.
+  def create
+    item = @project.items.create!(
+      draft: true,
+      title: "",
+      status: preselected_status,
+      parent: preselected_parent,
+      item_type: @project.organization.item_types.ordered.first.name
+    )
+    redirect_to project_item_path(@project, item)
   end
 
-  # On success the notice is a sticky toast (PROJ-67): it stays up until
-  # dismissed, carrying an "Add another" link back to the form with the same
-  # status and parent preselected for rapid batch entry.
-  def create
-    @item = @project.items.new(item_params)
-
-    if @item.save
+  # Publishing flips the draft live (title now required). The notice is a
+  # sticky toast (PROJ-67) whose "Add another" starts the next draft with the
+  # same status and parent, for rapid batch entry.
+  def publish
+    if @item.update(draft: false)
       flash[:notice] = {
-        message: "Item created.",
+        message: "#{@item.key} created.",
         sticky: true,
-        action: { label: "Add another", href: new_project_item_path(@project, { status_id: @item.status_id, parent_id: @item.parent_id }.compact) }
+        action: {
+          label: "Add another",
+          href: project_items_path(@project, { status_id: @item.status_id, parent_id: @item.parent_id }.compact),
+          method: "post"
+        }
       }
       redirect_to project_item_path(@project, @item)
     else
-      render :new, status: :unprocessable_entity
+      redirect_to project_item_path(@project, @item), alert: @item.errors.full_messages.to_sentence
     end
   end
 
@@ -66,7 +79,7 @@ class ItemsController < ApplicationController
 
   def destroy
     @item.destroy
-    redirect_to project_path(@project), notice: "Item deleted."
+    redirect_to project_path(@project), notice: @item.draft? ? "Draft discarded." : "Item deleted."
   end
 
   # Drag-and-drop status change from the board. Scopes the target status to the
@@ -106,10 +119,10 @@ class ItemsController < ApplicationController
     @project = find_project!(params[:project_id])
   end
 
-  # Status shown selected on the new-item form. The board's add-card button
-  # passes params[:status_id]; it is honored only when it belongs to the org
-  # (a foreign or unknown id is ignored) and otherwise falls back to the org's
-  # default so the form mirrors the status create would assign.
+  # Status a new draft is born into. The board's add-card button passes
+  # params[:status_id]; it is honored only when it belongs to the org (a
+  # foreign or unknown id is ignored) and otherwise falls back to the org's
+  # default.
   #
   # @return [Status, nil]
   def preselected_status
@@ -117,13 +130,13 @@ class ItemsController < ApplicationController
     requested || current_organization.default_status
   end
 
-  # Parent preselected on the new-item form via params[:parent_id] (the
-  # "Add sub-item" button on an item page). Ignored unless it names an item
-  # in this project.
+  # Parent a new draft is born under, via params[:parent_id] (the
+  # "Add sub-item" button on an item page). Ignored unless it names a
+  # published item in this project.
   #
   # @return [Item, nil]
   def preselected_parent
-    @project.items.find_by(id: params[:parent_id]) if params[:parent_id].present?
+    @project.items.published.find_by(id: params[:parent_id]) if params[:parent_id].present?
   end
 
   def set_item

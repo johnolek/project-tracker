@@ -309,7 +309,8 @@
           <h3 class="title is-6">{column.status.name}</h3>
           <a
             class="button is-small status-add"
-            href={column.status.new_item_url}
+            href={column.status.create_item_url}
+            data-turbo-method="post"
             aria-label="Add item to {column.status.name}"
           >
             <span aria-hidden="true">+</span>

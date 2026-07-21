@@ -78,8 +78,9 @@ module Api
         @item = find_organization_item(params[:id])
       end
 
+      # Web-side drafts (PROJ-86) stay out of the API entirely.
       def organization_items
-        Item.joins(:project).where(projects: { organization_id: current_organization.id })
+        Item.published.joins(:project).where(projects: { organization_id: current_organization.id })
       end
 
       def item_params
@@ -193,7 +194,7 @@ module Api
       # behave identically: both 404 when the project isn't in the organization.
       def base_scope
         if params[:project_id].present?
-          find_organization_project(params[:project_id]).items
+          find_organization_project(params[:project_id]).items.published
         else
           organization_items
         end

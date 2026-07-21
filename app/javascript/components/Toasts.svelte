@@ -145,7 +145,9 @@
       <button class="delete" aria-label="Dismiss notification" onclick={() => dismiss(toast.id)}></button>
       {toast.message}
       {#if toast.action}
-        <a class="toast-action" href={toast.action.href}>{toast.action.label}</a>
+        <!-- action.method (e.g. "post" for Add another's draft creation) rides
+             through Turbo's data-turbo-method; absent means a plain GET link. -->
+        <a class="toast-action" href={toast.action.href} data-turbo-method={toast.action.method}>{toast.action.label}</a>
       {/if}
     </div>
   {/each}

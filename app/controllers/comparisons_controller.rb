@@ -68,7 +68,7 @@ class ComparisonsController < ApplicationController
   def pinned_item
     return nil if params[:pinned_item_id].blank?
 
-    @project.items.not_done.not_needing_review.find_by(id: params[:pinned_item_id])
+    @project.items.published.not_done.not_needing_review.find_by(id: params[:pinned_item_id])
   end
 
   # Candidate-pool filters, read identically from GET query params (new) and the
@@ -182,7 +182,7 @@ class ComparisonsController < ApplicationController
   # pair ranking in spirit: under-compared items surface first, ties break
   # randomly.
   def selection(pinned: nil, exclude: [])
-    items = @project.items.not_done.not_needing_review.includes(:status, :tags).select { |item| matches_filters?(item) }
+    items = @project.items.published.not_done.not_needing_review.includes(:status, :tags).select { |item| matches_filters?(item) }
     counts = Comparison.counts_by_item(project: @project)
     skip = exclude.map { |first, second| pair_key(first, second) }.to_set
 
