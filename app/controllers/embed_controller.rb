@@ -68,13 +68,16 @@ class EmbedController < ApplicationController
 
   # Accepts any type configured for the organization (the same canonical list
   # the frame offers as pills); anything unrecognized or absent falls back to
-  # "idea", matching the widget's own default — lenient by design.
+  # "idea", or to the org's first configured type when "idea" itself has been
+  # removed — lenient by design, never a type the org doesn't have.
   #
   # @param organization [Organization]
   # @return [String]
   def submitted_item_type(organization)
     submitted = params[:item_type].to_s.downcase
-    organization.item_types.exists?(name: submitted) ? submitted : "idea"
+    return submitted if organization.item_types.exists?(name: submitted)
+
+    organization.item_types.exists?(name: "idea") ? "idea" : organization.item_types.ordered.first&.name
   end
 
   # Page context the loader forwarded, kept out of the notes body and in the
