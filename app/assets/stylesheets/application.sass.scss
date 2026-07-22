@@ -1662,6 +1662,14 @@ $tag-colors: (
   background: var(--bulma-primary);
   color: var(--bulma-primary-invert);
   box-shadow: 0 1px 2px hsla(var(--bulma-scheme-h), var(--bulma-scheme-s), 10%, 0.08);
+  // Quiet at rest, full presence (and AA contrast) once hovered or focused.
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+
+  &:hover,
+  &:focus-visible {
+    opacity: 1;
+  }
 }
 
 .feedback-panel {
@@ -1686,6 +1694,26 @@ $tag-colors: (
 
 .feedback-panel-title {
   font-weight: 600;
+}
+
+.feedback-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.feedback-hide {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.8rem;
+  line-height: 1;
+  color: var(--bulma-text-weak);
+
+  &:hover,
+  &:focus-visible {
+    color: var(--bulma-text);
+  }
 }
 
 .feedback-close {

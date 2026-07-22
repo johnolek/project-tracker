@@ -41,13 +41,23 @@
   iframe.addEventListener("load", sendContext);
   window.addEventListener("resize", sendContext);
 
-  window.addEventListener("message", function (event) {
+  function onMessage(event) {
     if (event.origin !== trackerOrigin) return;
     var data = event.data || {};
-    if (data.type !== "pt-embed:size") return;
-    iframe.style.width = Math.max(0, data.width) + "px";
-    iframe.style.height = Math.max(0, data.height) + "px";
-  });
+    if (data.type === "pt-embed:size") {
+      iframe.style.width = Math.max(0, data.width) + "px";
+      iframe.style.height = Math.max(0, data.height) + "px";
+    } else if (data.type === "pt-embed:hide") {
+      // Hide for the rest of this page load only — no persistence, so a full
+      // refresh re-creates the iframe and brings the widget back. Stop
+      // listening since the frame is gone until then.
+      iframe.style.display = "none";
+      window.removeEventListener("message", onMessage);
+      window.removeEventListener("resize", sendContext);
+    }
+  }
+
+  window.addEventListener("message", onMessage);
 
   function inject() {
     document.body.appendChild(iframe);

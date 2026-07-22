@@ -71,6 +71,13 @@
     expanded = false
   }
 
+  // Ask the loader to hide the iframe for the rest of this page load. No
+  // persistence anywhere — a full refresh brings the widget back.
+  function hide() {
+    if (typeof window === "undefined") return
+    window.parent.postMessage({ type: "pt-embed:hide" }, origin)
+  }
+
   function setScreenshot(blob) {
     if (!blob) return
     if (screenshotUrl) URL.revokeObjectURL(screenshotUrl)
@@ -187,7 +194,10 @@
     <div class="feedback-panel">
       <header class="feedback-panel-head">
         <span class="feedback-panel-title">Send feedback</span>
-        <button type="button" class="feedback-close" aria-label="Close" onclick={collapse}>×</button>
+        <div class="feedback-head-actions">
+          <button type="button" class="feedback-hide" aria-label="Hide until page refresh" onclick={hide}>Hide</button>
+          <button type="button" class="feedback-close" aria-label="Close" onclick={collapse}>×</button>
+        </div>
       </header>
 
       {#if result}
