@@ -34,6 +34,13 @@
     <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
     <%= javascript_include_tag "application", "data-turbo-track": "reload", type: "module" %>
+
+    <%# Dogfood the embeddable feedback widget (PROJ-104): admins only, so
+        signed-out and non-admin pages carry no loader tag at all. The frame
+        still 404s unless this host is allowlisted in embed_domains. %>
+    <% if current_user&.admin? %>
+      <script src="<%= embed_loader_url %>" async></script>
+    <% end %>
   </head>
 
   <body>

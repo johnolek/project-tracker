@@ -45,6 +45,33 @@ RSpec.describe "Embed feedback widget", type: :request do
     end
   end
 
+  describe "the loader tag in the app layout (PROJ-104)" do
+    let(:loader_tag) { %(<script src="#{embed_loader_url}" async></script>) }
+
+    it "renders the loader for the admin (first-registered) user" do
+      register_passkey(username: "owner")
+
+      get projects_path
+
+      expect(response.body).to include(loader_tag)
+    end
+
+    it "omits the loader for a non-admin user" do
+      register_passkey(username: "owner")
+      register_passkey(username: "member", client: WebAuthn::FakeClient.new(webauthn_origin))
+
+      get projects_path
+
+      expect(response.body).not_to include("embed.js")
+    end
+
+    it "omits the loader for signed-out visitors" do
+      get login_path
+
+      expect(response.body).not_to include("embed.js")
+    end
+  end
+
   describe "POST /embed/items" do
     let(:params) do
       {
