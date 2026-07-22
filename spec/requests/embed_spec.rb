@@ -35,6 +35,14 @@ RSpec.describe "Embed feedback widget", type: :request do
       expect(response.headers["X-Frame-Options"]).to be_nil
     end
 
+    it "passes the organization's configured item types to the widget props" do
+      get embed_frame_path, params: { origin: "https://good.example.com" }
+
+      props = JSON.parse(Nokogiri::HTML(response.body).at_css("[data-props]")["data-props"])
+      expect(props["itemTypes"]).to eq(organization.item_types.ordered.map(&:name))
+      expect(props["itemTypes"]).to eq(%w[bug feature idea])
+    end
+
     it "matches an allowlisted host:port exactly" do
       create(:embed_domain, organization: organization, project: project, host: "localhost:5173")
 
@@ -108,6 +116,22 @@ RSpec.describe "Embed feedback widget", type: :request do
       body = response.parsed_body
       expect(body["key"]).to eq(item.key)
       expect(body["url"]).to include(item.key.split("-").first)
+    end
+
+    it "creates an item of each configured type" do
+      organization.item_types.ordered.map(&:name).each do |type|
+        post embed_items_path, params: params.merge(item_type: type)
+
+        expect(response).to have_http_status(:created)
+        expect(project.items.order(:created_at).last.item_type).to eq(type)
+      end
+    end
+
+    it "falls back to idea for an unconfigured type rather than erroring" do
+      post embed_items_path, params: params.merge(item_type: "banana")
+
+      expect(response).to have_http_status(:created)
+      expect(project.items.order(:created_at).last.item_type).to eq("idea")
     end
 
     it "creates an item without a screenshot" do

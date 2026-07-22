@@ -22,6 +22,8 @@ class EmbedController < ApplicationController
     @origin = EmbedDomain.normalized_origin(params[:origin])
     return head :not_found unless @domain && @origin
 
+    @item_types = @domain.organization.item_types.ordered.map(&:name)
+
     response.headers["Content-Security-Policy"] = "frame-ancestors #{@origin}"
     response.headers.delete("X-Frame-Options")
   end
@@ -45,7 +47,7 @@ class EmbedController < ApplicationController
   private
 
   # Assembles (but does not save) the submitted item: mapped project, first
-  # workflow status, the toggled bug/idea type, source "embed", the page
+  # workflow status, the pill-selected item type, source "embed", the page
   # context stashed in metadata, and notes built from the description plus any
   # screenshot embedded as an ActionText attachment.
   #
@@ -56,7 +58,7 @@ class EmbedController < ApplicationController
 
     domain.project.items.new(
       title: params[:title].to_s.strip,
-      item_type: submitted_item_type,
+      item_type: submitted_item_type(organization),
       source: "embed",
       status: organization.statuses.ordered.first,
       metadata: submitted_metadata,
@@ -64,9 +66,15 @@ class EmbedController < ApplicationController
     )
   end
 
-  # @return [String] "bug" or "idea"; anything else falls back to "idea"
-  def submitted_item_type
-    %w[bug idea].include?(params[:item_type]) ? params[:item_type] : "idea"
+  # Accepts any type configured for the organization (the same canonical list
+  # the frame offers as pills); anything unrecognized or absent falls back to
+  # "idea", matching the widget's own default — lenient by design.
+  #
+  # @param organization [Organization]
+  # @return [String]
+  def submitted_item_type(organization)
+    submitted = params[:item_type].to_s.downcase
+    organization.item_types.exists?(name: submitted) ? submitted : "idea"
   end
 
   # Page context the loader forwarded, kept out of the notes body and in the

@@ -1804,27 +1804,24 @@ $tag-colors: (
 }
 
 .feedback-toggle {
-  display: inline-flex;
-  border: 1px solid var(--bulma-border);
-  border-radius: 6px;
-  overflow: hidden;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
 }
 
 .feedback-toggle-option {
-  border: 0;
+  border: 1px solid var(--bulma-border);
+  border-radius: 999px;
   cursor: pointer;
-  padding: 0.35rem 1rem;
+  padding: 0.3rem 0.85rem;
   font-size: 0.85rem;
   background: var(--bulma-scheme-main);
   color: var(--bulma-text);
 
-  & + & {
-    border-left: 1px solid var(--bulma-border);
-  }
-
   &.is-active {
     background: var(--bulma-primary);
     color: var(--bulma-primary-invert);
+    border-color: var(--bulma-primary);
   }
 }
 

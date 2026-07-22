@@ -5,13 +5,20 @@
   // posts pt-embed:size to the parent loader (which shows/resizes the iframe),
   // and reads pt-embed:context messages for the host page's URL/viewport.
   // Submits multipart, same-origin, to /embed/items — no CORS anywhere.
-  let { submitUrl, origin } = $props()
+  let { submitUrl, origin, itemTypes = [] } = $props()
+
+  // The server (frame) supplies the organization's configured types so a future
+  // type appears here with no widget change; fall back to bug/idea only if the
+  // prop is somehow empty. Default to "bug" when offered, else the first type.
+  const types = itemTypes.length ? itemTypes : ["bug", "idea"]
+  const defaultType = types.includes("bug") ? "bug" : types[0]
+  const capitalize = (value) => value.charAt(0).toUpperCase() + value.slice(1)
 
   let root = $state(null)
   let expanded = $state(false)
   let title = $state("")
   let description = $state("")
-  let itemType = $state("bug")
+  let itemType = $state(defaultType)
 
   let screenshot = $state(null)
   let screenshotUrl = $state(null)
@@ -181,7 +188,7 @@
     error = ""
     title = ""
     description = ""
-    itemType = "bug"
+    itemType = defaultType
     clearScreenshot()
   }
 </script>
@@ -238,20 +245,15 @@
           <div class="feedback-field">
             <span class="feedback-label">Type</span>
             <div class="feedback-toggle" role="group" aria-label="Feedback type">
-              <button
-                type="button"
-                class="feedback-toggle-option"
-                class:is-active={itemType === "bug"}
-                aria-pressed={itemType === "bug"}
-                onclick={() => (itemType = "bug")}
-              >Bug</button>
-              <button
-                type="button"
-                class="feedback-toggle-option"
-                class:is-active={itemType === "idea"}
-                aria-pressed={itemType === "idea"}
-                onclick={() => (itemType = "idea")}
-              >Idea</button>
+              {#each types as type (type)}
+                <button
+                  type="button"
+                  class="feedback-toggle-option"
+                  class:is-active={itemType === type}
+                  aria-pressed={itemType === type}
+                  onclick={() => (itemType = type)}
+                >{capitalize(type)}</button>
+              {/each}
             </div>
           </div>
 

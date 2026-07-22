@@ -22,9 +22,9 @@ beforeEach(() => {
   global.ResizeObserver = NoopResizeObserver
 })
 
-function renderWidget() {
+function renderWidget(itemTypes) {
   return render(FeedbackWidget, {
-    props: { submitUrl: "/embed/items", origin: HOST },
+    props: { submitUrl: "/embed/items", origin: HOST, itemTypes },
   })
 }
 
@@ -47,6 +47,44 @@ describe("dismiss for the current page view", () => {
     // No client-side persistence of the hidden state.
     expect(window.localStorage.length).toBe(0)
     expect(window.sessionStorage.length).toBe(0)
+  })
+})
+
+describe("item type pills (PROJ-106)", () => {
+  async function expand(itemTypes) {
+    renderWidget(itemTypes)
+    await tick()
+    await fireEvent.click(screen.getByText("Feedback"))
+    await tick()
+  }
+
+  it("renders one capitalized pill per server-supplied type, defaulting to bug", async () => {
+    await expand(["bug", "feature", "idea"])
+
+    for (const label of ["Bug", "Feature", "Idea"]) {
+      expect(screen.getByRole("button", { name: label })).toBeTruthy()
+    }
+    expect(screen.getByRole("button", { name: "Bug" }).getAttribute("aria-pressed")).toBe("true")
+    expect(screen.getByRole("button", { name: "Feature" }).getAttribute("aria-pressed")).toBe("false")
+  })
+
+  it("defaults to the first type when bug is not offered", async () => {
+    await expand(["chore", "idea"])
+
+    expect(screen.getByRole("button", { name: "Chore" }).getAttribute("aria-pressed")).toBe("true")
+  })
+
+  it("submits the selected type", async () => {
+    await expand(["bug", "feature", "idea"])
+    await fireEvent.input(screen.getByLabelText("Title"), { target: { value: "A feature" } })
+    await fireEvent.click(screen.getByRole("button", { name: "Feature" }))
+
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ key: "X-1", url: "/x" }) })
+    global.fetch = fetchMock
+
+    await fireEvent.submit(screen.getByText("Submit").closest("form"))
+
+    expect(fetchMock.mock.calls[0][1].body.get("item_type")).toBe("feature")
   })
 })
 
