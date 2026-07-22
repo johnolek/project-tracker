@@ -71,8 +71,9 @@
     expanded = false
   }
 
-  // Ask the loader to hide the iframe for the rest of this page load. No
-  // persistence anywhere — a full refresh brings the widget back.
+  // Ask the loader to dismiss the iframe for this page view. The loader keeps
+  // its listeners and re-shows the widget on the next page view (turbo:load)
+  // or a full reload — nothing is persisted here.
   function hide() {
     if (typeof window === "undefined") return
     window.parent.postMessage({ type: "pt-embed:hide" }, origin)
@@ -185,19 +186,27 @@
   }
 </script>
 
-<div class="feedback-widget" bind:this={root}>
+<div class="feedback-widget" class:is-expanded={expanded} bind:this={root}>
   {#if !expanded}
-    <button type="button" class="feedback-tab" onclick={expand}>
-      Feedback
-    </button>
+    <!-- Rest: a tiny low-opacity nub hugging the corner. Hover or keyboard
+         focus expands it into a pill exposing "Feedback" (opens the form) and
+         a "×" (hides the widget until the next page view). -->
+    <div class="feedback-collapsed">
+      <button type="button" class="feedback-open" onclick={expand}>
+        <span class="feedback-open-label">Feedback</span>
+      </button>
+      <button
+        type="button"
+        class="feedback-dismiss"
+        aria-label="Hide feedback until next page"
+        onclick={hide}
+      >×</button>
+    </div>
   {:else}
     <div class="feedback-panel">
       <header class="feedback-panel-head">
         <span class="feedback-panel-title">Send feedback</span>
-        <div class="feedback-head-actions">
-          <button type="button" class="feedback-hide" aria-label="Hide until page refresh" onclick={hide}>Hide</button>
-          <button type="button" class="feedback-close" aria-label="Close" onclick={collapse}>×</button>
-        </div>
+        <button type="button" class="feedback-close" aria-label="Close" onclick={collapse}>×</button>
       </header>
 
       {#if result}

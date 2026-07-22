@@ -3,9 +3,10 @@ import { render, screen, fireEvent } from "@testing-library/svelte"
 import { tick } from "svelte"
 import FeedbackWidget from "../../app/javascript/components/FeedbackWidget.svelte"
 
-// PROJ-89 embeddable widget: the "Hide until refresh" action posts a
-// pt-embed:hide message to the parent loader (targeted to the host origin),
-// and the frame trusts parent context only from that same origin.
+// PROJ-89 embeddable widget: the collapsed pill's "×" posts a pt-embed:hide
+// message to the parent loader (targeted to the host origin) to dismiss the
+// widget for the current page view, and the frame trusts parent context only
+// from that same origin.
 
 const HOST = "https://host.example"
 
@@ -27,16 +28,16 @@ function renderWidget() {
   })
 }
 
-describe("hide until page refresh", () => {
-  it("posts pt-embed:hide to the host origin, with no persistence", async () => {
+describe("dismiss for the current page view", () => {
+  it("posts pt-embed:hide to the host origin from the collapsed pill, with no persistence", async () => {
     const post = vi.spyOn(window.parent, "postMessage").mockImplementation(() => {})
 
     renderWidget()
-    await fireEvent.click(screen.getByText("Feedback"))
     await tick()
 
-    const hide = screen.getByLabelText("Hide until page refresh")
-    expect(hide.textContent.trim()).toBe("Hide")
+    // The dismiss control lives on the collapsed pill, not the expanded panel.
+    const hide = screen.getByLabelText("Hide feedback until next page")
+    expect(hide.textContent.trim()).toBe("×")
 
     await fireEvent.click(hide)
 

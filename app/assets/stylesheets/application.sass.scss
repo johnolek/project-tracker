@@ -1645,29 +1645,106 @@ $tag-colors: (
   background: transparent;
 }
 
+// inline-block so the widget shrinks to its content instead of filling the
+// iframe body (a block div would take the body's — i.e. the iframe's — full
+// width and echo that width back to the loader, pinning the box open). Shadow
+// room is only needed around the expanded panel, so its padding is scoped to
+// .is-expanded; the collapsed nub sits flush in the corner with none.
 .feedback-widget {
-  padding: 12px;
+  display: inline-block;
   box-sizing: border-box;
   font-family: var(--bulma-body-family, sans-serif);
 }
 
-.feedback-tab {
-  display: inline-block;
-  border: 0;
-  cursor: pointer;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 600;
+.feedback-widget.is-expanded {
+  padding: 12px;
+}
+
+// Collapsed widget: a nub at rest that expands to a pill on hover/focus. The
+// iframe hugs this box exactly, so the rest size must stay nub-small — the
+// iframe intercepts pointer events over its whole area.
+.feedback-collapsed {
+  // Block-level (not inline) flex so the widget's inline-block line box adds no
+  // line-height strut above/below — otherwise the nub inherits the body's
+  // ~24px line-height and stops hugging its content. fit-content keeps it
+  // shrink-wrapped to the nub/pill width.
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  overflow: hidden;
   background: var(--bulma-primary);
   color: var(--bulma-primary-invert);
+  border-top-left-radius: 9px;
+  border-top-right-radius: 3px;
   box-shadow: 0 1px 2px hsla(var(--bulma-scheme-h), var(--bulma-scheme-s), 10%, 0.08);
-  // Quiet at rest, full presence (and AA contrast) once hovered or focused.
-  opacity: 0.6;
+  // Almost fully hidden at rest; full presence (and AA contrast) on hover/focus.
+  opacity: 0.5;
   transition: opacity 0.15s ease;
 
   &:hover,
-  &:focus-visible {
+  &:focus-within {
+    opacity: 1;
+  }
+}
+
+.feedback-open {
+  border: 0;
+  margin: 0;
+  cursor: pointer;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.85rem;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  // Rest nub geometry: a small sliver, no visible text.
+  width: 44px;
+  height: 14px;
+  padding: 0;
+  transition: width 0.15s ease, height 0.15s ease, padding 0.15s ease;
+
+  .feedback-collapsed:hover &,
+  .feedback-collapsed:focus-within & {
+    width: auto;
+    height: auto;
+    padding: 0.4rem 0.25rem 0.4rem 0.8rem;
+  }
+}
+
+.feedback-open-label {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+
+  .feedback-collapsed:hover &,
+  .feedback-collapsed:focus-within & {
+    opacity: 1;
+  }
+}
+
+.feedback-dismiss {
+  border: 0;
+  margin: 0;
+  cursor: pointer;
+  background: transparent;
+  color: inherit;
+  font-size: 1rem;
+  line-height: 1;
+  // Fully collapsed at rest (no width or height) so it adds nothing to the
+  // nub's box; revealed alongside the label on hover/focus.
+  width: 0;
+  height: 0;
+  padding: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: width 0.15s ease, height 0.15s ease, padding 0.15s ease, opacity 0.15s ease;
+
+  .feedback-collapsed:hover &,
+  .feedback-collapsed:focus-within & {
+    width: auto;
+    height: auto;
+    padding: 0.4rem 0.55rem 0.4rem 0.15rem;
     opacity: 1;
   }
 }
@@ -1694,26 +1771,6 @@ $tag-colors: (
 
 .feedback-panel-title {
   font-weight: 600;
-}
-
-.feedback-head-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.feedback-hide {
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  font-size: 0.8rem;
-  line-height: 1;
-  color: var(--bulma-text-weak);
-
-  &:hover,
-  &:focus-visible {
-    color: var(--bulma-text);
-  }
 }
 
 .feedback-close {
