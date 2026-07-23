@@ -6,6 +6,8 @@
   submissions from an allowlisted host create items in its mapped project.
 </p>
 
+<% item_type_names = current_organization.item_types.ordered.pluck(:name) %>
+
 <%= form_with model: @embed_domain, url: settings_embeds_path do |form| %>
   <% if form.object.errors.any? %>
     <div class="notification is-danger is-light">
@@ -30,6 +32,12 @@
       </div>
     </div>
     <div class="control">
+      <%= form.label :default_item_type, "Default type", class: "label" %>
+      <div class="select">
+        <%= form.select :default_item_type, item_type_names, { include_blank: "No default" } %>
+      </div>
+    </div>
+    <div class="control">
       <%= form.submit "Add embed", class: "button is-primary" %>
     </div>
   </div>
@@ -40,7 +48,7 @@
     <thead>
       <tr>
         <th>Host</th>
-        <th>Project</th>
+        <th>Project &amp; defaults</th>
         <th></th>
       </tr>
     </thead>
@@ -50,11 +58,17 @@
           <td class="is-vcentered"><code><%= embed_domain.host %></code></td>
           <td>
             <%= form_with model: embed_domain, url: settings_embed_path(embed_domain), method: :patch,
-                  class: "field has-addons mb-0" do |form| %>
+                  class: "field is-grouped mb-0" do |form| %>
               <div class="control">
                 <div class="select is-small">
                   <%= form.collection_select :project_id, current_organization.projects.order(:name), :id, :name,
                         {}, { "aria-label": "Project" } %>
+                </div>
+              </div>
+              <div class="control">
+                <div class="select is-small">
+                  <%= form.select :default_item_type, item_type_names,
+                        { include_blank: "No default type" }, { "aria-label": "Default type" } %>
                 </div>
               </div>
               <div class="control">

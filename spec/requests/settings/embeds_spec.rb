@@ -68,6 +68,16 @@ RSpec.describe "Settings::Embeds", type: :request do
         expect(response).to redirect_to(settings_embeds_path)
         expect(embed_domain.reload.project).to eq(other)
       end
+
+      it "sets and clears the default item type" do
+        embed_domain = create(:embed_domain, organization: organization, project: project, host: "type.example.com")
+
+        patch settings_embed_path(embed_domain), params: { embed_domain: { default_item_type: "feature" } }
+        expect(embed_domain.reload.default_item_type).to eq("feature")
+
+        patch settings_embed_path(embed_domain), params: { embed_domain: { default_item_type: "" } }
+        expect(embed_domain.reload.default_item_type).to be_nil
+      end
     end
 
     describe "destroy" do
