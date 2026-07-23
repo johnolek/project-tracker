@@ -46,7 +46,7 @@ module Settings
     end
 
     def embed_domain_params
-      params.require(:embed_domain).permit(:host, :project_id, :default_item_type)
+      params.require(:embed_domain).permit(:host, :project_id, :default_item_type, :default_points)
     end
   end
 end

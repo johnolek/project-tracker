@@ -38,6 +38,12 @@
       </div>
     </div>
     <div class="control">
+      <%= form.label :default_points, "Default points", class: "label" %>
+      <div class="select">
+        <%= form.select :default_points, Item::POINT_OPTIONS, { include_blank: "No default" } %>
+      </div>
+    </div>
+    <div class="control">
       <%= form.submit "Add embed", class: "button is-primary" %>
     </div>
   </div>
@@ -69,6 +75,12 @@
                 <div class="select is-small">
                   <%= form.select :default_item_type, item_type_names,
                         { include_blank: "No default type" }, { "aria-label": "Default type" } %>
+                </div>
+              </div>
+              <div class="control">
+                <div class="select is-small">
+                  <%= form.select :default_points, Item::POINT_OPTIONS,
+                        { include_blank: "No default points" }, { "aria-label": "Default points" } %>
                 </div>
               </div>
               <div class="control">

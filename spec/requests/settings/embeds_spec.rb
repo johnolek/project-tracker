@@ -78,6 +78,16 @@ RSpec.describe "Settings::Embeds", type: :request do
         patch settings_embed_path(embed_domain), params: { embed_domain: { default_item_type: "" } }
         expect(embed_domain.reload.default_item_type).to be_nil
       end
+
+      it "sets and clears the default points" do
+        embed_domain = create(:embed_domain, organization: organization, project: project, host: "points.example.com")
+
+        patch settings_embed_path(embed_domain), params: { embed_domain: { default_points: "3" } }
+        expect(embed_domain.reload.default_points).to eq(3)
+
+        patch settings_embed_path(embed_domain), params: { embed_domain: { default_points: "" } }
+        expect(embed_domain.reload.default_points).to be_nil
+      end
     end
 
     describe "destroy" do
