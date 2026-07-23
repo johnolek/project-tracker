@@ -1660,14 +1660,15 @@ $tag-colors: (
   padding: 12px;
 }
 
-// Collapsed widget: a nub at rest that expands to a pill on hover/focus. The
-// iframe hugs this box exactly, so the rest size must stay nub-small — the
-// iframe intercepts pointer events over its whole area.
+// Collapsed widget: a tab hugging the right edge (the loader centers the
+// iframe vertically). Label and dismiss stay fully rendered at rest — the
+// old hover-reveal nub was invisible on touch screens (PROJ-111) — so the
+// tab must hold AA contrast on its own, no opacity dimming.
 .feedback-collapsed {
   // Block-level (not inline) flex so the widget's inline-block line box adds no
-  // line-height strut above/below — otherwise the nub inherits the body's
+  // line-height strut above/below — otherwise the tab inherits the body's
   // ~24px line-height and stops hugging its content. fit-content keeps it
-  // shrink-wrapped to the nub/pill width.
+  // shrink-wrapped to the tab's width.
   display: flex;
   width: fit-content;
   align-items: center;
@@ -1675,16 +1676,8 @@ $tag-colors: (
   background: var(--bulma-primary);
   color: var(--bulma-primary-invert);
   border-top-left-radius: 9px;
-  border-top-right-radius: 3px;
+  border-bottom-left-radius: 9px;
   box-shadow: 0 1px 2px hsla(var(--bulma-scheme-h), var(--bulma-scheme-s), 10%, 0.08);
-  // Almost fully hidden at rest; full presence (and AA contrast) on hover/focus.
-  opacity: 0.5;
-  transition: opacity 0.15s ease;
-
-  &:hover,
-  &:focus-within {
-    opacity: 1;
-  }
 }
 
 .feedback-open {
@@ -1695,32 +1688,10 @@ $tag-colors: (
   color: inherit;
   font-family: inherit;
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   line-height: 1;
   white-space: nowrap;
-  overflow: hidden;
-  // Rest nub geometry: a small sliver, no visible text.
-  width: 44px;
-  height: 14px;
-  padding: 0;
-  transition: width 0.15s ease, height 0.15s ease, padding 0.15s ease;
-
-  .feedback-collapsed:hover &,
-  .feedback-collapsed:focus-within & {
-    width: auto;
-    height: auto;
-    padding: 0.4rem 0.25rem 0.4rem 0.8rem;
-  }
-}
-
-.feedback-open-label {
-  opacity: 0;
-  transition: opacity 0.15s ease;
-
-  .feedback-collapsed:hover &,
-  .feedback-collapsed:focus-within & {
-    opacity: 1;
-  }
+  padding: 0.65rem 0.3rem 0.65rem 1rem;
 }
 
 .feedback-dismiss {
@@ -1729,24 +1700,9 @@ $tag-colors: (
   cursor: pointer;
   background: transparent;
   color: inherit;
-  font-size: 1rem;
+  font-size: 1.25rem;
   line-height: 1;
-  // Fully collapsed at rest (no width or height) so it adds nothing to the
-  // nub's box; revealed alongside the label on hover/focus.
-  width: 0;
-  height: 0;
-  padding: 0;
-  opacity: 0;
-  overflow: hidden;
-  transition: width 0.15s ease, height 0.15s ease, padding 0.15s ease, opacity 0.15s ease;
-
-  .feedback-collapsed:hover &,
-  .feedback-collapsed:focus-within & {
-    width: auto;
-    height: auto;
-    padding: 0.4rem 0.55rem 0.4rem 0.15rem;
-    opacity: 1;
-  }
+  padding: 0.65rem 0.75rem 0.65rem 0.3rem;
 }
 
 .feedback-panel {

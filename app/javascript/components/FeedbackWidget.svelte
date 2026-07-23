@@ -195,9 +195,9 @@
 
 <div class="feedback-widget" class:is-expanded={expanded} bind:this={root}>
   {#if !expanded}
-    <!-- Rest: a tiny low-opacity nub hugging the corner. Hover or keyboard
-         focus expands it into a pill exposing "Feedback" (opens the form) and
-         a "×" (hides the widget until the next page view). -->
+    <!-- Rest: a tab pinned to the right edge with "Feedback" (opens the form)
+         and "×" (hides the widget until the next page view) always visible —
+         hover-reveal never worked on touch. -->
     <div class="feedback-collapsed">
       <button type="button" class="feedback-open" onclick={expand}>
         <span class="feedback-open-label">Feedback</span>
