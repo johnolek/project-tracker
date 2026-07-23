@@ -1643,6 +1643,10 @@ $tag-colors: (
 .embed-frame-body {
   margin: 0;
   background: transparent;
+  // The widget caps itself to the host viewport and the loader sizes the
+  // iframe to the widget, so anything that would overflow is a rendering
+  // glitch — never let it surface as frame scrollbars (PROJ-109).
+  overflow: hidden;
 }
 
 // inline-block so the widget shrinks to its content instead of filling the
