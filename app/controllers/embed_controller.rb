@@ -59,7 +59,7 @@ class EmbedController < ApplicationController
 
     domain.project.items.new(
       title: params[:title].to_s.strip,
-      item_type: submitted_item_type(organization),
+      item_type: submitted_item_type(domain),
       source: "embed",
       status: organization.statuses.ordered.first,
       metadata: submitted_metadata,
@@ -69,14 +69,19 @@ class EmbedController < ApplicationController
 
   # Accepts any type configured for the organization (the same canonical list
   # the frame offers as pills); anything unrecognized or absent falls back to
-  # "idea", or to the org's first configured type when "idea" itself has been
-  # removed — lenient by design, never a type the org doesn't have.
+  # the embed's configured default (PROJ-110, unless the org has since removed
+  # that type), then "idea", then the org's first configured type — lenient by
+  # design, never a type the org doesn't have.
   #
-  # @param organization [Organization]
+  # @param domain [EmbedDomain]
   # @return [String]
-  def submitted_item_type(organization)
+  def submitted_item_type(domain)
+    organization = domain.organization
     submitted = params[:item_type].to_s.downcase
     return submitted if organization.item_types.exists?(name: submitted)
+
+    default = domain.default_item_type
+    return default if default && organization.item_types.exists?(name: default)
 
     organization.item_types.exists?(name: "idea") ? "idea" : organization.item_types.ordered.first&.name
   end

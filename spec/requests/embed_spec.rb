@@ -152,6 +152,15 @@ RSpec.describe "Embed feedback widget", type: :request do
       expect(project.items.order(:created_at).last.item_type).to eq("idea")
     end
 
+    it "falls back to the embed's default type before idea" do
+      embed_domain.update!(default_item_type: "feature")
+
+      post embed_items_path, params: params.merge(item_type: "banana")
+
+      expect(response).to have_http_status(:created)
+      expect(project.items.order(:created_at).last.item_type).to eq("feature")
+    end
+
     it "creates an item without a screenshot" do
       expect do
         post embed_items_path, params: params.except(:page_url)
