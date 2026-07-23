@@ -1690,12 +1690,11 @@ $tag-colors: (
   cursor: pointer;
   background: transparent;
   color: inherit;
-  font-family: inherit;
-  font-weight: 600;
-  font-size: 0.9rem;
-  line-height: 1;
-  white-space: nowrap;
-  padding: 0.65rem 0.3rem 0.65rem 1rem;
+  padding: 0.65rem 0.15rem 0.65rem 0.5rem;
+
+  svg {
+    display: block;
+  }
 }
 
 .feedback-dismiss {
@@ -1706,7 +1705,7 @@ $tag-colors: (
   color: inherit;
   font-size: 1.25rem;
   line-height: 1;
-  padding: 0.65rem 0.75rem 0.65rem 0.3rem;
+  padding: 0.65rem 0.5rem 0.65rem 0.15rem;
 }
 
 // The component inlines max-width/max-height from the host viewport (posted

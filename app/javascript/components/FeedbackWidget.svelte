@@ -212,12 +212,15 @@
 
 <div class="feedback-widget" class:is-expanded={expanded} bind:this={root}>
   {#if !expanded}
-    <!-- Rest: a tab pinned to the right edge with "Feedback" (opens the form)
-         and "×" (hides the widget until the next page view) always visible —
-         hover-reveal never worked on touch. -->
+    <!-- Rest: a compact tab pinned to the right edge — a speech-bubble glyph
+         (opens the form) and "×" (hides the widget until the next page view),
+         both always visible; hover-reveal never worked on touch. -->
     <div class="feedback-collapsed">
-      <button type="button" class="feedback-open" onclick={expand}>
-        <span class="feedback-open-label">Feedback</span>
+      <button type="button" class="feedback-open" aria-label="Send feedback" onclick={expand}>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
       </button>
       <button
         type="button"
