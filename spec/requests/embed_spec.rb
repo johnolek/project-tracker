@@ -43,6 +43,24 @@ RSpec.describe "Embed feedback widget", type: :request do
       expect(props["itemTypes"]).to eq(%w[bug feature idea])
     end
 
+    it "passes the embed's default item type to the widget props" do
+      embed_domain.update!(default_item_type: "feature")
+
+      get embed_frame_path, params: { origin: "https://good.example.com" }
+
+      props = JSON.parse(Nokogiri::HTML(response.body).at_css("[data-props]")["data-props"])
+      expect(props["defaultType"]).to eq("feature")
+    end
+
+    it "passes no default type when the configured one has since been removed" do
+      embed_domain.update_column(:default_item_type, "banana")
+
+      get embed_frame_path, params: { origin: "https://good.example.com" }
+
+      props = JSON.parse(Nokogiri::HTML(response.body).at_css("[data-props]")["data-props"])
+      expect(props["defaultType"]).to be_nil
+    end
+
     it "matches an allowlisted host:port exactly" do
       create(:embed_domain, organization: organization, project: project, host: "localhost:5173")
 

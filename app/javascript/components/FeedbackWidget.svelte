@@ -5,13 +5,16 @@
   // posts pt-embed:size to the parent loader (which shows/resizes the iframe),
   // and reads pt-embed:context messages for the host page's URL/viewport.
   // Submits multipart, same-origin, to /embed/items — no CORS anywhere.
-  let { submitUrl, origin, itemTypes = [] } = $props()
+  let { submitUrl, origin, itemTypes = [], defaultType: configuredDefault = null } = $props()
 
   // The server (frame) supplies the organization's configured types so a future
   // type appears here with no widget change; fall back to bug/idea only if the
-  // prop is somehow empty. Default to "bug" when offered, else the first type.
+  // prop is somehow empty. Preselect the embed's configured default (PROJ-110)
+  // when it's still an offered type; without one, "idea" — a mislabeled idea
+  // beats a mislabeled bug — else the first type.
   const types = itemTypes.length ? itemTypes : ["bug", "idea"]
-  const defaultType = types.includes("bug") ? "bug" : types[0]
+  const defaultType = types.includes(configuredDefault) ? configuredDefault
+    : types.includes("idea") ? "idea" : types[0]
   const capitalize = (value) => value.charAt(0).toUpperCase() + value.slice(1)
 
   let root = $state(null)

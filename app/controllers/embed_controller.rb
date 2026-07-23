@@ -23,6 +23,7 @@ class EmbedController < ApplicationController
     return head :not_found unless @domain && @origin
 
     @item_types = @domain.organization.item_types.ordered.map(&:name)
+    @default_type = @domain.default_item_type if @item_types.include?(@domain.default_item_type)
 
     response.headers["Content-Security-Policy"] = "frame-ancestors #{@origin}"
     response.headers.delete("X-Frame-Options")
