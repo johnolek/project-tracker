@@ -12,11 +12,13 @@ class EmbedDomain < ApplicationRecord
   belongs_to :project
 
   normalizes :host, with: ->(host) { host.to_s.strip.downcase }
+  normalizes :default_item_type, with: ->(name) { name.to_s.strip.downcase.presence }
 
   validates :host, presence: true,
                    uniqueness: { case_sensitive: false },
                    format: { with: HOST_FORMAT, message: "must be a bare host like example.com or localhost:5173" }
   validate :project_in_organization
+  validate :default_item_type_configured
 
   # Extracts the allowlist host key ("chesshair.com", "localhost:5173") from a
   # page origin. The port is kept only when it isn't the scheme's default, so
@@ -68,5 +70,14 @@ class EmbedDomain < ApplicationRecord
     return if project.organization_id == organization_id
 
     errors.add(:project, "must belong to this organization")
+  end
+
+  # The default is stored by name, so a type the organization later removes can
+  # go stale; writes reject unconfigured names and readers re-check at use.
+  def default_item_type_configured
+    return if default_item_type.nil? || organization.nil?
+    return if organization.item_types.exists?(name: default_item_type)
+
+    errors.add(:default_item_type, "must be a configured item type")
   end
 end
