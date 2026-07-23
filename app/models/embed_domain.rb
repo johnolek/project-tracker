@@ -17,6 +17,9 @@ class EmbedDomain < ApplicationRecord
   validates :host, presence: true,
                    uniqueness: { case_sensitive: false },
                    format: { with: HOST_FORMAT, message: "must be a bare host like example.com or localhost:5173" }
+  # Same latitude as Item#points: any positive integer, though the settings UI
+  # only offers Item::POINT_OPTIONS.
+  validates :default_points, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
   validate :project_in_organization
   validate :default_item_type_configured
 

@@ -31,4 +31,16 @@ RSpec.describe EmbedDomain do
       expect(build_domain(default_item_type: "banana")).not_to be_valid
     end
   end
+
+  describe "default_points" do
+    it "accepts a positive integer or nil" do
+      expect(build(:embed_domain, default_points: 3)).to be_valid
+      expect(build(:embed_domain, default_points: nil)).to be_valid
+    end
+
+    it "rejects zero and negative values" do
+      expect(build(:embed_domain, default_points: 0)).not_to be_valid
+      expect(build(:embed_domain, default_points: -1)).not_to be_valid
+    end
+  end
 end

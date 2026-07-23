@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_23_161914) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_23_162130) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "citext"
   enable_extension "pg_catalog.plpgsql"
@@ -111,6 +111,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_23_161914) do
   create_table "embed_domains", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "default_item_type"
+    t.integer "default_points"
     t.string "host", null: false
     t.bigint "organization_id", null: false
     t.bigint "project_id", null: false
