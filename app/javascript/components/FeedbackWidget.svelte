@@ -29,6 +29,19 @@
 
   let context = $state({ url: null, viewport: null })
 
+  // Cap the expanded panel to the host page's viewport (posted as context) so
+  // the frame's content always fits the iframe and never scrolls (PROJ-109).
+  // Frame-relative units can't do this: vw/vh here measure the iframe, whose
+  // size is itself derived from the content. The inset leaves room for the
+  // .is-expanded shadow padding on both sides.
+  const PANEL_VIEWPORT_INSET = 24
+  const panelMax = $derived(context.viewport
+    ? {
+        width: `${context.viewport.width - PANEL_VIEWPORT_INSET}px`,
+        height: `${context.viewport.height - PANEL_VIEWPORT_INSET}px`,
+      }
+    : { width: null, height: null })
+
   const canCapture = typeof navigator !== "undefined" &&
     !!navigator.mediaDevices && typeof navigator.mediaDevices.getDisplayMedia === "function"
 
@@ -40,8 +53,9 @@
     if (data.type !== "pt-embed:context") return
     context = {
       url: typeof data.url === "string" ? data.url : null,
-      viewport: data.viewport && typeof data.viewport.width === "number"
-        ? `${data.viewport.width}x${data.viewport.height}`
+      viewport: data.viewport &&
+        typeof data.viewport.width === "number" && typeof data.viewport.height === "number"
+        ? { width: data.viewport.width, height: data.viewport.height }
         : null,
     }
   }
@@ -165,7 +179,7 @@
     form.append("item_type", itemType)
     form.append("origin", origin)
     if (context.url) form.append("page_url", context.url)
-    if (context.viewport) form.append("viewport", context.viewport)
+    if (context.viewport) form.append("viewport", `${context.viewport.width}x${context.viewport.height}`)
     form.append("user_agent", navigator.userAgent)
     if (screenshot) {
       form.append("screenshot", screenshot, screenshot.name || "screenshot.png")
@@ -210,7 +224,7 @@
       >×</button>
     </div>
   {:else}
-    <div class="feedback-panel">
+    <div class="feedback-panel" style:max-width={panelMax.width} style:max-height={panelMax.height}>
       <header class="feedback-panel-head">
         <span class="feedback-panel-title">Send feedback</span>
         <button type="button" class="feedback-close" aria-label="Close" onclick={collapse}>×</button>

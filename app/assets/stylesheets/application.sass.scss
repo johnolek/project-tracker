@@ -1705,9 +1705,14 @@ $tag-colors: (
   padding: 0.65rem 0.75rem 0.65rem 0.3rem;
 }
 
+// The component inlines max-width/max-height from the host viewport (posted
+// as context) — frame-relative vw/vh can't cap this, they measure the iframe
+// whose size follows the content. Column layout keeps the header pinned while
+// the form scrolls internally when that cap binds (PROJ-109).
 .feedback-panel {
   width: 320px;
-  max-width: 90vw;
+  display: flex;
+  flex-direction: column;
   background: var(--bulma-scheme-main);
   color: var(--bulma-text);
   border: 1px solid var(--bulma-border);
@@ -1717,6 +1722,7 @@ $tag-colors: (
 }
 
 .feedback-panel-head {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1745,6 +1751,7 @@ $tag-colors: (
 .feedback-form,
 .feedback-success {
   padding: 0.9rem;
+  overflow-y: auto;
 }
 
 .feedback-field {
