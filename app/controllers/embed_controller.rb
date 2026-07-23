@@ -48,7 +48,8 @@ class EmbedController < ApplicationController
   private
 
   # Assembles (but does not save) the submitted item: mapped project, first
-  # workflow status, the pill-selected item type, source "embed", the page
+  # workflow status, the pill-selected item type, the embed's default points
+  # (PROJ-112 — the widget offers no points field), source "embed", the page
   # context stashed in metadata, and notes built from the description plus any
   # screenshot embedded as an ActionText attachment.
   #
@@ -60,6 +61,7 @@ class EmbedController < ApplicationController
     domain.project.items.new(
       title: params[:title].to_s.strip,
       item_type: submitted_item_type(domain),
+      points: domain.default_points,
       source: "embed",
       status: organization.statuses.ordered.first,
       metadata: submitted_metadata,

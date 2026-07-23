@@ -152,6 +152,16 @@ RSpec.describe "Embed feedback widget", type: :request do
       expect(project.items.order(:created_at).last.item_type).to eq("idea")
     end
 
+    it "applies the embed's default points, none configured meaning none" do
+      post embed_items_path, params: params
+      expect(project.items.order(:created_at).last.points).to be_nil
+
+      embed_domain.update!(default_points: 2)
+
+      post embed_items_path, params: params
+      expect(project.items.order(:created_at).last.points).to eq(2)
+    end
+
     it "falls back to the embed's default type before idea" do
       embed_domain.update!(default_item_type: "feature")
 
